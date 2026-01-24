@@ -1,0 +1,112 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+language: "ko-KR"
+tone_instructions: >
+  사무적인 톤으로 간결하게 리뷰한다.
+  불필요한 감탄/수사는 피하고, 근거(파일/라인/규칙)를 명시한다.
+  코멘트는 "문제 → 영향 → 권장 수정" 순서로 작성한다.
+
+reviews:
+  # 피드백 강도(너무 니트픽 방지). 필요하면 assertive로 올리기.
+  profile: "chill" # enum: chill | assertive
+
+  # PR 설명에 요약 생성
+  high_level_summary: true
+  high_level_summary_instructions: >
+    아래 포맷을 반드시 따른다.
+
+    ## Summary
+    - 변경 목적 1~3줄 요약
+    - 주요 변경점 bullet 3~7개
+
+    ## Result
+    - 기능/동작 측면의 결과(사용자 관점) 1~3줄
+    - 리스크/회귀 가능성(있으면) bullet
+
+    ## Action Items
+    - Must Fix: 린트/타입/런타임 오류 가능성 등 반드시 수정할 항목 (없으면 "None")
+    - Should Fix: 유지보수성/가독성 개선 제안
+    - Nice to Have: 선택적 개선
+
+  # 워크스루/상세 리뷰 출력(코멘트 품질을 올리되, 과도한 장문은 지양)
+  review_details: true
+  review_status: true
+
+  # 잡담성 요소는 꺼서 "사무적 톤" 유지
+  poem: false
+  in_progress_fortune: false
+
+  # 프론트엔드에서는 다이어그램이 과할 때가 많아 기본 off(원하면 true)
+  sequence_diagrams: false
+
+  # 리뷰 노력 추정치(리뷰 규모 파악에 도움)
+  estimate_code_review_effort: true
+
+  # PR 라벨/리뷰어 추천은 필요 시만(원하면 true)
+  suggested_labels: true
+  auto_apply_labels: false
+  labeling_instructions:
+    - label: "frontend"
+      instructions: "React/Vite/TS/Tailwind 관련 변경이 포함된 경우"
+    - label: "booking"
+      instructions: "src/** 내 booking 도메인 변경 포함 시"
+    - label: "auth"
+      instructions: "src/** 내 auth 도메인 변경 포함 시"
+    - label: "test"
+      instructions: "vitest/rtl/playwright 테스트 변경 포함 시"
+
+  # 자동 리뷰
+  auto_review:
+    enabled: true
+    drafts: false
+
+  # 리뷰 범위(포함/제외)
+  path_filters:
+    - "src/**"
+    - "configs/**"
+    - "vite.config.*"
+    - "vitest.config.*"
+    - "playwright.config.*"
+    - "tsconfig*.json"
+    - "eslint.config.*"
+    - "!dist/**"
+    - "!node_modules/**"
+    - "!public/**"
+    - "!**/*.lock"
+    - "!**/*.snap"
+
+  # 경로별 리뷰 지침(프로젝트 컨벤션을 그대로 반영)
+  path_instructions:
+    - path: "src/**/*.tsx"
+      instructions: |
+        - 컴포넌트는 PascalCase를 사용한다.
+        - 컴포넌트는 반드시 `export default function Component(props) {}` 형태의 "함수 선언식"으로 작성한다.
+          - 화살표 함수 컴포넌트(`const Component = () => {}`)는 지양한다.
+        - import 순서는 ESLint(simple-import-sort)에 의해 정리되므로, 수동 정렬을 요구하지 않는다.
+        - Tailwind class는 의미 단위로 끊어 가독성을 유지한다(과도한 한 줄 장문 지양).
+
+    - path: "src/api/**/*.{ts,tsx}"
+      instructions: |
+        - API 응답/외부 입력은 런타임에서 신뢰할 수 없으므로 Zod로 parse/safeParse를 통해 검증한다.
+        - React Query 사용 시 queryKey는 상수/팩토리로 관리하여 문자열 하드코딩을 지양한다.
+        - 네트워크/에러 처리는 호출부가 예측 가능하도록 표준화한다(에러 형태 일관성).
+
+    - path: "src/store/**/*.{ts,tsx}"
+      instructions: |
+        - Zustand store는 상태 타입을 명시한다.
+        - selector 사용을 권장하며 불필요한 전역 구독(전체 state 구독)은 지양한다.
+        - persist를 사용하는 경우 직렬화/복구 과정에서 타입 붕괴 위험이 있는지 점검한다.
+
+    - path: "src/**/*.{test,spec}.{ts,tsx}"
+      instructions: |
+        - 테스트는 Arrange-Act-Assert 구조를 따른다.
+        - RTL은 사용자 관점의 query를 우선한다(getByRole 등).
+        - 불필요한 implementation detail 테스트를 지양한다.
+
+    - path: "playwright/**/*.{ts,tsx}"
+      instructions: |
+        - E2E는 사용자 시나리오 단위로 작성한다.
+        - flaky 요인을 줄이기 위해 임의 sleep 사용을 지양하고, expect 기반의 기다림을 사용한다.
+
+chat:
+  auto_reply: false
