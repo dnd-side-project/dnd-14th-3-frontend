@@ -2,7 +2,7 @@
 
 DND 14기 3팀 프론트엔드 프로젝트 (TypeScript 기반)
 
-## 🛠 기술 스택
+## 기술 스택
 
 ### 코어
 
@@ -39,13 +39,13 @@ DND 14기 3팀 프론트엔드 프로젝트 (TypeScript 기반)
 - **Prettier 3.8.1** - 코드 포맷팅
 - **EditorConfig** - 에디터 설정 통일
 
-## 📦 설치
+## 설치
 
 ```bash
 npm install
 ```
 
-## 🚀 스크립트
+## 스크립트
 
 ### 개발 서버
 
@@ -132,11 +132,11 @@ npm run test:e2e:headed
 # → 테스트 과정을 눈으로 확인 가능
 ```
 
-## 📝 코딩 컨벤션
+## 코딩 컨벤션
 
-파일명, import 순서 등 프로젝트 컨벤션은 [CONVENTIONS.md](./CONVENTIONS.md)를 참고하세요.
+파일명, import 순서 등 프로젝트 컨벤션은 [프론트엔드_코딩 컨벤션](https://www.notion.so/2f1a2177353a80718546d418d168eed2)를 참고하세요.
 
-## 📁 프로젝트 구조
+## 프로젝트 구조
 
 ```
 ├── src/
@@ -177,7 +177,7 @@ npm run test:e2e:headed
 └── README.md                # 프로젝트 문서
 ```
 
-## 🔧 Path Alias
+## Path Alias
 
 TypeScript와 Vite에서 다음 경로 별칭을 사용할 수 있습니다:
 
@@ -222,7 +222,7 @@ import icon from "@public/icon.svg";
 
 1. React 핵심 → 2. 외부 라이브러리 → 3. types → 4. lib → 5. api → 6. services → 7. store → 8. hooks → 9. queries → 10. components → 11. pages → 12. router → 13. assets
 
-## 🧪 테스트 실행 전 준비
+## 테스트 실행 전 준비
 
 Playwright 브라우저를 처음 사용하는 경우 설치가 필요합니다:
 
@@ -230,11 +230,11 @@ Playwright 브라우저를 처음 사용하는 경우 설치가 필요합니다:
 npx playwright install
 ```
 
-## 🤖 AI 코드 리뷰
+## AI 코드 리뷰
 
 이 프로젝트는 CodeRabbit을 사용하여 PR에 대한 자동 코드 리뷰를 제공합니다.
 리뷰 설정은 `.coderabbit.yaml`에서 확인할 수 있습니다.
 
-## 📄 라이선스
+## 라이선스
 
 MIT
