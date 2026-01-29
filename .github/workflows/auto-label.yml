@@ -1,0 +1,57 @@
+name: Auto Label Issues & PRs
+
+on:
+  issues:
+    types: [opened, edited]
+  pull_request:
+    types: [opened, edited, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  auto-label:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Determine label based on title prefix
+        id: detect
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          # 이벤트에 따라 제목 가져오기
+          if [ "$EVENT_NAME" = "issues" ]; then
+            TITLE="$ISSUE_TITLE"
+          else
+            TITLE="$PR_TITLE"
+          fi
+
+          echo "🔍 Title: $TITLE"
+
+          # 기본 라벨 값
+          LABEL="1open issues"
+
+          # 제목 접두어에 따른 라벨 분류
+          case "$TITLE" in
+            feat:*) LABEL="feature" ;;
+            fix:*) LABEL="fix" ;;
+            hotfix:*) LABEL="hotfix" ;;
+            chore:*) LABEL="chore" ;;
+            refactor:*) LABEL="refactor" ;;
+            test:*) LABEL="test" ;;
+            docs:*) LABEL="docs" ;;
+            design:*) LABEL="design" ;;
+          esac
+
+          echo "🎯 Label to apply: $LABEL"
+          echo "label=$LABEL" >> "$GITHUB_OUTPUT"
+
+      - name: Apply the detected label
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          labels: ${{ steps.detect.outputs.label }}
