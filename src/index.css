@@ -1,75 +1,195 @@
 @import "tailwindcss";
 
-:root {
-    font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-    line-height: 1.5;
-    font-weight: 400;
+@theme {
+  /* color */
+  --color-mint: #2fe1d6; /* 메인 컬러 */
+  --color-mint-50: #eafcfb;
+  --color-mint-100: #bff6f2;
+  --color-mint-200: #9ff1ec;
+  --color-mint-300: #74ebe4;
+  --color-mint-400: #59e7de;
+  --color-mint-500: #2fe1d6;
+  --color-mint-600: #2bcdc3;
+  --color-mint-700: #21a098;
+  --color-mint-800: #1a7c76;
+  --color-mint-900: #145f5a;
 
-    color-scheme: light dark;
-    color: rgba(255, 255, 255, 0.87);
-    background-color: #242424;
+  --color-warning: #ff6b6b; /* 경고 컬러 */
+  --color-warning-50: #fff0f0;
+  --color-warning-100: #ffd1d1;
+  --color-warning-200: #ffbbbb;
+  --color-warning-300: #ff9c9c;
+  --color-warning-400: #ff8989;
+  --color-warning-500: #ff6b6b;
+  --color-warning-600: #e86161;
+  --color-warning-700: #b54c4c;
+  --color-warning-800: #8c3b3b;
+  --color-warning-900: #6b2d2d;
 
-    font-synthesis: none;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
+  --color-text: #212121; /* 텍스트 컬러 */
 
-a {
-    font-weight: 500;
-    color: #646cff;
-    text-decoration: inherit;
-}
+  /* typography */
+  --title-1-size: 36px;
+  --title-1-line-height: 48px;
+  --title-1-letter-spacing: -0.027em;
 
-a:hover {
-    color: #535bf2;
+  --title-2-size: 28px;
+  --title-2-line-height: 38px;
+  --title-2-letter-spacing: -0.0236em;
+
+  --title-3-size: 24px;
+  --title-3-line-height: 32px;
+  --title-3-letter-spacing: -0.023em;
+
+  --heading-1-size: 22px;
+  --heading-1-line-height: 30px;
+  --heading-1-letter-spacing: -0.0194em;
+
+  --heading-2-size: 20px;
+  --heading-2-line-height: 28px;
+  --heading-2-letter-spacing: -0.012em;
+
+  --heading-3-size: 18px;
+  --heading-3-line-height: 26px;
+  --heading-3-letter-spacing: -0.002em;
+
+  --body-1-size: 16px;
+  --body-1-line-height: 24px;
+  --body-1-letter-spacing: 0.0057em;
+
+  --body-2-size: 15px;
+  --body-2-line-height: 22px;
+  --body-2-letter-spacing: 0.0096em;
+
+  --label-1-size: 14px;
+  --label-1-line-height: 20px;
+  --label-1-letter-spacing: 0.0145em;
+
+  --label-2-size: 13px;
+  --label-2-line-height: 18px;
+  --label-2-letter-spacing: 0.0194em;
+
+  --caption-1-size: 12px;
+  --caption-1-line-height: 16px;
+  --caption-1-letter-spacing: 0.0252em;
+
+  --caption-2-size: 11px;
+  --caption-2-line-height: 14px;
+  --caption-2-letter-spacing: 0.0311em;
+
+  /* radius */
+  --radius-xxs: 2px;
+  --radius-xs: 4px;
+  --radius-s: 6px;
+  --radius-m: 8px;
+  --radius-l: 12px;
+  --radius-xl: 16px;
+  --radius-xxl: 20px;
+  --radius-full: 50%;
+
+  /* border */
+  --border-50: 0.5px;
+  --border-100: 1px;
+  --border-200: 2px;
 }
 
 body {
-    margin: 0;
-    display: flex;
-    place-items: center;
-    min-width: 320px;
-    min-height: 100vh;
+  font-family:
+    Pretendard,
+    -apple-system,
+    BlinkMacSystemFont,
+    system-ui,
+    Roboto,
+    "Helvetica Neue",
+    "Apple SD Gothic Neo",
+    "Noto Sans KR",
+    "Malgun Gothic",
+    sans-serif;
+  margin: 0;
+  padding: 0;
 }
 
-h1 {
-    font-size: 3.2em;
-    line-height: 1.1;
+/* typography */
+.text-title-1 {
+  font-size: var(--title-1-size);
+  line-height: var(--title-1-line-height);
+  letter-spacing: var(--title-1-letter-spacing);
+  color: var(--color-text);
 }
 
-button {
-    border-radius: 8px;
-    border: 1px solid transparent;
-    padding: 0.6em 1.2em;
-    font-size: 1em;
-    font-weight: 500;
-    font-family: inherit;
-    background-color: #1a1a1a;
-    cursor: pointer;
-    transition: border-color 0.25s;
+.text-title-2 {
+  font-size: var(--title-2-size);
+  line-height: var(--title-2-line-height);
+  letter-spacing: var(--title-2-letter-spacing);
+  color: var(--color-text);
 }
 
-button:hover {
-    border-color: #646cff;
+.text-title-3 {
+  font-size: var(--title-3-size);
+  line-height: var(--title-3-line-height);
+  letter-spacing: var(--title-3-letter-spacing);
+  color: var(--color-text);
 }
 
-button:focus,
-button:focus-visible {
-    outline: 4px auto -webkit-focus-ring-color;
+.text-heading-1 {
+  font-size: var(--heading-1-size);
+  line-height: var(--heading-1-line-height);
+  letter-spacing: var(--heading-1-letter-spacing);
+  color: var(--color-text);
 }
 
-@media (prefers-color-scheme: light) {
-    :root {
-        color: #213547;
-        background-color: #ffffff;
-    }
+.text-heading-2 {
+  font-size: var(--heading-2-size);
+  line-height: var(--heading-2-line-height);
+  letter-spacing: var(--heading-2-letter-spacing);
+  color: var(--color-text);
+}
 
-    a:hover {
-        color: #747bff;
-    }
+.text-heading-3 {
+  font-size: var(--heading-3-size);
+  line-height: var(--heading-3-line-height);
+  letter-spacing: var(--heading-3-letter-spacing);
+  color: var(--color-text);
+}
 
-    button {
-        background-color: #f9f9f9;
-    }
+.text-body-1 {
+  font-size: var(--body-1-size);
+  line-height: var(--body-1-line-height);
+  letter-spacing: var(--body-1-letter-spacing);
+  color: var(--color-text);
+}
+
+.text-body-2 {
+  font-size: var(--body-2-size);
+  line-height: var(--body-2-line-height);
+  letter-spacing: var(--body-2-letter-spacing);
+  color: var(--color-text);
+}
+
+.text-label-1 {
+  font-size: var(--label-1-size);
+  line-height: var(--label-1-line-height);
+  letter-spacing: var(--label-1-letter-spacing);
+  color: var(--color-text);
+}
+
+.text-label-2 {
+  font-size: var(--label-2-size);
+  line-height: var(--label-2-line-height);
+  letter-spacing: var(--label-2-letter-spacing);
+  color: var(--color-text);
+}
+
+.text-caption-1 {
+  font-size: var(--caption-1-size);
+  line-height: var(--caption-1-line-height);
+  letter-spacing: var(--caption-1-letter-spacing);
+  color: var(--color-text);
+}
+
+.text-caption-2 {
+  font-size: var(--caption-2-size);
+  line-height: var(--caption-2-line-height);
+  letter-spacing: var(--caption-2-letter-spacing);
+  color: var(--color-text);
 }
