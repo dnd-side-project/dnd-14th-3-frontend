@@ -3,13 +3,39 @@ import react from "@vitejs/plugin-react";
 import { dirname, resolve } from "path";
 import { fileURLToPath } from "url";
 import { defineConfig } from "vite";
+import { VitePWA } from "vite-plugin-pwa";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    VitePWA({
+      registerType: "autoUpdate",
+      manifest: {
+        name: "찍어줄게",
+        short_name: "찍어줄게",
+        description: "사진 동행 서비스",
+        theme_color: "#ffffff",
+        // TODO: 서비스 icon으로 업데이트
+        icons: [
+          {
+            src: "tmpicon.png",
+            sizes: "192x192",
+            type: "image/png",
+          },
+          {
+            src: "tmpicon.png",
+            sizes: "512x512",
+            type: "image/png",
+          },
+        ],
+      },
+    }),
+  ],
   resolve: {
     alias: {
       "@": resolve(__dirname, "./src"),
