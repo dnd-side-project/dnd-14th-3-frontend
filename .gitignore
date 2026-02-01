@@ -76,3 +76,4 @@ Desktop.ini
 # Optional
 # storybook-static/
 # .storybook-out/
+*storybook.log
