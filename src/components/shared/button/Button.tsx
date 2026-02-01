@@ -1,21 +1,42 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
+/* =====================
+ * Types
+ * ===================== */
+type ButtonVariant = "primary" | "outlined" | "error";
 type ButtonSize = "large" | "medium" | "small";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  /** 버튼 라벨 텍스트 */
   children: ReactNode;
-  /** 버튼 크기 */
   size?: ButtonSize;
-  /** 비활성화 상태 */
   disabled?: boolean;
-  /** 왼쪽 아이콘 */
   leftIcon?: ReactNode;
-  /** 오른쪽 아이콘 */
   rightIcon?: ReactNode;
-  /** 추가 클래스명 */
   className?: string;
+  variant?: ButtonVariant;
 }
+
+/* =====================
+ * Styles
+ * ===================== */
+const buttonStyles = {
+  primary: {
+    base: "font-bold transition-colors",
+    enabled: "bg-mint-500 text-black hover:bg-mint-600 active:bg-mint-700",
+    disabled: "bg-gray-50 text-gray-500 cursor-not-allowed",
+  },
+  outlined: {
+    base: "font-bold border transition-colors",
+    enabled: "border-mint-500 text-black bg-transparent hover:bg-mint-50 active:bg-mint-100",
+    disabled: "border-gray-50 text-gray-400 cursor-not-allowed",
+  },
+  error: {
+    base: "font-bold border transition-colors",
+    enabled:
+      "border-warning-500 text-black bg-transparent hover:bg-warning-50 active:bg-warning-100",
+    disabled: "border-warning-500 text-gray-400 cursor-not-allowed",
+  },
+} satisfies Record<ButtonVariant, { base: string; enabled: string; disabled: string }>;
 
 const sizeStyles: Record<ButtonSize, string> = {
   large: "h-[52px] px-7 py-3 rounded-[var(--radius-l)] text-body-1 gap-1.5",
@@ -29,35 +50,30 @@ const iconSizes: Record<ButtonSize, string> = {
   small: "size-4",
 };
 
-/**
- * Button/Solid/Primary
- *
- * - 중요한 행동에 사용합니다.
- * - 아이콘과 함께 사용할 수 있습니다.
- * - 가장 높은 시각 위계를 가집니다.
- *
- * @see Figma: https://www.figma.com/design/z8WjEo3rhBbmTzGszMvlJz/?node-id=278-1551
- */
-function Button({
+/* =====================
+ * Base Button
+ * ===================== */
+function BaseButton({
   children,
   size = "large",
+  variant = "primary",
   disabled = false,
   leftIcon,
   rightIcon,
   className = "",
   ...props
 }: ButtonProps) {
-  const baseStyles = "inline-flex items-center justify-center font-bold transition-colors";
-
-  const stateStyles = disabled
-    ? "bg-gray-50 text-gray-500 cursor-not-allowed"
-    : "bg-mint text-black hover:bg-mint-600 active:bg-mint-700";
+  const variantStyle = buttonStyles[variant];
 
   return (
     <button
       type="button"
       disabled={disabled}
-      className={`${baseStyles} ${sizeStyles[size]} ${stateStyles} ${className}`}
+      className={`inline-flex items-center justify-center ${
+        variantStyle.base
+      } ${sizeStyles[size]} ${
+        disabled ? variantStyle.disabled : variantStyle.enabled
+      } ${className}`}
       {...props}
     >
       {leftIcon && <span className={`shrink-0 ${iconSizes[size]}`}>{leftIcon}</span>}
@@ -66,5 +82,21 @@ function Button({
     </button>
   );
 }
+
+/* =====================
+ * Compound Components
+ * ===================== */
+type CompoundButton = {
+  (props: ButtonProps): JSX.Element;
+  Primary: (props: Omit<ButtonProps, "variant">) => JSX.Element;
+  Outlined: (props: Omit<ButtonProps, "variant">) => JSX.Element;
+  Error: (props: Omit<ButtonProps, "variant">) => JSX.Element;
+};
+
+const Button = BaseButton as CompoundButton;
+
+Button.Primary = (props) => <BaseButton {...props} variant="primary" />;
+Button.Outlined = (props) => <BaseButton {...props} variant="outlined" />;
+Button.Error = (props) => <BaseButton {...props} variant="error" />;
 
 export default Button;
