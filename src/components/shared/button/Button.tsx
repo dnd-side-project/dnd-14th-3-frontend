@@ -14,6 +14,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   rightIcon?: ReactNode;
   className?: string;
   variant?: ButtonVariant;
+  fullWidth?: boolean;
 }
 
 /* =====================
@@ -60,6 +61,7 @@ function BaseButton({
   disabled = false,
   leftIcon,
   rightIcon,
+  fullWidth = false,
   className = "",
   ...props
 }: ButtonProps) {
@@ -71,8 +73,8 @@ function BaseButton({
       disabled={disabled}
       className={`inline-flex items-center justify-center ${
         variantStyle.base
-      } ${sizeStyles[size]} ${
-        disabled ? variantStyle.disabled : variantStyle.enabled
+      } ${sizeStyles[size]} ${disabled ? variantStyle.disabled : variantStyle.enabled} ${
+        fullWidth ? "w-full" : ""
       } ${className}`}
       {...props}
     >

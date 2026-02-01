@@ -33,6 +33,11 @@ const meta = {
       description: "비활성화 상태",
       table: { defaultValue: { summary: "false" } },
     },
+    fullWidth: {
+      control: "boolean",
+      description: "부모 너비에 맞춰 전체 폭 사용",
+      table: { defaultValue: { summary: "false" } },
+    },
     children: {
       control: "text",
       description: "버튼 라벨",
@@ -90,5 +95,15 @@ export const WithBothIcons: Story = {
   args: {
     leftIcon: <PlaceholderIcon />,
     rightIcon: <PlaceholderIcon />,
+  },
+};
+export const FullWidth: Story = {
+  render: (args) => (
+    <div className="w-[500px]">
+      <Button.Error {...args} />
+    </div>
+  ),
+  args: {
+    fullWidth: true,
   },
 };
