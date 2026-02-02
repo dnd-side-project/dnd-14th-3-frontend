@@ -8,20 +8,15 @@ export default function Home() {
       <Button.Primary>버튼 테스트</Button.Primary>
 
       <div>
-        <Checkbox.Check state="checked" />
-        <Checkbox.Check state="unchecked" />
-        <Checkbox.Check state="checked" disabled />
-        <Checkbox.Check state="unchecked" disabled />
+        <Checkbox.Check state="checked">체크박스 체크됨</Checkbox.Check>
       </div>
-
       <div>
-        <Checkbox.Primary size="small" state="checked" />
-        <Checkbox.Round size="small" />
+        <Checkbox.Round state="unchecked">체크박스 체크안됨</Checkbox.Round>
       </div>
-
       <div>
-        <Checkbox.Primary size="small" state="partial" disabled />
-        <Checkbox.Round size="small" disabled />
+        <Checkbox.Primary state="checked" disabled>
+          체크박스 체크됨 (비활성화)
+        </Checkbox.Primary>
       </div>
     </div>
   );

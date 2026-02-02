@@ -104,29 +104,26 @@ const PartialIcon = () => <div className="w-3 h-[1.8px] bg-white rounded-sm" />;
 /* =====================
  * Base Checkbox
  * ===================== */
-function BaseCheckbox(props: CheckboxProps) {
+function BaseCheckbox(props: CheckboxProps & { children?: React.ReactNode }) {
   const {
     variant = "primary",
     size = "normal",
     state = "unchecked",
     disabled = false,
     className = "",
+    children,
     ...rest
   } = props;
 
   const isCheck = variant === "check";
 
   const [internalState, setInternalState] = useState<NormalState | CheckState>(state);
-
   const isChecked = internalState === "checked";
 
   const toggle = () => {
     if (disabled) return;
-
     const nextState = internalState === "checked" ? "unchecked" : "checked";
-
     setInternalState(nextState);
-
     rest.onChange?.({
       target: { checked: nextState === "checked" },
     } as any);
@@ -141,24 +138,25 @@ function BaseCheckbox(props: CheckboxProps) {
       : stateStyles[internalState as NormalState];
 
   return (
-    <div className={className}>
+    <label className={`inline-flex items-center gap-2 cursor-pointer ${className}`}>
       <input
         type="checkbox"
         checked={isChecked}
         disabled={disabled}
-        readOnly
+        onChange={toggle}
         className="hidden"
         {...rest}
       />
 
-      <div
-        onClick={toggle}
-        className={[boxBase, sizeStyles[size], variantStyles[variant], stateClass].join(" ")}
-      >
+      <div className={[boxBase, sizeStyles[size], variantStyles[variant], stateClass].join(" ")}>
         {internalState !== "partial" && <CheckIcon />}
         {!isCheck && internalState === "partial" && <PartialIcon />}
       </div>
-    </div>
+
+      {children && (
+        <span className={`select-none ${disabled ? "text-gray-300" : ""}`}>{children}</span>
+      )}
+    </label>
   );
 }
 
