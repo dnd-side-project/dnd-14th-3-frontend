@@ -40,7 +40,7 @@ const buttonStyles = {
 } satisfies Record<ButtonVariant, { base: string; enabled: string; disabled: string }>;
 
 const sizeStyles: Record<ButtonSize, string> = {
-  large: "h-[52px] px-7 py-3 rounded-[var(--radius-l)] text-body-1 gap-1.5",
+  large: "h-[48px] px-7 py-3 rounded-[var(--radius-l)] text-body-1 gap-1.5",
   medium: "px-5 py-2.5 rounded-[var(--radius-m)] text-body-2 gap-1",
   small: "px-3.5 py-1.5 rounded-[var(--radius-s)] text-label-2 gap-1",
 };
