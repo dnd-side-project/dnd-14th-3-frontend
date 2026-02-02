@@ -12,7 +12,7 @@ const meta = {
 ## Checkbox.Round
 
 - 원형 체크박스입니다.
-- 필터 / 옵션 선택 UI에 적합합니다.
+- 보통 위계로 활성화 여부를 제어할 때 사용합니다.
 - Primary와 동일한 state 규칙을 가집니다.
 
 [Figma 링크](https://www.figma.com/design/z8WjEo3rhBbmTzGszMvlJz/DND3%EC%A1%B0-%EC%A7%84%EC%A7%9C-?node-id=273-855&t=2bjfxe64oF1vS1cJ-4)

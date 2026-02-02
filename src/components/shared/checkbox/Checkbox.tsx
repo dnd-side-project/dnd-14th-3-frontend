@@ -4,28 +4,44 @@ import { useState } from "react";
 /* =====================
  * Types
  * ===================== */
-type CheckboxVariant = "primary" | "round";
+type CheckboxVariant = "primary" | "round" | "check";
 type CheckboxSize = "normal" | "small";
-type CheckboxState = "unchecked" | "checked" | "partial";
 
-interface CheckboxProps extends Omit<
+type NormalState = "unchecked" | "checked" | "partial";
+type CheckState = "unchecked" | "checked";
+
+/* ---------- 공통 props ---------- */
+type BaseProps = Omit<
   InputHTMLAttributes<HTMLInputElement>,
   "size" | "checked" | "defaultChecked"
-> {
+> & {
   size?: CheckboxSize;
-  state?: CheckboxState;
   disabled?: boolean;
   className?: string;
-}
+};
+
+/* ---------- variant별 props ---------- */
+type NormalCheckboxProps = BaseProps & {
+  variant?: "primary" | "round";
+  state?: NormalState;
+};
+
+type CheckCheckboxProps = BaseProps & {
+  variant: "check";
+  state?: CheckState;
+};
+
+type CheckboxProps = NormalCheckboxProps | CheckCheckboxProps;
 
 /* =====================
  * Styles
  * ===================== */
-const boxBase = "flex items-center justify-center border";
+const boxBase = "flex items-center justify-center";
 
 const variantStyles: Record<CheckboxVariant, string> = {
-  primary: "rounded-[3px]",
-  round: "rounded-full",
+  primary: "border rounded-[3px] text-white",
+  round: "border rounded-full text-white",
+  check: "bg-white",
 };
 
 const sizeStyles: Record<CheckboxSize, string> = {
@@ -33,13 +49,20 @@ const sizeStyles: Record<CheckboxSize, string> = {
   small: "w-[14px] h-[14px]",
 };
 
-const stateStyles: Record<CheckboxState, string> = {
+const stateStyles: Record<NormalState, string> = {
   unchecked: "bg-white border-gray-200",
-  checked: "bg-mint-500 border-mint-500",
-  partial: "bg-mint-500 border-mint-500",
+  checked:
+    "bg-mint-500 border-mint-500 hover:bg-mint-600 hover:border-mint-600 active:bg-mint-700 active:border-mint-700",
+  partial:
+    "bg-mint-500 border-mint-500 hover:bg-mint-600 hover:border-mint-600 active:bg-mint-700 active:border-mint-700",
 };
 
-const disabledStyles: Record<CheckboxVariant, Record<CheckboxState, string>> = {
+const checkStateStyles: Record<CheckState, string> = {
+  unchecked: "text-gray-200 hover:text-gray-300 active:text-gray-400",
+  checked: "text-mint-500 hover:text-mint-600 active:text-mint-700",
+};
+
+const disabledStyles = {
   primary: {
     unchecked: "bg-white border-gray-100",
     checked: "bg-mint-100 border-mint-100",
@@ -50,17 +73,25 @@ const disabledStyles: Record<CheckboxVariant, Record<CheckboxState, string>> = {
     checked: "bg-mint-100 border-mint-100",
     partial: "bg-mint-100 border-mint-100",
   },
+  check: {
+    unchecked: "text-gray-100",
+    checked: "text-mint-100",
+  },
+} satisfies {
+  primary: Record<NormalState, string>;
+  round: Record<NormalState, string>;
+  check: Record<CheckState, string>;
 };
 
 /* =====================
  * Icons
  * ===================== */
 const CheckIcon = () => (
-  <svg viewBox="0 0 24 24" className="w-4 h-4 text-white">
+  <svg viewBox="0 0 24 24" className="w-5 h-5">
     <path
       d="M5 13l4 4L19 7"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth="3"
       fill="none"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -68,32 +99,46 @@ const CheckIcon = () => (
   </svg>
 );
 
-const PartialIcon = () => <div className="w-2 h-[1.3px] bg-white rounded-sm" />;
+const PartialIcon = () => <div className="w-3 h-[1.8px] bg-white rounded-sm" />;
 
 /* =====================
  * Base Checkbox
  * ===================== */
-interface BaseCheckboxProps extends CheckboxProps {
-  variant: CheckboxVariant;
-}
+function BaseCheckbox(props: CheckboxProps) {
+  const {
+    variant = "primary",
+    size = "normal",
+    state = "unchecked",
+    disabled = false,
+    className = "",
+    ...rest
+  } = props;
 
-function BaseCheckbox({
-  variant,
-  size = "normal",
-  state = "unchecked",
-  disabled = false,
-  className = "",
-  ...props
-}: BaseCheckboxProps) {
-  const isChecked = state === "checked";
+  const isCheck = variant === "check";
+
+  const [internalState, setInternalState] = useState<NormalState | CheckState>(state);
+
+  const isChecked = internalState === "checked";
 
   const toggle = () => {
     if (disabled) return;
 
-    props.onChange?.({
-      target: { checked: !isChecked },
+    const nextState = internalState === "checked" ? "unchecked" : "checked";
+
+    setInternalState(nextState);
+
+    rest.onChange?.({
+      target: { checked: nextState === "checked" },
     } as any);
   };
+
+  const stateClass = disabled
+    ? isCheck
+      ? disabledStyles.check[internalState as CheckState]
+      : disabledStyles[variant][internalState as NormalState]
+    : isCheck
+      ? checkStateStyles[internalState as CheckState]
+      : stateStyles[internalState as NormalState];
 
   return (
     <div className={className}>
@@ -101,21 +146,17 @@ function BaseCheckbox({
         type="checkbox"
         checked={isChecked}
         disabled={disabled}
+        readOnly
         className="hidden"
-        {...props}
+        {...rest}
       />
 
       <div
         onClick={toggle}
-        className={[
-          boxBase,
-          sizeStyles[size],
-          variantStyles[variant],
-          disabled ? disabledStyles[variant][state] : stateStyles[state],
-        ].join(" ")}
+        className={[boxBase, sizeStyles[size], variantStyles[variant], stateClass].join(" ")}
       >
-        {state === "checked" && <CheckIcon />}
-        {state === "partial" && <PartialIcon />}
+        {internalState !== "partial" && <CheckIcon />}
+        {!isCheck && internalState === "partial" && <PartialIcon />}
       </div>
     </div>
   );
@@ -125,16 +166,18 @@ function BaseCheckbox({
  * Compound Checkbox
  * ===================== */
 type CompoundCheckbox = {
-  (props: Omit<BaseCheckboxProps, "variant"> & { variant?: CheckboxVariant }): JSX.Element;
-  Primary: (props: CheckboxProps) => JSX.Element;
-  Round: (props: CheckboxProps) => JSX.Element;
+  (props: CheckboxProps): JSX.Element;
+  Primary: (props: Omit<NormalCheckboxProps, "variant">) => JSX.Element;
+  Round: (props: Omit<NormalCheckboxProps, "variant">) => JSX.Element;
+  Check: (props: Omit<CheckCheckboxProps, "variant">) => JSX.Element;
 };
 
-const Checkbox = ((props: any) => (
-  <BaseCheckbox variant={props.variant ?? "primary"} {...props} />
-)) as CompoundCheckbox;
+const Checkbox = ((props: CheckboxProps) => <BaseCheckbox {...props} />) as CompoundCheckbox;
 
 Checkbox.Primary = (props) => <BaseCheckbox {...props} variant="primary" />;
+
 Checkbox.Round = (props) => <BaseCheckbox {...props} variant="round" />;
+
+Checkbox.Check = (props) => <BaseCheckbox {...props} variant="check" />;
 
 export default Checkbox;

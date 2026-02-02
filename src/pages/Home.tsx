@@ -8,8 +8,10 @@ export default function Home() {
       <Button.Primary>버튼 테스트</Button.Primary>
 
       <div>
-        <Checkbox.Primary />
-        <Checkbox.Round />
+        <Checkbox.Check state="checked" />
+        <Checkbox.Check state="unchecked" />
+        <Checkbox.Check state="checked" disabled />
+        <Checkbox.Check state="unchecked" disabled />
       </div>
 
       <div>
