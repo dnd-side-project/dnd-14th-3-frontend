@@ -6,8 +6,23 @@ import "./index.css";
 
 import App from "./App";
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>
-);
+async function enableMocking() {
+  if (import.meta.env.MODE !== "development") return;
+  if (import.meta.env.VITE_MSW_ENABLED !== "true") return;
+  const { worker } = await import("./mocks/browser");
+  return worker.start({ onUnhandledRequest: "bypass" });
+}
+
+function renderApp() {
+  createRoot(document.getElementById("root")!).render(
+    <StrictMode>
+      <App />
+    </StrictMode>
+  );
+}
+
+enableMocking().
+catch((error) => {
+  console.warn("MSW init failed; rendering without mocks.", error);
+})
+.finally(() => renderApp());
