@@ -12,6 +12,7 @@ const meta: Meta<typeof Checkbox.Check> = {
 ## Checkbox.Check
 - 체크 아이콘만 표시되는 체크박스입니다.
 - 낮은 위계로 활성화 여부를 제어할 때 사용합니다.
+
 [Figma 링크](https://www.figma.com/design/z8WjEo3rhBbmTzGszMvlJz/DND3%EC%A1%B0-%EC%A7%84%EC%A7%9C-?node-id=273-956&t=d7jqXQPLZtCUdNyo-4)
         `,
       },

@@ -13,6 +13,7 @@ const meta: Meta<typeof Checkbox.Primary> = {
 - 기본 사각형 체크박스입니다.
 - 상위 위계로 활성화 여부를 제어할 때 사용합니다.
 - partial 상태는 하위 항목이 일부만 선택되었을 때 사용합니다.
+
 [Figma 링크](https://www.figma.com/design/z8WjEo3rhBbmTzGszMvlJz/DND3%EC%A1%B0-%EC%A7%84%EC%A7%9C-?node-id=273-754&t=2bjfxe64oF1vS1cJ-4)
         `,
       },
