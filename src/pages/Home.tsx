@@ -1,8 +1,9 @@
+import { useState } from "react";
+
 import { Button } from "@/components/shared/button";
 import Checkbox from "@/components/shared/checkbox/Checkbox";
 import Radio from "@/components/shared/radio/Radio";
 import Switch from "@/components/shared/switch/Switch";
-import { useState } from "react";
 
 // 임시페이지
 export default function Home() {

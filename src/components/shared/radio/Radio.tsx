@@ -1,4 +1,4 @@
-import type { ChangeEvent, InputHTMLAttributes, ReactNode } from "react";
+import type { ChangeEvent, InputHTMLAttributes, ReactElement, ReactNode } from "react";
 
 /* =====================
  * Types
@@ -31,6 +31,7 @@ interface RadioGroupProps {
  * ===================== */
 function BaseRadio({
   value,
+  name,
   size = "normal",
   state = "unchecked",
   checked = false,
@@ -55,6 +56,7 @@ function BaseRadio({
     >
       <input
         type="radio"
+        name={name}
         value={value}
         checked={isChecked}
         disabled={disabled}
@@ -100,7 +102,7 @@ Radio.Group = function RadioGroup({
   return (
     <div role="radiogroup" aria-disabled={disabled}>
       {Array.isArray(children)
-        ? children.map((child: any) =>
+        ? children.map((child: ReactElement<RadioProps> | null) =>
             child ? (
               <child.type
                 key={child.props.value}

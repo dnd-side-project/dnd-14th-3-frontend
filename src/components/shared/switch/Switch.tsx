@@ -1,5 +1,6 @@
-import type { InputHTMLAttributes, ReactNode } from "react";
 import { useState } from "react";
+
+import type { InputHTMLAttributes, ReactNode } from "react";
 
 /* =====================
  * Types
@@ -78,11 +79,12 @@ function Switch({
       setInternalChecked(next);
     }
 
-    onChange?.({
+    const event = {
       target: { checked: next },
-    } as any);
-  };
+    } as React.ChangeEvent<HTMLInputElement>;
 
+    onChange?.(event);
+  };
   const trackClass = disabled
     ? isOn
       ? trackStateStyles.disabledOn

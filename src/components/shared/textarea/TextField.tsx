@@ -1,5 +1,6 @@
-import type { TextareaHTMLAttributes } from "react";
 import { useState } from "react";
+
+import type { TextareaHTMLAttributes } from "react";
 
 /* =====================
  * Types

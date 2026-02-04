@@ -75,9 +75,13 @@ export const Disabled: Story = { args: { disabled: true } };
 
 export const Sizes: Story = {
   render: () => (
-    <div className="flex flex-col gap-3">
-      <Button.Error size="large">Large</Button.Error>
-      <Button.Error size="medium">Medium</Button.Error>
+    <div>
+      <Button.Error size="large" className="mr-2">
+        Large
+      </Button.Error>
+      <Button.Error size="medium" className="mr-2">
+        Medium
+      </Button.Error>
       <Button.Error size="small">Small</Button.Error>
     </div>
   ),

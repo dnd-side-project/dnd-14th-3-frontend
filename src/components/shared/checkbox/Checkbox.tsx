@@ -1,5 +1,6 @@
-import type { InputHTMLAttributes } from "react";
 import { useState } from "react";
+
+import type { InputHTMLAttributes } from "react";
 
 /* =====================
  * Types
@@ -124,9 +125,13 @@ function BaseCheckbox(props: CheckboxProps & { children?: React.ReactNode }) {
     if (disabled) return;
     const nextState = internalState === "checked" ? "unchecked" : "checked";
     setInternalState(nextState);
-    rest.onChange?.({
-      target: { checked: nextState === "checked" },
-    } as any);
+
+    if (rest.onChange) {
+      const event = {
+        target: { checked: nextState === "checked" },
+      } as React.ChangeEvent<HTMLInputElement>;
+      rest.onChange(event);
+    }
   };
 
   const stateClass = disabled
