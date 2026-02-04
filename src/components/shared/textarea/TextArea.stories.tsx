@@ -1,16 +1,16 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 
-import TextField from "./TextField";
+import TextArea from "./TextArea";
 
-const meta: Meta<typeof TextField> = {
-  title: "shared/TextField",
-  component: TextField,
+const meta: Meta<typeof TextArea> = {
+  title: "shared/TextArea",
+  component: TextArea,
   parameters: {
     layout: "centered",
     docs: {
       description: {
         component: `
-## TextField
+## TextArea
 - 입력 가능한 텍스트 영역 컴포넌트입니다.
 
 [Figma 링크](https://www.figma.com/design/z8WjEo3rhBbmTzGszMvlJz/DND3%EC%A1%B0-%EC%A7%84%EC%A7%9C-?node-id=327-3238&t=rn1IDUEINPlQH5sD-4)
@@ -40,7 +40,7 @@ const meta: Meta<typeof TextField> = {
 };
 
 export default meta;
-type Story = StoryObj<typeof TextField>;
+type Story = StoryObj<typeof TextArea>;
 
 /* =====================
  * Stories
@@ -68,7 +68,7 @@ export const Disabled: Story = {
 export const NoCaption: Story = {
   render: () => (
     <div className="flex flex-col gap-4">
-      <TextField placeholder="캡션 없음" />
+      <TextArea placeholder="캡션 없음" />
     </div>
   ),
 };

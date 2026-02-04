@@ -5,13 +5,13 @@ import type { TextareaHTMLAttributes } from "react";
 /* =====================
  * Types
  * ===================== */
-type TextFieldStatus = "default" | "error" | "disabled";
+type TextAreaStatus = "default" | "error" | "disabled";
 
-export interface TextFieldProps extends Omit<
+export interface TextAreaProps extends Omit<
   TextareaHTMLAttributes<HTMLTextAreaElement>,
   "disabled"
 > {
-  status?: TextFieldStatus;
+  status?: TextAreaStatus;
   caption?: string;
 }
 
@@ -25,9 +25,9 @@ const statusStyles = {
 };
 
 /* =====================
- * TextField Component
+ * TextArea Component
  * ===================== */
-function TextField({ status = "default", caption, className = "", ...rest }: TextFieldProps) {
+function TextArea({ status = "default", caption, className = "", ...rest }: TextAreaProps) {
   const [value, setValue] = useState(rest.defaultValue || "");
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -55,4 +55,4 @@ function TextField({ status = "default", caption, className = "", ...rest }: Tex
   );
 }
 
-export default TextField;
+export default TextArea;
