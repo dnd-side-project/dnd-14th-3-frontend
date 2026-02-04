@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-
 import Checkbox from "./Checkbox";
 
 const meta: Meta<typeof Checkbox.Primary> = {
@@ -22,20 +21,10 @@ const meta: Meta<typeof Checkbox.Primary> = {
   },
   tags: ["autodocs"],
   argTypes: {
-    size: {
-      control: "select",
-      options: ["normal", "small"],
-    },
-    state: {
-      control: "select",
-      options: ["checked", "unchecked", "partial"],
-    },
-    disabled: {
-      control: "boolean",
-    },
-    children: {
-      control: "text",
-    },
+    size: { control: "select", options: ["normal", "small"] },
+    state: { control: "select", options: ["checked", "unchecked", "partial"] },
+    disabled: { control: "boolean" },
+    children: { control: "text" },
   },
   args: {
     size: "normal",
@@ -48,14 +37,9 @@ const meta: Meta<typeof Checkbox.Primary> = {
 export default meta;
 type Story = StoryObj<typeof Checkbox.Primary>;
 
-export const Default: Story = {
-  args: {},
-};
-
-export const Partial: Story = {
-  args: { state: "partial" },
-};
-
+export const Default: Story = { args: {} };
+export const Unchecked: Story = { args: { state: "unchecked" } };
+export const Partial: Story = { args: { state: "partial" } };
 export const Disabled: Story = {
   render: () => (
     <div className="flex flex-col gap-3">
@@ -71,12 +55,15 @@ export const Disabled: Story = {
     </div>
   ),
 };
-
 export const Sizes: Story = {
   render: () => (
     <div className="flex flex-col gap-3">
-      <Checkbox.Primary size="normal">Normal</Checkbox.Primary>
-      <Checkbox.Primary size="small">Small</Checkbox.Primary>
+      <Checkbox.Primary size="normal" state="checked">
+        Normal
+      </Checkbox.Primary>
+      <Checkbox.Primary size="small" state="checked">
+        Small
+      </Checkbox.Primary>
     </div>
   ),
 };

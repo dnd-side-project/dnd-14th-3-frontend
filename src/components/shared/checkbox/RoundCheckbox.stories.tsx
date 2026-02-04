@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-
 import Checkbox from "./Checkbox";
 
 const meta: Meta<typeof Checkbox.Round> = {
@@ -52,8 +51,16 @@ export const Default: Story = {
   args: {},
 };
 
+export const Unchecked: Story = {
+  args: {
+    state: "unchecked",
+  },
+};
+
 export const Partial: Story = {
-  args: { state: "partial" },
+  args: {
+    state: "partial",
+  },
 };
 
 export const Disabled: Story = {
@@ -75,8 +82,12 @@ export const Disabled: Story = {
 export const Sizes: Story = {
   render: () => (
     <div className="flex flex-col gap-3">
-      <Checkbox.Round size="normal">Normal</Checkbox.Round>
-      <Checkbox.Round size="small">Small</Checkbox.Round>
+      <Checkbox.Round size="normal" state="checked">
+        Normal
+      </Checkbox.Round>
+      <Checkbox.Round size="small" state="checked">
+        Small
+      </Checkbox.Round>
     </div>
   ),
 };

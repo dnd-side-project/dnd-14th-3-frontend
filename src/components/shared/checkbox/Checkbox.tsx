@@ -1,5 +1,3 @@
-import { useState } from "react";
-
 import type { InputHTMLAttributes } from "react";
 
 /* =====================
@@ -24,12 +22,12 @@ type BaseProps = Omit<
 /* ---------- variant별 props ---------- */
 type NormalCheckboxProps = BaseProps & {
   variant?: "primary" | "round";
-  state?: NormalState;
+  state: NormalState; // 제어 상태
 };
 
 type CheckCheckboxProps = BaseProps & {
   variant: "check";
-  state?: CheckState;
+  state: CheckState; // 제어 상태
 };
 
 export type CheckboxProps = NormalCheckboxProps | CheckCheckboxProps;
@@ -103,13 +101,13 @@ const CheckIcon = () => (
 const PartialIcon = () => <div className="w-3 h-[1.8px] bg-white rounded-sm" />;
 
 /* =====================
- * Base Checkbox
+ * Base Checkbox (제어 모드)
  * ===================== */
 function BaseCheckbox(props: CheckboxProps & { children?: React.ReactNode }) {
   const {
     variant = "primary",
     size = "normal",
-    state = "unchecked",
+    state,
     disabled = false,
     className = "",
     children,
@@ -117,30 +115,27 @@ function BaseCheckbox(props: CheckboxProps & { children?: React.ReactNode }) {
   } = props;
 
   const isCheck = variant === "check";
-
-  const [internalState, setInternalState] = useState<NormalState | CheckState>(state);
-  const isChecked = internalState === "checked";
+  const isChecked = state === "checked";
 
   const toggle = () => {
-    if (disabled) return;
-    const nextState = internalState === "checked" ? "unchecked" : "checked";
-    setInternalState(nextState);
+    if (disabled || !rest.onChange) return;
 
-    if (rest.onChange) {
-      const event = {
-        target: { checked: nextState === "checked" },
-      } as React.ChangeEvent<HTMLInputElement>;
-      rest.onChange(event);
-    }
+    const nextState = state === "checked" ? "unchecked" : "checked";
+
+    const event = {
+      target: { checked: nextState === "checked" },
+    } as React.ChangeEvent<HTMLInputElement>;
+
+    rest.onChange(event);
   };
 
   const stateClass = disabled
     ? isCheck
-      ? disabledStyles.check[internalState as CheckState]
-      : disabledStyles[variant][internalState as NormalState]
+      ? disabledStyles.check[state as CheckState]
+      : disabledStyles[variant][state as NormalState]
     : isCheck
-      ? checkStateStyles[internalState as CheckState]
-      : stateStyles[internalState as NormalState];
+      ? checkStateStyles[state as CheckState]
+      : stateStyles[state as NormalState];
 
   return (
     <label className={`inline-flex items-center gap-2 cursor-pointer ${className}`}>
@@ -154,8 +149,8 @@ function BaseCheckbox(props: CheckboxProps & { children?: React.ReactNode }) {
       />
 
       <div className={[boxBase, sizeStyles[size], variantStyles[variant], stateClass].join(" ")}>
-        {internalState !== "partial" && <CheckIcon />}
-        {!isCheck && internalState === "partial" && <PartialIcon />}
+        {state !== "partial" && <CheckIcon />}
+        {!isCheck && state === "partial" && <PartialIcon />}
       </div>
 
       {children && (
@@ -178,9 +173,7 @@ type CompoundCheckbox = {
 const Checkbox = ((props: CheckboxProps) => <BaseCheckbox {...props} />) as CompoundCheckbox;
 
 Checkbox.Primary = (props) => <BaseCheckbox {...props} variant="primary" />;
-
 Checkbox.Round = (props) => <BaseCheckbox {...props} variant="round" />;
-
 Checkbox.Check = (props) => <BaseCheckbox {...props} variant="check" />;
 
 export default Checkbox;

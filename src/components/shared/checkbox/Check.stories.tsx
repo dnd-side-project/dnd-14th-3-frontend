@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-
 import Checkbox from "./Checkbox";
 
 const meta: Meta<typeof Checkbox.Check> = {
@@ -21,21 +20,10 @@ const meta: Meta<typeof Checkbox.Check> = {
   },
   tags: ["autodocs"],
   argTypes: {
-    size: {
-      control: "select",
-      options: ["normal", "small"],
-    },
-    state: {
-      control: "select",
-      options: ["checked", "unchecked"],
-    },
-    disabled: {
-      control: "boolean",
-    },
-    children: {
-      control: "text",
-      description: "라벨 텍스트",
-    },
+    size: { control: "select", options: ["normal", "small"] },
+    state: { control: "select", options: ["checked", "unchecked"] },
+    disabled: { control: "boolean" },
+    children: { control: "text", description: "라벨 텍스트" },
   },
   args: {
     size: "normal",
@@ -48,14 +36,8 @@ const meta: Meta<typeof Checkbox.Check> = {
 export default meta;
 type Story = StoryObj<typeof Checkbox.Check>;
 
-export const Default: Story = {
-  args: {},
-};
-
-export const Unchecked: Story = {
-  args: { state: "unchecked" },
-};
-
+export const Default: Story = { args: {} };
+export const Unchecked: Story = { args: { state: "unchecked" } };
 export const Disabled: Story = {
   render: () => (
     <div className="flex flex-col gap-3">
@@ -68,12 +50,15 @@ export const Disabled: Story = {
     </div>
   ),
 };
-
 export const Sizes: Story = {
   render: () => (
     <div className="flex flex-col gap-3">
-      <Checkbox.Check size="normal">Normal</Checkbox.Check>
-      <Checkbox.Check size="small">Small</Checkbox.Check>
+      <Checkbox.Check size="normal" state="checked">
+        Normal
+      </Checkbox.Check>
+      <Checkbox.Check size="small" state="checked">
+        Small
+      </Checkbox.Check>
     </div>
   ),
 };

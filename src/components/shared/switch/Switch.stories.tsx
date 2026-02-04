@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import Switch from "./Switch";
@@ -26,10 +27,7 @@ const meta: Meta<typeof Switch> = {
       options: ["normal", "small"],
     },
     checked: {
-      control: "boolean",
-    },
-    defaultChecked: {
-      control: "boolean",
+      control: false,
     },
     disabled: {
       control: "boolean",
@@ -38,12 +36,6 @@ const meta: Meta<typeof Switch> = {
       control: "text",
       description: "스위치 라벨",
     },
-  },
-  args: {
-    size: "normal",
-    defaultChecked: true,
-    disabled: false,
-    label: "스위치 라벨",
   },
 };
 
@@ -55,38 +47,71 @@ type Story = StoryObj<typeof Switch>;
  * ===================== */
 
 export const Default: Story = {
-  args: {},
+  render: (args) => {
+    const [checked, setChecked] = useState(true);
+
+    return <Switch {...args} checked={checked} onChange={(e) => setChecked(e.target.checked)} />;
+  },
+  args: {
+    size: "normal",
+    label: "스위치 라벨",
+  },
 };
 
 export const Off: Story = {
+  render: (args) => {
+    const [checked, setChecked] = useState(false);
+
+    return <Switch {...args} checked={checked} onChange={(e) => setChecked(e.target.checked)} />;
+  },
   args: {
-    defaultChecked: false,
+    label: "OFF 상태",
   },
 };
 
 export const Disabled: Story = {
   render: () => (
     <div className="flex flex-col gap-3">
-      <Switch defaultChecked disabled label="비활성 ON" />
-      <Switch defaultChecked={false} disabled label="비활성 OFF" />
+      <Switch checked disabled label="비활성 ON" />
+      <Switch checked={false} disabled label="비활성 OFF" />
     </div>
   ),
 };
 
 export const Sizes: Story = {
-  render: () => (
-    <div className="flex flex-col gap-4">
-      <Switch size="normal" defaultChecked label="Normal" />
-      <Switch size="small" defaultChecked label="Small" />
-    </div>
-  ),
+  render: () => {
+    const [normal, setNormal] = useState(true);
+    const [small, setSmall] = useState(false);
+
+    return (
+      <div className="flex flex-col gap-4">
+        <Switch
+          size="normal"
+          checked={normal}
+          onChange={(e) => setNormal(e.target.checked)}
+          label="Normal"
+        />
+        <Switch
+          size="small"
+          checked={small}
+          onChange={(e) => setSmall(e.target.checked)}
+          label="Small"
+        />
+      </div>
+    );
+  },
 };
 
 export const NoLabel: Story = {
-  render: () => (
-    <div className="flex gap-4">
-      <Switch defaultChecked />
-      <Switch size="small" />
-    </div>
-  ),
+  render: () => {
+    const [a, setA] = useState(true);
+    const [b, setB] = useState(false);
+
+    return (
+      <div className="flex gap-4">
+        <Switch checked={a} onChange={(e) => setA(e.target.checked)} />
+        <Switch size="small" checked={b} onChange={(e) => setB(e.target.checked)} />
+      </div>
+    );
+  },
 };

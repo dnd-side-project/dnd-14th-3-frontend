@@ -1,6 +1,8 @@
+import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import TextArea from "./TextArea";
+import { useArgs } from "storybook/internal/preview-api";
 
 const meta: Meta<typeof TextArea> = {
   title: "shared/TextArea",
@@ -32,11 +34,6 @@ const meta: Meta<typeof TextArea> = {
       control: "text",
     },
   },
-  args: {
-    status: "default",
-    caption: "설명이나 안내 문구",
-    placeholder: "여기에 입력하세요",
-  },
 };
 
 export default meta;
@@ -45,30 +42,61 @@ type Story = StoryObj<typeof TextArea>;
 /* =====================
  * Stories
  * ===================== */
-
 export const Default: Story = {
-  args: {},
+  render: (args) => {
+    const [, updateArgs] = useArgs();
+
+    return (
+      <TextArea
+        {...args}
+        onChange={(value) => {
+          updateArgs({ value });
+        }}
+      />
+    );
+  },
+  args: {
+    value: "",
+    placeholder: "여기에 입력하세요",
+  },
 };
 
 export const Error: Story = {
-  args: {
-    status: "error",
-    caption: "오류가 발생했습니다",
+  render: (args) => {
+    const [value, setValue] = useState("잘못된 값");
+
+    return (
+      <TextArea
+        {...args}
+        value={value}
+        onChange={setValue}
+        status="error"
+        caption="오류가 발생했습니다"
+      />
+    );
   },
 };
 
 export const Disabled: Story = {
-  args: {
-    status: "disabled",
-    caption: "편집할 수 없습니다",
-    defaultValue: "기본값",
+  render: (args) => {
+    const [value] = useState("기본값");
+
+    return (
+      <TextArea
+        {...args}
+        value={value}
+        onChange={() => {}}
+        status="disabled"
+        caption="편집할 수 없습니다"
+      />
+    );
   },
 };
 
 export const NoCaption: Story = {
-  render: () => (
-    <div className="flex flex-col gap-4">
-      <TextArea placeholder="캡션 없음" />
-    </div>
-  ),
+  render: () => {
+    const [value, setValue] = useState("");
+
+    return <TextArea value={value} onChange={setValue} placeholder="캡션 없음" />;
+  },
 };
