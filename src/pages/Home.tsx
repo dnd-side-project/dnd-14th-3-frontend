@@ -1,6 +1,7 @@
 import { Button } from "@/components/shared/button";
 import Checkbox from "@/components/shared/checkbox/Checkbox";
 import Radio from "@/components/shared/radio/Radio";
+import Switch from "@/components/shared/switch/Switch";
 import { useState } from "react";
 
 // 임시페이지
@@ -32,6 +33,15 @@ export default function Home() {
             옵션 4 (비활성)
           </Radio.Option>
         </Radio.Group>
+      </div>
+      <div>
+        <Switch />
+        <Switch defaultChecked />
+        <Switch disabled />
+        <Switch disabled defaultChecked size="small" />
+      </div>
+      <div>
+        <Switch label="알림 받기" />
       </div>
     </div>
   );
