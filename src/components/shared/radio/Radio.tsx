@@ -1,4 +1,12 @@
-import type { ChangeEvent, InputHTMLAttributes, ReactElement, ReactNode } from "react";
+import {
+  ChangeEvent,
+  Children,
+  cloneElement,
+  InputHTMLAttributes,
+  isValidElement,
+  ReactElement,
+  ReactNode,
+} from "react";
 
 /* =====================
  * Types
@@ -26,6 +34,13 @@ interface RadioGroupProps {
   children: ReactNode;
 }
 
+/* Option 전용 props */
+type RadioOptionProps = RadioProps & {
+  name: string;
+  groupValue?: string;
+  onGroupChange?: (value: string) => void;
+};
+
 /* =====================
  * Base Radio
  * ===================== */
@@ -39,7 +54,7 @@ function BaseRadio({
   onChange,
   children,
   ...props
-}: RadioProps & { checked?: boolean }) {
+}: RadioProps & { name: string; checked?: boolean }) {
   const isChecked = checked || state === "checked";
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -52,7 +67,9 @@ function BaseRadio({
 
   return (
     <label
-      className={`inline-flex items-center gap-2 cursor-pointer ${disabled ? "cursor-not-allowed" : ""}`}
+      className={`inline-flex items-center gap-2 ${
+        disabled ? "cursor-not-allowed" : "cursor-pointer"
+      }`}
     >
       <input
         type="radio"
@@ -65,29 +82,37 @@ function BaseRadio({
         {...props}
       />
       <span
-        className={`flex items-center justify-center border rounded-full bg-white
-          ${disabled ? (isChecked ? "border-mint-100" : "border-gray-100") : isChecked ? "border-mint-500" : "border-gray-300"}
+        className={`flex items-center justify-center rounded-full border bg-white
+          ${
+            disabled
+              ? isChecked
+                ? "border-mint-100"
+                : "border-gray-100"
+              : isChecked
+                ? "border-mint-500"
+                : "border-gray-300"
+          }
           ${sizeClass}`}
-      ></span>
+      />
       {children && <span>{children}</span>}
     </label>
   );
 }
 
 /* =====================
- * Compound Radio
+ * Radio (default)
  * ===================== */
-type CompoundRadio = {
-  (props: RadioProps & { name: string; checked?: boolean }): JSX.Element;
-  Group: (props: RadioGroupProps) => JSX.Element;
-  Option: (
-    props: RadioProps & { groupValue?: string; onGroupChange?: (value: string) => void }
-  ) => JSX.Element;
-};
+function Radio(props: RadioProps & { name: string; checked?: boolean }) {
+  return <BaseRadio {...props} />;
+}
 
-const Radio = ((props: RadioProps & { name: string; checked?: boolean }) => (
-  <BaseRadio {...props} />
-)) as CompoundRadio;
+/* =====================
+ * Declaration Merging
+ * ===================== */
+interface Radio {
+  Group: (props: RadioGroupProps) => JSX.Element;
+  Option: (props: RadioOptionProps) => JSX.Element;
+}
 
 /* =====================
  * Radio Group
@@ -101,19 +126,16 @@ Radio.Group = function RadioGroup({
 }: RadioGroupProps) {
   return (
     <div role="radiogroup" aria-disabled={disabled}>
-      {Array.isArray(children)
-        ? children.map((child: ReactElement<RadioProps> | null) =>
-            child ? (
-              <child.type
-                key={child.props.value}
-                {...child.props}
-                groupValue={groupValue}
-                onGroupChange={onChange}
-                disabled={disabled || child.props.disabled}
-              />
-            ) : null
-          )
-        : children}
+      {Children.map(children, (child) => {
+        if (!isValidElement<RadioOptionProps>(child)) return null;
+
+        return cloneElement(child, {
+          name,
+          groupValue,
+          onGroupChange: onChange,
+          disabled: disabled || child.props.disabled,
+        });
+      })}
     </div>
   );
 };
@@ -122,6 +144,7 @@ Radio.Group = function RadioGroup({
  * Radio Option
  * ===================== */
 Radio.Option = function RadioOption({
+  name,
   value,
   children,
   groupValue,
@@ -129,7 +152,7 @@ Radio.Option = function RadioOption({
   size = "normal",
   disabled = false,
   ...props
-}: RadioProps & { groupValue?: string; onGroupChange?: (value: string) => void }) {
+}: RadioOptionProps) {
   const isChecked = groupValue === value;
 
   const handleChange = () => {
@@ -139,12 +162,13 @@ Radio.Option = function RadioOption({
 
   return (
     <BaseRadio
+      {...props}
+      name={name}
       value={value}
-      size={size}
       checked={isChecked}
+      size={size}
       disabled={disabled}
       onChange={handleChange}
-      {...props}
     >
       {children}
     </BaseRadio>

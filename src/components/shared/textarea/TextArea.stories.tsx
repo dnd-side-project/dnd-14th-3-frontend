@@ -1,8 +1,9 @@
 import { useState } from "react";
+
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { useArgs } from "storybook/internal/preview-api";
 
 import TextArea from "./TextArea";
-import { useArgs } from "storybook/internal/preview-api";
 
 const meta: Meta<typeof TextArea> = {
   title: "shared/TextArea",

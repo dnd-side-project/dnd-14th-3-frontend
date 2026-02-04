@@ -54,7 +54,7 @@ const thumbBase = "absolute rounded-full bg-white transition-transform duration-
 /* =====================
  * Switch Component
  * ===================== */
-function Switch({
+export default function Switch({
   size = "normal",
   checked,
   disabled = false,
@@ -111,5 +111,3 @@ function Switch({
     </label>
   );
 }
-
-export default Switch;

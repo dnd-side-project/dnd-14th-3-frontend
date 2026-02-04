@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes } from "react";
+import type { ChangeEvent, InputHTMLAttributes, ReactNode } from "react";
 
 /* =====================
  * Types
@@ -12,22 +12,23 @@ type CheckState = "unchecked" | "checked";
 /* ---------- 공통 props ---------- */
 type BaseProps = Omit<
   InputHTMLAttributes<HTMLInputElement>,
-  "size" | "checked" | "defaultChecked"
+  "size" | "checked" | "defaultChecked" | "onChange"
 > & {
   size?: CheckboxSize;
   disabled?: boolean;
   className?: string;
+  onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
 };
 
 /* ---------- variant별 props ---------- */
 type NormalCheckboxProps = BaseProps & {
   variant?: "primary" | "round";
-  state: NormalState; // 제어 상태
+  state: NormalState;
 };
 
 type CheckCheckboxProps = BaseProps & {
   variant: "check";
-  state: CheckState; // 제어 상태
+  state: CheckState;
 };
 
 export type CheckboxProps = NormalCheckboxProps | CheckCheckboxProps;
@@ -85,25 +86,29 @@ const disabledStyles = {
 /* =====================
  * Icons
  * ===================== */
-const CheckIcon = () => (
-  <svg viewBox="0 0 24 24" className="w-5 h-5">
-    <path
-      d="M5 13l4 4L19 7"
-      stroke="currentColor"
-      strokeWidth="3"
-      fill="none"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
+function CheckIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-5 h-5">
+      <path
+        d="M5 13l4 4L19 7"
+        stroke="currentColor"
+        strokeWidth="3"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
-const PartialIcon = () => <div className="w-3 h-[1.8px] bg-white rounded-sm" />;
+function PartialIcon() {
+  return <div className="w-3 h-[1.8px] bg-white rounded-sm" />;
+}
 
 /* =====================
- * Base Checkbox (제어 모드)
+ * Base Checkbox (제어)
  * ===================== */
-function BaseCheckbox(props: CheckboxProps & { children?: React.ReactNode }) {
+function BaseCheckbox(props: CheckboxProps & { children?: ReactNode }) {
   const {
     variant = "primary",
     size = "normal",
@@ -111,29 +116,29 @@ function BaseCheckbox(props: CheckboxProps & { children?: React.ReactNode }) {
     disabled = false,
     className = "",
     children,
+    onChange,
     ...rest
   } = props;
 
-  const isCheck = variant === "check";
+  const isCheckVariant = variant === "check";
   const isChecked = state === "checked";
 
-  const toggle = () => {
-    if (disabled || !rest.onChange) return;
+  const handleChange = () => {
+    if (disabled || !onChange) return;
 
-    const nextState = state === "checked" ? "unchecked" : "checked";
-
+    const nextChecked = !isChecked;
     const event = {
-      target: { checked: nextState === "checked" },
-    } as React.ChangeEvent<HTMLInputElement>;
+      target: { checked: nextChecked },
+    } as ChangeEvent<HTMLInputElement>;
 
-    rest.onChange(event);
+    onChange(event);
   };
 
   const stateClass = disabled
-    ? isCheck
+    ? isCheckVariant
       ? disabledStyles.check[state as CheckState]
       : disabledStyles[variant][state as NormalState]
-    : isCheck
+    : isCheckVariant
       ? checkStateStyles[state as CheckState]
       : stateStyles[state as NormalState];
 
@@ -143,16 +148,14 @@ function BaseCheckbox(props: CheckboxProps & { children?: React.ReactNode }) {
         type="checkbox"
         checked={isChecked}
         disabled={disabled}
-        onChange={toggle}
+        onChange={handleChange}
         className="hidden"
         {...rest}
       />
-
       <div className={[boxBase, sizeStyles[size], variantStyles[variant], stateClass].join(" ")}>
         {state !== "partial" && <CheckIcon />}
-        {!isCheck && state === "partial" && <PartialIcon />}
+        {!isCheckVariant && state === "partial" && <PartialIcon />}
       </div>
-
       {children && (
         <span className={`select-none ${disabled ? "text-gray-300" : ""}`}>{children}</span>
       )}
@@ -161,7 +164,14 @@ function BaseCheckbox(props: CheckboxProps & { children?: React.ReactNode }) {
 }
 
 /* =====================
- * Compound Checkbox
+ * Checkbox (default export, 함수 선언식)
+ * ===================== */
+function Checkbox(props: CheckboxProps) {
+  return <BaseCheckbox {...props} />;
+}
+
+/* =====================
+ * Compound Type
  * ===================== */
 type CompoundCheckbox = {
   (props: CheckboxProps): JSX.Element;
@@ -170,10 +180,21 @@ type CompoundCheckbox = {
   Check: (props: Omit<CheckCheckboxProps, "variant">) => JSX.Element;
 };
 
-const Checkbox = ((props: CheckboxProps) => <BaseCheckbox {...props} />) as CompoundCheckbox;
+/* =====================
+ * Static Properties (type casting)
+ * ===================== */
+const TypedCheckbox = Checkbox as unknown as CompoundCheckbox;
 
-Checkbox.Primary = (props) => <BaseCheckbox {...props} variant="primary" />;
-Checkbox.Round = (props) => <BaseCheckbox {...props} variant="round" />;
-Checkbox.Check = (props) => <BaseCheckbox {...props} variant="check" />;
+TypedCheckbox.Primary = function PrimaryCheckbox(props) {
+  return <BaseCheckbox {...props} variant="primary" />;
+};
 
-export default Checkbox;
+TypedCheckbox.Round = function RoundCheckbox(props) {
+  return <BaseCheckbox {...props} variant="round" />;
+};
+
+TypedCheckbox.Check = function CheckCheckbox(props) {
+  return <BaseCheckbox {...props} variant="check" />;
+};
+
+export default TypedCheckbox;
