@@ -31,8 +31,13 @@
     "zustand": "^5.0.10"
   },
   "devDependencies": {
+    "@chromatic-com/storybook": "^5.0.0",
     "@eslint/js": "^9.39.1",
     "@playwright/test": "^1.58.0",
+    "@storybook/addon-a11y": "^10.2.3",
+    "@storybook/addon-docs": "^10.2.3",
+    "@storybook/addon-vitest": "^10.2.3",
+    "@storybook/react-vite": "^10.2.3",
     "@tailwindcss/vite": "^4.1.18",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -41,6 +46,8 @@
     "@types/react": "^18.3.15",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^5.1.1",
+    "@vitest/browser-playwright": "^4.0.18",
+    "@vitest/coverage-v8": "^4.0.18",
     "@vitest/ui": "^4.0.18",
     "autoprefixer": "^10.4.23",
     "eslint": "^9.39.1",
@@ -53,27 +60,27 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "eslint-plugin-simple-import-sort": "^12.1.1",
+    "eslint-plugin-storybook": "^10.2.3",
     "eslint-plugin-testing-library": "^7.15.4",
     "globals": "^16.5.0",
     "jsdom": "^25.0.1",
     "kakao.maps.d.ts": "^0.1.40",
+    "msw": "^2.12.7",
+    "msw-storybook-addon": "^2.0.6",
+    "playwright": "^1.58.1",
     "postcss": "^8.5.6",
     "prettier": "^3.8.1",
+    "storybook": "^10.2.3",
     "tailwindcss": "^4.1.18",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.53.1",
     "vite": "^7.2.4",
     "vite-plugin-pwa": "^1.2.0",
-    "vitest": "^4.0.18",
-    "storybook": "^10.2.3",
-    "@storybook/react-vite": "^10.2.3",
-    "@chromatic-com/storybook": "^5.0.0",
-    "@storybook/addon-vitest": "^10.2.3",
-    "@storybook/addon-a11y": "^10.2.3",
-    "@storybook/addon-docs": "^10.2.3",
-    "eslint-plugin-storybook": "^10.2.3",
-    "playwright": "^1.58.1",
-    "@vitest/browser-playwright": "^4.0.18",
-    "@vitest/coverage-v8": "^4.0.18"
+    "vitest": "^4.0.18"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }

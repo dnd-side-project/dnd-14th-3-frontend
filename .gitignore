@@ -13,6 +13,7 @@ node_modules
 # Build outputs
 dist
 dist-ssr
+storybook-static
 *.local
 
 # Environment variables
@@ -74,6 +75,4 @@ Desktop.ini
 *.tsbuildinfo
 
 # Optional
-# storybook-static/
-# .storybook-out/
 *storybook.log

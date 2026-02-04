@@ -14,7 +14,7 @@ import tseslint from "typescript-eslint";
 
 export default [
   // ignore
-  { ignores: ["dist/**", "node_modules/**"] },
+  { ignores: ["dist/**", "node_modules/**", "storybook-static/**"] },
 
   // JS 기본
   js.configs.recommended,
