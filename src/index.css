@@ -26,6 +26,17 @@
   --color-warning-800: #8c3b3b;
   --color-warning-900: #6b2d2d;
 
+  --color-gray-50: #f8f8f8;
+  --color-gray-100: #f0f0f0;
+  --color-gray-200: #e6e6e6;
+  --color-gray-300: #d5d5d5;
+  --color-gray-400: #b1b1b1;
+  --color-gray-500: #919191;
+  --color-gray-600: #696969;
+  --color-gray-700: #565656;
+  --color-gray-800: #373737;
+  --color-gray-900: #212121;
+
   --color-text: #212121; /* 텍스트 컬러 */
 
   /* typography */
@@ -114,35 +125,30 @@ body {
   font-size: var(--title-1-size);
   line-height: var(--title-1-line-height);
   letter-spacing: var(--title-1-letter-spacing);
-  color: var(--color-text);
 }
 
 .text-title-2 {
   font-size: var(--title-2-size);
   line-height: var(--title-2-line-height);
   letter-spacing: var(--title-2-letter-spacing);
-  color: var(--color-text);
 }
 
 .text-title-3 {
   font-size: var(--title-3-size);
   line-height: var(--title-3-line-height);
   letter-spacing: var(--title-3-letter-spacing);
-  color: var(--color-text);
 }
 
 .text-heading-1 {
   font-size: var(--heading-1-size);
   line-height: var(--heading-1-line-height);
   letter-spacing: var(--heading-1-letter-spacing);
-  color: var(--color-text);
 }
 
 .text-heading-2 {
   font-size: var(--heading-2-size);
   line-height: var(--heading-2-line-height);
   letter-spacing: var(--heading-2-letter-spacing);
-  color: var(--color-text);
 }
 
 .text-heading-3 {
@@ -156,40 +162,34 @@ body {
   font-size: var(--body-1-size);
   line-height: var(--body-1-line-height);
   letter-spacing: var(--body-1-letter-spacing);
-  color: var(--color-text);
 }
 
 .text-body-2 {
   font-size: var(--body-2-size);
   line-height: var(--body-2-line-height);
   letter-spacing: var(--body-2-letter-spacing);
-  color: var(--color-text);
 }
 
 .text-label-1 {
   font-size: var(--label-1-size);
   line-height: var(--label-1-line-height);
   letter-spacing: var(--label-1-letter-spacing);
-  color: var(--color-text);
 }
 
 .text-label-2 {
   font-size: var(--label-2-size);
   line-height: var(--label-2-line-height);
   letter-spacing: var(--label-2-letter-spacing);
-  color: var(--color-text);
 }
 
 .text-caption-1 {
   font-size: var(--caption-1-size);
   line-height: var(--caption-1-line-height);
   letter-spacing: var(--caption-1-letter-spacing);
-  color: var(--color-text);
 }
 
 .text-caption-2 {
   font-size: var(--caption-2-size);
   line-height: var(--caption-2-line-height);
   letter-spacing: var(--caption-2-letter-spacing);
-  color: var(--color-text);
 }
