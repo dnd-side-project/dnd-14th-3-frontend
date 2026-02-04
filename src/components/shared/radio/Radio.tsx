@@ -6,7 +6,7 @@ import type { ChangeEvent, InputHTMLAttributes, ReactElement, ReactNode } from "
 type RadioSize = "normal" | "small";
 type RadioState = "checked" | "unchecked";
 
-interface RadioProps extends Omit<
+export interface RadioProps extends Omit<
   InputHTMLAttributes<HTMLInputElement>,
   "type" | "checked" | "size" | "onChange"
 > {

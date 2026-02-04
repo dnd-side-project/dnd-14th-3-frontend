@@ -7,7 +7,10 @@ import type { TextareaHTMLAttributes } from "react";
  * ===================== */
 type TextFieldStatus = "default" | "error" | "disabled";
 
-interface TextFieldProps extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "disabled"> {
+export interface TextFieldProps extends Omit<
+  TextareaHTMLAttributes<HTMLTextAreaElement>,
+  "disabled"
+> {
   status?: TextFieldStatus;
   caption?: string;
 }

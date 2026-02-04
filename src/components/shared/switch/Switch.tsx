@@ -7,7 +7,7 @@ import type { InputHTMLAttributes, ReactNode } from "react";
  * ===================== */
 type SwitchSize = "normal" | "small";
 
-interface SwitchProps extends Omit<
+export interface SwitchProps extends Omit<
   InputHTMLAttributes<HTMLInputElement>,
   "type" | "size" | "checked" | "defaultChecked"
 > {

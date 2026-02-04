@@ -1,2 +1,2 @@
-export type { default as RadioProps } from "./Radio";
+export type { RadioProps } from "./Radio";
 export { default as Radio } from "./Radio";

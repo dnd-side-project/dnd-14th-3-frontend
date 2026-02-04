@@ -32,7 +32,7 @@ type CheckCheckboxProps = BaseProps & {
   state?: CheckState;
 };
 
-type CheckboxProps = NormalCheckboxProps | CheckCheckboxProps;
+export type CheckboxProps = NormalCheckboxProps | CheckCheckboxProps;
 
 /* =====================
  * Styles

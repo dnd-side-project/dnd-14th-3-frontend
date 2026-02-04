@@ -6,7 +6,7 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 type ButtonVariant = "primary" | "outlined" | "error";
 type ButtonSize = "large" | "medium" | "small";
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
   size?: ButtonSize;
   disabled?: boolean;
