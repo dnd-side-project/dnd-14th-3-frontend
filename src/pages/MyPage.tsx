@@ -1,0 +1,3 @@
+export default function MainReviewPage() {
+  return <div>마이페이지</div>;
+}
