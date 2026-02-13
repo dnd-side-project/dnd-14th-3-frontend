@@ -13,7 +13,6 @@ export default function ProtectedRoute() {
 
   const validateQuery = useValidateSessionQuery({
     accessToken,
-    pathname: location.pathname,
   });
   const hasValidationError = validateQuery.isError;
 

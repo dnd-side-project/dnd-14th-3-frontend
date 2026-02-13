@@ -6,17 +6,15 @@ import { queryKeys } from "@/queries/keys";
 
 type Options = {
   accessToken: string | null;
-  pathname: string;
 };
 
-export function useValidateSessionQuery({ accessToken, pathname }: Options) {
+export function useValidateSessionQuery({ accessToken }: Options) {
   return useQuery({
-    queryKey: queryKeys.auth.validate(pathname),
+    queryKey: queryKeys.auth.validate(accessToken ?? ""),
     queryFn: () => validateSessionApi(accessToken as string),
     enabled: Boolean(accessToken),
-    staleTime: 0,
+    staleTime: 30_000,
     gcTime: 0,
     retry: false,
   });
 }
-

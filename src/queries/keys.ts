@@ -1,6 +1,6 @@
 export const queryKeys = {
   auth: {
-    validate: (pathname: string) => ["auth", "validate", pathname] as const,
+    validate: (accessToken: string) => ["auth", "validate", accessToken] as const,
   },
   user: {
     all: ["user"] as const,
@@ -8,4 +8,3 @@ export const queryKeys = {
     list: (filters?: object) => ["user", "list", filters] as const,
   },
 } as const;
-
