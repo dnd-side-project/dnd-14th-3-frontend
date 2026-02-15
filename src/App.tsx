@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+﻿import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import { ToastContainer, ToastPortal } from "@/components/shared/toast";
 
@@ -9,6 +9,7 @@ import KakaoCallbackPage from "@/pages/KakaoCallbackPage";
 import LoginPage from "@/pages/LoginPage";
 import MainMapPage from "@/pages/MainMapPage";
 import MainReviewPage from "@/pages/MainReviewPage";
+import MyPage from "@/pages/MyPage";
 import OnboardingPage from "@/pages/OnboardingPage";
 
 import ProtectedRoute from "@/router/ProtectedRoute";
@@ -32,6 +33,7 @@ function App() {
             <Route path="/companion" element={<CompanionListPage />} />
             <Route path="/companion/:reservationId" element={<CompanionDetailPage />} />
             <Route path="/companion/create" element={<CompanionCreatePage />} />
+            <Route path="/mypage" element={<MyPage />} />
           </Route>
         </Route>
       </Routes>
