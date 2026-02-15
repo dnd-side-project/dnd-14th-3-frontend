@@ -22,7 +22,7 @@ const navItems = [
 
 export default function BottomNavigation() {
   return (
-    <nav className="fixed bottom-0 z-10 w-full max-w-[600px] border-t border-gray-200 bg-[#F3F8F3] px-2 pb-safe">
+    <nav className="fixed bottom-0 z-10 w-full max-w-[600px] border-t border-gray-200 bg-white px-2 pb-safe">
       <ul className="grid h-16 grid-cols-3">
         {navItems.map((item) => (
           <li key={item.to}>
