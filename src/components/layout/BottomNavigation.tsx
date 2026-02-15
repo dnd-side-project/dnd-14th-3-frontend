@@ -2,25 +2,25 @@ import { NavLink } from "react-router-dom";
 
 import { Camera, CircleUserRound, Flag } from "lucide-react";
 
-export default function BottomNavigation() {
-  const navItems = [
-    {
-      to: "/",
-      label: "지도",
-      icon: <Flag className="h-6 w-6" strokeWidth={1.8} />,
-    },
-    {
-      to: "/companion",
-      label: "동행 예약",
-      icon: <Camera className="h-6 w-6" strokeWidth={1.8} />,
-    },
-    {
-      to: "/mypage",
-      label: "마이페이지",
-      icon: <CircleUserRound className="h-6 w-6" strokeWidth={1.8} />,
-    },
-  ];
+const navItems = [
+  {
+    to: "/",
+    label: "지도",
+    icon: <Flag className="h-6 w-6" strokeWidth={1.8} />,
+  },
+  {
+    to: "/companion",
+    label: "동행 예약",
+    icon: <Camera className="h-6 w-6" strokeWidth={1.8} />,
+  },
+  {
+    to: "/mypage",
+    label: "마이페이지",
+    icon: <CircleUserRound className="h-6 w-6" strokeWidth={1.8} />,
+  },
+];
 
+export default function BottomNavigation() {
   return (
     <nav className="fixed bottom-0 z-10 w-full max-w-[600px] border-t border-gray-200 bg-[#F3F8F3] px-2 pb-safe">
       <ul className="grid h-16 grid-cols-3">
