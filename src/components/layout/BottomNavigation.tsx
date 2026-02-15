@@ -1,6 +1,8 @@
-import { NavLink } from "react-router-dom";
+﻿import { NavLink } from "react-router-dom";
 
 import { Camera, CircleUserRound, Flag } from "lucide-react";
+
+import { usePageLayoutStore } from "@/store/layout/pageLayout.store";
 
 const navItems = [
   {
@@ -21,6 +23,12 @@ const navItems = [
 ];
 
 export default function BottomNavigation() {
+  const showBottomNav = usePageLayoutStore((state) => state.layout.showBottomNav);
+
+  if (!showBottomNav) {
+    return null;
+  }
+
   return (
     <nav className="fixed bottom-0 z-10 w-full max-w-[600px] border-t border-gray-200 bg-white px-2 pb-safe">
       <ul className="grid h-16 grid-cols-3">
