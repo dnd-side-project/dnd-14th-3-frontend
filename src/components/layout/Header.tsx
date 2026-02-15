@@ -1,20 +1,30 @@
-﻿import { Bell, ChevronLeft, Menu, X } from "lucide-react";
+﻿import { useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 
-import type { HeaderLeftAction } from "@/layout/usePageLayout";
+import { Bell, ChevronLeft, Menu, X } from "lucide-react";
 
-type HeaderProps = {
-  title?: string;
-  leftAction?: HeaderLeftAction;
-  onLeftActionClick?: () => void;
-  showRightActions?: boolean;
-};
+import { usePageLayoutStore } from "@/store/layout/pageLayout.store";
 
-export default function Header({
-  title,
-  leftAction,
-  onLeftActionClick,
-  showRightActions = true,
-}: HeaderProps) {
+export default function Header() {
+  const navigate = useNavigate();
+  const { showHeader, title, leftAction, onLeftActionClick, showRightActions } = usePageLayoutStore(
+    (state) => state.layout
+  );
+
+  const defaultCloseOrBack = useCallback(() => {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+    navigate("/");
+  }, [navigate]);
+
+  if (!showHeader) {
+    return null;
+  }
+
+  const handleLeftActionClick = onLeftActionClick ?? (leftAction ? defaultCloseOrBack : undefined);
+
   const leftIcon =
     leftAction === "back" ? <ChevronLeft className="h-5 w-5" strokeWidth={1.9} /> : null;
   const closeIcon = leftAction === "close" ? <X className="h-5 w-5" strokeWidth={1.9} /> : null;
@@ -27,7 +37,7 @@ export default function Header({
             <button
               type="button"
               aria-label={leftAction === "back" ? "뒤로가기" : "닫기"}
-              onClick={onLeftActionClick}
+              onClick={handleLeftActionClick}
               className="cursor-pointer rounded-md text-gray-700"
             >
               {leftIcon}

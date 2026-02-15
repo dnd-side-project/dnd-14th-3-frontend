@@ -1,6 +1,6 @@
 ﻿import { matchPath } from "react-router-dom";
 
-import type { HeaderLeftAction } from "@/layout/usePageLayout";
+import type { HeaderLeftAction } from "@/layout/pageLayout.types";
 
 type RouteLayoutWithHeader = {
   pattern: string;
