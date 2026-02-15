@@ -7,7 +7,10 @@ import Header from "@/components/layout/Header";
 import { getRouteLayoutMeta, type RouteLayoutMeta } from "@/layout/routeLayoutMeta";
 import { PageLayoutContext, type PageLayoutOverride } from "@/layout/usePageLayout";
 
-function mergeLayoutOverride(prev: PageLayoutOverride, next: PageLayoutOverride): PageLayoutOverride {
+function mergeLayoutOverride(
+  prev: PageLayoutOverride,
+  next: PageLayoutOverride
+): PageLayoutOverride {
   const showBottomNav = next.showBottomNav ?? prev.showBottomNav;
 
   if (next.showHeader === false) {
@@ -50,14 +53,23 @@ function MobileLayoutContent({ routeLayoutMeta }: { routeLayoutMeta: RouteLayout
   const title = layoutOverride.title ?? routeLayoutMeta.title;
   const showHeader = layoutOverride.showHeader ?? routeLayoutMeta.showHeader;
   const showBottomNav = layoutOverride.showBottomNav ?? routeLayoutMeta.showBottomNav;
-  const leftAction = showHeader ? layoutOverride.leftAction ?? routeLayoutMeta.leftAction : undefined;
+  const leftAction = showHeader
+    ? (layoutOverride.leftAction ?? routeLayoutMeta.leftAction)
+    : undefined;
   const showRightActions = showHeader
-    ? layoutOverride.showRightActions ?? routeLayoutMeta.showRightActions ?? true
+    ? (layoutOverride.showRightActions ?? routeLayoutMeta.showRightActions ?? true)
     : false;
-  const onLeftActionClick =
-    showHeader
-      ? layoutOverride.onLeftActionClick ?? (leftAction === "back" ? () => navigate(-1) : undefined)
-      : undefined;
+  // back과 close 모두 이전 페이지로 이동
+  const defaultCloseOrBack = useCallback(() => {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+    navigate("/");
+  }, [navigate]);
+  const onLeftActionClick = showHeader
+    ? (layoutOverride.onLeftActionClick ?? (leftAction ? defaultCloseOrBack : undefined))
+    : undefined;
 
   return (
     <PageLayoutContext.Provider value={{ setLayoutOptions, resetLayoutOptions }}>
@@ -69,7 +81,9 @@ function MobileLayoutContent({ routeLayoutMeta }: { routeLayoutMeta: RouteLayout
           showRightActions={showRightActions}
         />
       )}
-      <main className={`flex-1 ${showBottomNav ? "pb-[calc(64px+env(safe-area-inset-bottom))]" : ""}`}>
+      <main
+        className={`flex-1 ${showBottomNav ? "pb-[calc(64px+env(safe-area-inset-bottom))]" : ""}`}
+      >
         <Outlet />
       </main>
       {showBottomNav && <BottomNavigation />}
