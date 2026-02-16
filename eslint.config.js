@@ -71,15 +71,23 @@ export default [
           ["^react$", "^react-dom$", "^react-router-dom$"],
           [],
 
-          // 2) 핵심 라이브러리 (Zod, Zustand, React Query, Tailwind)
-          ["^zod$", "^zustand$", "^@tanstack/react-query$", "^tailwindcss$"],
+          // 2) 데이터·상태 (Zod, Zustand, React Query)
+          ["^zod$", "^zustand$", "^@tanstack/react-query$"],
           [],
 
-          // 3) 기타 외부 라이브러리
+          // 3) HTTP
+          ["^axios$"],
+          [],
+
+          // 4) UI·스타일 (Tailwind, Framer Motion)
+          ["^tailwindcss$", "^framer-motion$"],
+          [],
+
+          // 5) 기타 외부 라이브러리
           ["^@?\\w"],
           [],
 
-          // 4) 내부 모듈 (의존성 계층 순서)
+          // 6) 내부 모듈 (의존성 계층 순서)
           // 하위 계층 (독립적)
           ["^@/types(/.*|$)"], // 타입 정의 (가장 하위)
           ["^@/lib(/.*|$)"], // 유틸리티 함수
