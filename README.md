@@ -141,10 +141,11 @@ npm run test:e2e:headed
 ```
 ├── src/
 │   ├── components/          # 재사용 가능한 컴포넌트
-│   │   ├── common/          # 공통 컴포넌트 (Button, Input 등)
+│   │   ├── shared/          # 공통 컴포넌트 (Button, Input 등)
 │   │   ├── layout/          # 레이아웃 컴포넌트 (Header, Footer 등)
 │   │   └── domain/          # 도메인별 컴포넌트
 │   ├── hooks/               # 커스텀 React 훅
+│   ├── constants/           # 상수 (도메인별: on-board/intro 등)
 │   ├── api/                 # API 통신 함수 (순수 API 호출)
 │   ├── queries/             # React Query 훅 & Query Key 관리
 │   ├── services/            # 비즈니스 로직
@@ -195,6 +196,7 @@ import { userApi } from "@/api/user.api";
 // 하위 계층 (독립적)
 import type { User } from "@/types";
 import { formatDate } from "@/lib/format";
+import { INTRO_STEPS } from "@/constants/on-board";
 
 // 중간 계층
 import { userApi } from "@/api/user.api";
