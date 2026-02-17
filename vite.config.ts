@@ -41,6 +41,7 @@ export default defineConfig({
       "@": resolve(__dirname, "./src"),
       "@/types": resolve(__dirname, "./src/types"),
       "@/lib": resolve(__dirname, "./src/lib"),
+      "@/constants": resolve(__dirname, "./src/constants"),
       "@/api": resolve(__dirname, "./src/api"),
       "@/services": resolve(__dirname, "./src/services"),
       "@/store": resolve(__dirname, "./src/store"),
