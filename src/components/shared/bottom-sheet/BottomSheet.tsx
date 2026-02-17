@@ -49,13 +49,13 @@ export interface BottomSheetProps {
   /** dim(배경) 클릭 시 동작. 미입력 시 'close'. */
   backdropClick?: "none" | "collapse" | "close";
   /**
-   * 드래그로 접기/펼치기 허용 여부. 기본 true.
-   * false면 접힘 없이 항상 펼친 상태만(아래로 드래그 시 닫기만 가능).
+   * 드래그로 접기/펼치기 허용 여부. 기본 `true`.
+   * false면 접힘 없이 항상 펼친 상태만
    */
   draggable?: boolean;
   /**
-   * 드래그로 닫기 허용 (기본 true).
-   * false면 드래그해도 접힌 상태까지만 내려가고 닫히지 않음.
+   * 드래그로 닫기 허용. 기본 `false`.
+   * false면 드래그로 닫히지 않음.
    */
   dragToClose?: boolean;
   /** 스냅 변경 시 콜백 (접힘/펼침) */
@@ -88,6 +88,12 @@ const DRAG = {
   closeVelocity: 500,
 } as const;
 
+/**
+ * 드래그 종료 시 스냅(접기/펼치기) 또는 닫기 결과를 반환.
+ * - hold: 이동/속도가 작으면 현재 스냅 유지
+ * - close: dragToClose + draggable + 접힌 상태에서만 아래로 드래그 + 속도 충분 → 닫기
+ * - 그 외: 방향에 따라 collapsed / full 스냅 전환
+ */
 function getDragEndResult(
   offsetY: number,
   velocityY: number,
@@ -97,22 +103,30 @@ function getDragEndResult(
 ): { close: boolean; snapState: BottomSheetSnapState } {
   const absOffset = Math.abs(offsetY);
   const absVel = Math.abs(velocityY);
-  const hold = absOffset <= DRAG.hold.offset && absVel <= DRAG.hold.velocity;
-  if (hold) return { close: false, snapState: currentSnap };
+  const isDraggingDown = offsetY > 0;
 
-  const big = absOffset > DRAG.snap.offset || absVel > DRAG.snap.velocity;
-  if (
-    big &&
+  // 움직임이 작으면 스냅/닫기 판단 없이 현재 상태 유지
+  if (absOffset <= DRAG.hold.offset && absVel <= DRAG.hold.velocity) {
+    return { close: false, snapState: currentSnap };
+  }
+
+  // 스냅 전환 또는 닫기를 고려할 만한 구간인지
+  const isSnapOrCloseRange =
+    absOffset > DRAG.snap.offset || absVel > DRAG.snap.velocity;
+  // 닫기 허용: dragToClose + draggable + 접힌 상태에서만 + 아래 방향 + 속도 임계값
+  const canClose =
     dragToClose &&
-    (currentSnap === "collapsed" || !draggable) &&
-    offsetY > 0 &&
-    absVel > DRAG.closeVelocity
-  )
+    draggable &&
+    currentSnap === "collapsed" &&
+    isDraggingDown &&
+    absVel > DRAG.closeVelocity;
+  if (isSnapOrCloseRange && canClose) {
     return { close: true, snapState: currentSnap };
+  }
 
-  const wouldBeCollapsed = offsetY > 0;
+  // 접기/펼치기 스냅만 전환 (닫지 않음)
   const nextState: BottomSheetSnapState =
-    draggable && wouldBeCollapsed ? "collapsed" : "full";
+    draggable && isDraggingDown ? "collapsed" : "full";
   return { close: false, snapState: nextState };
 }
 
@@ -134,7 +148,7 @@ export default function BottomSheet({
   initialSnap = "full",
   backdropClick,
   draggable = true,
-  dragToClose = true,
+  dragToClose = false,
   onSnapChange,
   footer,
   header,
@@ -156,13 +170,13 @@ export default function BottomSheet({
   const [measuredContentHeightPx, setMeasuredContentHeightPx] = useState(72);
 
   useEffect(() => {
-
     if (!isOpen) return;
+    const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const onResize = () => setVh(window.innerHeight);
     window.addEventListener("resize", onResize);
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = prevOverflow;
       window.removeEventListener("resize", onResize);
     };
   }, [isOpen]);
@@ -253,7 +267,7 @@ export default function BottomSheet({
         info.offset.y,
         info.velocity.y,
         snapState,
-        dragToClose && draggable,
+        dragToClose,
         draggable
       );
       if (result.close) {
@@ -268,9 +282,9 @@ export default function BottomSheet({
   );
 
   const portalTarget =
-    useMemo(() => typeof document !== "undefined"
+    typeof document !== "undefined"
       ? document.getElementsByTagName("main")[0]?.parentElement ?? document.body
-      : null, []);
+      : null;
 
   const [layoutWidth, setLayoutWidth] = useState<number | null>(null);
   useEffect(() => {
@@ -291,7 +305,7 @@ export default function BottomSheet({
           <motion.div
             role="presentation"
             aria-hidden
-            className="fixed w-full top-0 bottom-0 z-100 bg-gray-900/50"
+            className="fixed w-full top-0 bottom-0 z-50 bg-gray-900/50"
             style={{
               maxWidth: layoutWidth != null ? `${layoutWidth}px` : undefined,
               pointerEvents: snapState === "collapsed" ? "none" : "auto",
@@ -307,14 +321,19 @@ export default function BottomSheet({
             role="dialog"
             aria-modal="true"
             aria-label="바텀 시트"
-            className={`fixed w-full bottom-0 z-101 flex flex-col overflow-hidden rounded-t-2xl bg-white shadow-[0_-4px_20px_rgba(0,0,0,0.08)] ${className}`}
+            className={`fixed w-full bottom-0 z-50 flex flex-col overflow-hidden rounded-t-2xl bg-white shadow-[0_-4px_20px_rgba(0,0,0,0.08)] ${className}`}
             style={{
               ...panelHeightStyle,
               ...(layoutWidth != null ? { maxWidth: `${layoutWidth}px` } : {}),
+              willChange: "transform"
             }}
             initial={{ y: vh, height: panelHeightPx }}
             animate={{ y: currentY, height: panelHeightPx }}
-            exit={{ y: vh, height: panelHeightPx }}
+            exit={{
+              y: vh,
+              // collapse 상태에서 닫을 땐 헤더 높이만 쓰면, 아래로 내려가며 콘텐츠가 드러나는 'expand' 같은 연출 방지
+              height: snapState === "collapsed" ? measuredHeaderHeightPx : panelHeightPx,
+            }}
             transition={SNAP_ANIMATION}
             onClick={(e) => e.stopPropagation()}
             drag="y"
@@ -328,7 +347,7 @@ export default function BottomSheet({
             {/* Handle + Header: 이 영역 높이 = 접힌 높이, 본문 높이 = 펼친 높이 */}
             <div
               ref={headerAreaRef}
-              className={"flex shrink-0 cursor-grab touch-pan-y flex-col " + (draggable ? "active:cursor-grabbing" : "")}
+              className={"flex shrink-0 cursor-grab touch-none flex-col " + (draggable ? "active:cursor-grabbing" : "")}
               onPointerDown={(e) => dragControls.start(e)}
             >
               {draggable && <div className="flex justify-center pt-3 pb-1">
@@ -341,7 +360,13 @@ export default function BottomSheet({
               }
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
+              onTouchMove={(e) => {
+                if (e.currentTarget.scrollTop === 0) {
+                  e.stopPropagation();
+                }
+              }}
+              style={{ WebkitOverflowScrolling: "touch" }}>
               <div ref={contentInnerRef} className="h-fit px-4 pb-6 pt-2">
                 {typeof renderContent === "function" ? renderContent(headerActions) : renderContent}
               </div>
