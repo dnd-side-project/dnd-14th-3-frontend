@@ -2,22 +2,22 @@ import { useState } from "react";
 
 import type { Meta } from "@storybook/react-vite";
 
-import { Modal } from "./index";
-import TriggerWrapper, { type Story, StoryTriggerButton } from "./Modal.story-shared";
+import { Popup } from "./index";
+import TriggerWrapper, { type Story, StoryTriggerButton } from "./Popup.story-shared";
 
 const meta = {
-  title: "shared/Modal/Scenarios",
-  component: Modal,
+  title: "shared/Popup/Scenarios",
+  component: Popup,
   parameters: {
     layout: "fullscreen",
     docs: {
       description: {
         component:
-          "Common modal usage scenarios: default confirm/cancel, confirm-only, no-buttons notice, custom labels, and strict backdrop close behavior.",
+          "Common popup usage scenarios: default confirm/cancel, confirm-only, no-buttons notice, custom labels, and strict backdrop close behavior.",
       },
     },
   },
-} satisfies Meta<typeof Modal>;
+} satisfies Meta<typeof Popup>;
 
 export default meta;
 
@@ -27,7 +27,7 @@ export const Scenario1_DefaultFlow: Story = {
     return (
       <TriggerWrapper>
         <StoryTriggerButton onClick={() => setIsOpen(true)}>Scenario 1</StoryTriggerButton>
-        <Modal
+        <Popup
           isOpen={isOpen}
           title="Leave this page?"
           content="Unsaved changes may be lost."
@@ -48,7 +48,7 @@ export const Scenario2_ConfirmOnly: Story = {
     return (
       <TriggerWrapper>
         <StoryTriggerButton onClick={() => setIsOpen(true)}>Scenario 2</StoryTriggerButton>
-        <Modal
+        <Popup
           isOpen={isOpen}
           title="Session expired"
           content="Please sign in again to continue."
@@ -68,7 +68,7 @@ export const Scenario3_NoButtonsNotice: Story = {
     return (
       <TriggerWrapper>
         <StoryTriggerButton onClick={() => setIsOpen(true)}>Scenario 3</StoryTriggerButton>
-        <Modal
+        <Popup
           isOpen={isOpen}
           title="Processing"
           content="Please wait while we complete your request."
@@ -87,7 +87,7 @@ export const Scenario4_CustomLabels: Story = {
     return (
       <TriggerWrapper>
         <StoryTriggerButton onClick={() => setIsOpen(true)}>Scenario 4</StoryTriggerButton>
-        <Modal
+        <Popup
           isOpen={isOpen}
           title="Delete post"
           content="Deleted posts cannot be restored."
@@ -108,7 +108,7 @@ export const Scenario5_NoBackdropClose: Story = {
     return (
       <TriggerWrapper>
         <StoryTriggerButton onClick={() => setIsOpen(true)}>Scenario 5</StoryTriggerButton>
-        <Modal
+        <Popup
           isOpen={isOpen}
           title="Critical confirmation"
           content="You must choose an explicit action."

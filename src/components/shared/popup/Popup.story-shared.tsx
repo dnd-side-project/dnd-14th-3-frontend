@@ -1,13 +1,13 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ComponentProps, ReactNode } from "react";
 
-import type { Modal } from "./index";
+import type { Popup } from "./index";
 
 export type StoryArgs = Partial<
-  Omit<ComponentProps<typeof Modal>, "isOpen" | "onClose" | "onConfirm" | "onCancel">
+  Omit<ComponentProps<typeof Popup>, "isOpen" | "onClose" | "onConfirm" | "onCancel">
 >;
 
-export type Story = StoryObj<Meta<typeof Modal> & { args?: StoryArgs }>;
+export type Story = StoryObj<Meta<typeof Popup> & { args?: StoryArgs }>;
 
 export default function TriggerWrapper({ children }: { children: ReactNode }) {
   return <div className="flex min-h-[80vh] items-center justify-center p-4">{children}</div>;

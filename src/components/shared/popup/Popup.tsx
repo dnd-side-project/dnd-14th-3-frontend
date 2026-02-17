@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 
 import { Button } from "@/components/shared/button";
 
-export interface ModalProps {
+export interface PopupProps {
   isOpen: boolean;
   title: string;
   content: string;
@@ -17,7 +17,7 @@ export interface ModalProps {
   onCancel?: () => void;
 }
 
-export default function Modal({
+export default function Popup({
   isOpen,
   title,
   content,
@@ -29,7 +29,7 @@ export default function Modal({
   onClose,
   onConfirm,
   onCancel,
-}: ModalProps) {
+}: PopupProps) {
   const portalTarget =
     typeof document !== "undefined"
       ? (document.getElementsByTagName("main")[0]?.parentElement ?? document.body)
@@ -94,10 +94,10 @@ export default function Modal({
       <div
         role="dialog"
         aria-modal="true"
-        aria-labelledby="shared-modal-title"
+        aria-labelledby="shared-popup-title"
         className="relative z-10 w-full max-w-[460px] rounded-xl bg-white p-6 shadow-[0_8px_30px_rgba(0,0,0,0.12)]"
       >
-        <h2 id="shared-modal-title" className="text-center text-heading-2 font-bold text-gray-900">
+        <h2 id="shared-popup-title" className="text-center text-heading-2 font-bold text-gray-900">
           {title}
         </h2>
         <p className="mt-1 text-center text-body-1 text-gray-500">{content}</p>
