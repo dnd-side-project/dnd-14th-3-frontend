@@ -1,6 +1,6 @@
-import { useState } from "react";
-
 import type { Meta } from "@storybook/react-vite";
+
+import { useBottomSheet } from "@/hooks/shared/bottom-sheet";
 
 import TriggerWrapper, {
   SheetHeaderWithActions,
@@ -69,16 +69,17 @@ export default meta;
  */
 export const Default: Story = {
   render: (args) => {
-    const [isOpen, setIsOpen] = useState(false);
+    const sheet = useBottomSheet();
     return (
       <TriggerWrapper>
-        <StoryTriggerButton onClick={() => setIsOpen(true)}>
+        <StoryTriggerButton onClick={sheet.open}>
           바텀시트 열기
         </StoryTriggerButton>
         <BottomSheet
           {...args}
-          isOpen={isOpen}
-          onClose={() => setIsOpen(false)}
+          key={sheet.key}
+          isOpen={sheet.isOpen}
+          onClose={sheet.close}
           header={(actions) => (
             <SheetHeaderWithActions title="제목" actions={actions} />
           )}

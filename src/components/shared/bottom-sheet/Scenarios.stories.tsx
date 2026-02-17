@@ -2,6 +2,8 @@ import { useState } from "react";
 
 import type { Meta } from "@storybook/react-vite";
 
+import { useBottomSheet } from "@/hooks/shared/bottom-sheet";
+
 import TriggerWrapper, {
   SheetHeaderCollapseExpandOnly,
   SheetHeaderTitleOnly,
@@ -45,11 +47,11 @@ export default meta;
 /** 1. 접힘 없음, dim 닫힘, 드래그 불가, 푸터 [유지 / 다음] → 다음 단계 80vh */
 export const Scenario1_TwoStep_DimClose: Story = {
   render: (args) => {
-    const [isOpen, setIsOpen] = useState(false);
+    const sheet = useBottomSheet();
     const [step, setStep] = useState<1 | 2>(1);
     const openSheet = () => {
       setStep(1);
-      setIsOpen(true);
+      sheet.open();
     };
     return (
       <TriggerWrapper>
@@ -58,8 +60,9 @@ export const Scenario1_TwoStep_DimClose: Story = {
         </StoryTriggerButton>
         <BottomSheet
           {...args}
-          isOpen={isOpen}
-          onClose={() => setIsOpen(false)}
+          key={sheet.key}
+          isOpen={sheet.isOpen}
+          onClose={sheet.close}
           draggable={false}
           backdropClick="close"
           header={<SheetHeaderTitleOnly title="1단계" />}
@@ -112,16 +115,17 @@ export const Scenario1_TwoStep_DimClose: Story = {
 /** 2. 접힘 없음, dim 닫힘 없음, 헤더 없음, 푸터 [취소]로만 닫기 */
 export const Scenario2_FooterCancelOnly: Story = {
   render: (args) => {
-    const [isOpen, setIsOpen] = useState(false);
+    const sheet = useBottomSheet();
     return (
       <TriggerWrapper>
-        <StoryTriggerButton onClick={() => setIsOpen(true)}>
+        <StoryTriggerButton onClick={sheet.open}>
           시나리오 2 열기
         </StoryTriggerButton>
         <BottomSheet
           {...args}
-          isOpen={isOpen}
-          onClose={() => setIsOpen(false)}
+          key={sheet.key}
+          isOpen={sheet.isOpen}
+          onClose={sheet.close}
           draggable={false}
           backdropClick="none"
           footer={(actions) => (
@@ -148,11 +152,11 @@ export const Scenario2_FooterCancelOnly: Story = {
 /** 3. 접힘·dim 접힘·닫기 없음, 푸터 [다음] → 80vh 후 [확인]으로 닫기 */
 export const Scenario3_Collapse_TwoStep: Story = {
   render: (args) => {
-    const [isOpen, setIsOpen] = useState(false);
+    const sheet = useBottomSheet();
     const [step, setStep] = useState<1 | 2>(1);
     const openSheet = () => {
       setStep(1);
-      setIsOpen(true);
+      sheet.open();
     };
     return (
       <TriggerWrapper>
@@ -161,8 +165,9 @@ export const Scenario3_Collapse_TwoStep: Story = {
         </StoryTriggerButton>
         <BottomSheet
           {...args}
-          isOpen={isOpen}
-          onClose={() => setIsOpen(false)}
+          key={sheet.key}
+          isOpen={sheet.isOpen}
+          onClose={sheet.close}
           backdropClick="collapse"
           dragToClose={false}
           header={(actions) => (
@@ -214,16 +219,17 @@ export const Scenario3_Collapse_TwoStep: Story = {
 /** 4. 접힘·dim 접힘·닫기 없음, 푸터 [확인]으로만 닫기 */
 export const Scenario4_Collapse_FooterClose: Story = {
   render: (args) => {
-    const [isOpen, setIsOpen] = useState(false);
+    const sheet = useBottomSheet();
     return (
       <TriggerWrapper>
-        <StoryTriggerButton onClick={() => setIsOpen(true)}>
+        <StoryTriggerButton onClick={sheet.open}>
           시나리오 4 열기
         </StoryTriggerButton>
         <BottomSheet
           {...args}
-          isOpen={isOpen}
-          onClose={() => setIsOpen(false)}
+          key={sheet.key}
+          isOpen={sheet.isOpen}
+          onClose={sheet.close}
           backdropClick="collapse"
           dragToClose={false}
           header={(actions) => (
@@ -253,16 +259,17 @@ export const Scenario4_Collapse_FooterClose: Story = {
 /** 5. 접힌 상태로 시작, 본문 입력 + [확인]으로 닫기 */
 export const Scenario5_Input_ConfirmClose: Story = {
   render: (args) => {
-    const [isOpen, setIsOpen] = useState(false);
+    const sheet = useBottomSheet();
     return (
       <TriggerWrapper>
-        <StoryTriggerButton onClick={() => setIsOpen(true)}>
+        <StoryTriggerButton onClick={sheet.open}>
           시나리오 5 열기
         </StoryTriggerButton>
         <BottomSheet
           {...args}
-          isOpen={isOpen}
-          onClose={() => setIsOpen(false)}
+          key={sheet.key}
+          isOpen={sheet.isOpen}
+          onClose={sheet.close}
           initialSnap="collapsed"
           header={(actions) => (
             <SheetHeaderWithActions title="입력" actions={actions} />
@@ -296,16 +303,17 @@ export const Scenario5_Input_ConfirmClose: Story = {
 /** 6. 열었을 때 접힌 상태로 시작. 헤더에서 펼치기/접기/닫기 모두 가능 */
 export const Scenario6_CollapsedInitial: Story = {
   render: (args) => {
-    const [isOpen, setIsOpen] = useState(false);
+    const sheet = useBottomSheet();
     return (
       <TriggerWrapper>
-        <StoryTriggerButton onClick={() => setIsOpen(true)}>
+        <StoryTriggerButton onClick={sheet.open}>
           시나리오 6 열기
         </StoryTriggerButton>
         <BottomSheet
           {...args}
-          isOpen={isOpen}
-          onClose={() => setIsOpen(false)}
+          key={sheet.key}
+          isOpen={sheet.isOpen}
+          onClose={sheet.close}
           initialSnap="collapsed"
           header={(actions) => (
             <SheetHeaderWithActions title="접힌 상태로 시작" actions={actions} />
