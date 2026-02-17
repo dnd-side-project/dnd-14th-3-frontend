@@ -31,6 +31,9 @@
             "@/api/*": [
                 "./src/api/*"
             ],
+            "@/constants/*": [
+                "./src/constants/*"
+            ],
             "@/services/*": [
                 "./src/services/*"
             ],
