@@ -83,9 +83,9 @@ export default function Modal({
           : undefined
       }
     >
-      <button
-        type="button"
-        aria-label="모달 닫기"
+      <div
+        role="presentation"
+        aria-hidden="true"
         className="absolute inset-0 bg-gray-900/50"
         onClick={() => {
           if (closeOnBackdrop) onClose?.();
