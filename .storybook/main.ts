@@ -16,6 +16,15 @@ const config: StorybookConfig = {
   ],
   framework: "@storybook/react-vite",
   viteFinal: async (config) => {
+    config.plugins = (config.plugins || []).filter((plugin) => {
+      if (!plugin) {
+        return true;
+      }
+
+      const pluginName = "name" in plugin ? plugin.name : "";
+      return pluginName !== "vite-plugin-pwa";
+    });
+
     config.resolve = config.resolve || {};
     config.resolve.alias = {
       ...config.resolve.alias,

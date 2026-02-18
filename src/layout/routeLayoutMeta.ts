@@ -26,7 +26,7 @@ const routeLayoutMeta: RouteLayoutMeta[] = [
   { pattern: "/login", showHeader: false, showBottomNav: false },
   { pattern: "/auth/kakao/callback", showHeader: false, showBottomNav: false },
   { pattern: "/onboarding", showHeader: false, showBottomNav: false },
-  { pattern: "/", title: "메인 지도", showHeader: true, showBottomNav: true },
+  { pattern: "/", showHeader: true, showBottomNav: true },
   {
     pattern: "/review",
     showHeader: true,
