@@ -1,5 +1,10 @@
 /// <reference types="vite/client" />
+/// <reference types="kakao.maps.d.ts" />
 
-interface Window {
-  kakao: typeof kakao;
+declare global {
+  interface Window {
+    kakao: typeof kakao;
+  }
 }
+
+export {};
