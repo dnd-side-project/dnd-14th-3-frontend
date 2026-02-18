@@ -1,6 +1,7 @@
-import { create } from "zustand";
+﻿import { create } from "zustand";
 
-import type { PageLayoutOverride, ResolvedPageLayout } from "@/layout/pageLayout.types";
+import type { PageLayoutOverride, ResolvedPageLayout } from "@/types/layout/page-layout.type";
+
 import type { RouteLayoutMeta } from "@/layout/routeLayoutMeta";
 
 type PageLayoutState = {
@@ -88,3 +89,4 @@ export const usePageLayoutStore = create<PageLayoutState>((set) => ({
       layout: state.baseLayout,
     })),
 }));
+

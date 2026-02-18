@@ -5,7 +5,11 @@ import { Bell, ChevronLeft, Menu, X } from "lucide-react";
 
 import { usePageLayoutStore } from "@/store/layout/pageLayout.store";
 
-export default function Header() {
+type HeaderProps = {
+  onMenuClick?: () => void;
+};
+
+export default function Header({ onMenuClick }: HeaderProps) {
   const navigate = useNavigate();
   const { showHeader, title, leftAction, onLeftActionClick, showRightActions } = usePageLayoutStore(
     (state) => state.layout
@@ -60,6 +64,7 @@ export default function Header() {
               <button
                 type="button"
                 aria-label="메뉴"
+                onClick={onMenuClick}
                 className="cursor-pointer rounded-md p-2 text-gray-700"
               >
                 <Menu className="h-5 w-5" strokeWidth={1.9} />
