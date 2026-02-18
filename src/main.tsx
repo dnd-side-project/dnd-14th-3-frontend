@@ -35,7 +35,6 @@ if (sentryDsn && typeof sentryDsn === "string" && sentryDsn.trim() !== "") {
 }
 
 async function enableMocking() {
-  if (import.meta.env.MODE !== "development") return;
   if (import.meta.env.VITE_MSW_ENABLED !== "true") return;
   const { worker } = await import("./mocks/browser");
   return worker.start({ onUnhandledRequest: "bypass" });
