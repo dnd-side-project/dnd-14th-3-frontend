@@ -3,7 +3,7 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 /* =====================
  * Types
  * ===================== */
-type ButtonVariant = "primary" | "outlined" | "error";
+type ButtonVariant = "primary" | "secondary" | "outlined" | "error";
 type ButtonSize = "large" | "medium" | "small";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -24,6 +24,11 @@ const buttonStyles = {
   primary: {
     base: "font-bold transition-colors",
     enabled: "bg-mint-500 text-black hover:bg-mint-600 active:bg-mint-700",
+    disabled: "bg-gray-50 text-gray-500 cursor-not-allowed",
+  },
+  secondary: {
+    base: "font-bold transition-colors",
+    enabled: "bg-gray-100 text-gray-900 hover:bg-gray-200 active:bg-gray-300",
     disabled: "bg-gray-50 text-gray-500 cursor-not-allowed",
   },
   outlined: {
@@ -91,6 +96,7 @@ function BaseButton({
 type CompoundButton = {
   (props: ButtonProps): JSX.Element;
   Primary: (props: Omit<ButtonProps, "variant">) => JSX.Element;
+  Secondary: (props: Omit<ButtonProps, "variant">) => JSX.Element;
   Outlined: (props: Omit<ButtonProps, "variant">) => JSX.Element;
   Error: (props: Omit<ButtonProps, "variant">) => JSX.Element;
 };
@@ -98,6 +104,7 @@ type CompoundButton = {
 const Button = BaseButton as CompoundButton;
 
 Button.Primary = (props) => <BaseButton {...props} variant="primary" />;
+Button.Secondary = (props) => <BaseButton {...props} variant="secondary" />;
 Button.Outlined = (props) => <BaseButton {...props} variant="outlined" />;
 Button.Error = (props) => <BaseButton {...props} variant="error" />;
 

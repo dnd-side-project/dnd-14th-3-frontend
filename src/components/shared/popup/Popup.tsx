@@ -110,13 +110,12 @@ export default function Popup({
               </Button.Primary>
             )}
             {showCancel && (
-              <Button.Primary
+              <Button.Secondary
                 fullWidth
-                className="!bg-gray-100 !text-gray-600 hover:!bg-gray-200 active:!bg-gray-300"
                 onClick={handleCancel}
               >
                 {cancelMessage}
-              </Button.Primary>
+              </Button.Secondary>
             )}
           </div>
         )}
