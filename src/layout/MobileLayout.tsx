@@ -20,10 +20,6 @@ export default function MobileLayout() {
     setLayout(routeLayoutMeta);
   }, [routeLayoutMeta, setLayout]);
 
-  useEffect(() => {
-    setIsDrawerOpen(false);
-  }, [location.pathname]);
-
   return (
     <div className="flex min-h-dvh w-full justify-center bg-gray-100">
       <div className="relative flex min-h-dvh w-full max-w-[600px] flex-col overflow-hidden bg-white">
