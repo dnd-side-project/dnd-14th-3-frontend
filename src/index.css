@@ -120,6 +120,15 @@ body {
   padding: 0;
 }
 
+.mobile-scroll-container {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.mobile-scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
 /* typography */
 .text-title-1 {
   font-size: var(--title-1-size);

@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 
 import { usePageLayoutStore } from "@/store/layout/pageLayout.store";
@@ -22,9 +22,11 @@ export default function MobileLayout() {
 
   return (
     <div className="flex min-h-dvh w-full justify-center bg-gray-100">
-      <div className="relative flex min-h-dvh w-full max-w-[600px] flex-col overflow-hidden bg-white">
+      <div className="relative flex h-dvh w-full max-w-[600px] flex-col overflow-hidden bg-white">
         <Header onMenuClick={() => setIsDrawerOpen(true)} />
-        <main className={`flex-1 ${showBottomNav ? "pb-[calc(64px+env(safe-area-inset-bottom))]" : ""}`}>
+        <main
+          className={`mobile-scroll-container min-h-0 flex-1 overflow-y-auto ${showBottomNav ? "pb-[calc(64px+env(safe-area-inset-bottom))]" : ""}`}
+        >
           <Outlet />
         </main>
         <SideDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />
