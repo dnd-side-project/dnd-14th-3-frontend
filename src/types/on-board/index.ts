@@ -1,0 +1,1 @@
+export { type IntroStepContent } from "./intro-step-content.type";
