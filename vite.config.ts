@@ -8,9 +8,11 @@ import { VitePWA } from "vite-plugin-pwa";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+const isStorybook = process.env.STORYBOOK === "true";
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [
+  
+  plugins: !isStorybook ? [
     react(),
     tailwindcss(),
     VitePWA({
@@ -35,7 +37,7 @@ export default defineConfig({
         ],
       },
     }),
-  ],
+  ] : [react(), tailwindcss()],
   resolve: {
     alias: {
       "@": resolve(__dirname, "./src"),
