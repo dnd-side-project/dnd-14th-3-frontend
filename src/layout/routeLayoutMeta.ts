@@ -1,6 +1,6 @@
 ﻿import { matchPath } from "react-router-dom";
 
-import type { HeaderLeftAction } from "@/layout/pageLayout.types";
+import type { HeaderLeftAction } from "@/types/layout/page-layout.type";
 
 type RouteLayoutWithHeader = {
   pattern: string;
@@ -65,3 +65,4 @@ export function getRouteLayoutMeta(pathname: string) {
 
   return matchedMeta ?? defaultRouteLayoutMeta;
 }
+

@@ -1,4 +1,4 @@
-export type HeaderLeftAction = "back" | "close";
+﻿export type HeaderLeftAction = "back" | "close";
 
 type HeaderShownOverride = {
   showHeader?: true;
