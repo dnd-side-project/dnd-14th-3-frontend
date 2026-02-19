@@ -28,10 +28,10 @@ export default function ExpandableFab() {
             {FAB_ITEMS.map((item, index) => (
               <div
                 key={item.id}
-                className={`pointer-events-auto flex items-center gap-2 transition-all duration-200 ${
+                className={`flex items-center gap-2 transition-all duration-200 ${
                   isFabExpanded
-                    ? "translate-y-0 scale-100 opacity-100"
-                    : "translate-y-3 scale-95 pointer-events-none opacity-0"
+                    ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
+                    : "pointer-events-none translate-y-3 scale-95 opacity-0"
                 }`}
                 style={{ transitionDelay: isFabExpanded ? `${index * 45}ms` : "0ms" }}
               >
@@ -45,7 +45,7 @@ export default function ExpandableFab() {
                     onClick={item.onClick}
                     className="cursor-pointer flex size-11 items-center justify-center rounded-full bg-mint-500 text-white shadow-[0_8px_16px_rgba(0,0,0,0.2)] transition-transform active:scale-95"
                   >
-                    <item.icon className="size-4.5" strokeWidth={2.1} />
+                    <item.icon className="size-4" strokeWidth={2.1} />
                   </button>
                 </div>
               </div>
@@ -60,9 +60,9 @@ export default function ExpandableFab() {
               }`}
             >
               {isFabExpanded ? (
-                <X className="size-5.5" strokeWidth={2.3} />
+                <X className="size-5" strokeWidth={2.3} />
               ) : (
-                <Plus className="size-5.5" strokeWidth={2.3} />
+                <Plus className="size-5" strokeWidth={2.3} />
               )}
             </button>
           </div>
