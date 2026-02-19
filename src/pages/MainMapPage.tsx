@@ -1,5 +1,6 @@
 ﻿import { Map, useKakaoLoader } from "react-kakao-maps-sdk";
 
+import ExpandableFab from "@/components/main-map/ExpandableFab";
 import { LoadingIndicator } from "@/components/shared/loading";
 
 const DEFAULT_CENTER = { lat: 37.5665, lng: 126.978 };
@@ -41,5 +42,10 @@ export default function MainMapPage() {
     );
   }
 
-  return <Map center={DEFAULT_CENTER} level={3} draggable style={{ width: "100%", height: "100%" }} />;
+  return (
+    <div className="relative h-full">
+      <Map center={DEFAULT_CENTER} level={3} draggable style={{ width: "100%", height: "100%" }} />
+      <ExpandableFab />
+    </div>
+  );
 }
