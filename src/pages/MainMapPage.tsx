@@ -15,6 +15,11 @@ import { LoadingIndicator } from "@/components/shared/loading";
 const DEFAULT_CENTER = { lat: 37.5665, lng: 126.978 };
 const MANUAL_CONFIRM_DELAY_MS = 5000;
 const ADDRESS_LOOKUP_TIMEOUT_MS = 5000;
+const MY_PIN_IMAGE = {
+  src: "/main-map/pin_me.png",
+  size: { width: 52, height: 52 },
+  options: { offset: { x: 26, y: 52 } },
+};
 
 interface LocationAddressInfo {
   roadAddress: string;
@@ -247,10 +252,11 @@ export default function MainMapPage() {
         onClick={handleManualMapClick}
         style={{ width: "100%", height: "100%" }}
       >
-        {currentLocation ? <MapMarker position={currentLocation} /> : null}
+        {currentLocation ? <MapMarker position={currentLocation} image={MY_PIN_IMAGE} /> : null}
         {isManualLocationMode ? (
           <MapMarker
             position={manualLocationDraft}
+            image={MY_PIN_IMAGE}
             draggable
             onDragEnd={handleManualMarkerDragEnd}
           />
