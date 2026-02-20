@@ -71,6 +71,13 @@ export default function ExpandableFab({
 
     const permissionState = await getLocationPermissionState();
     if (permissionState === "granted") {
+      const location = await requestLocationPermissionWithPrompt();
+      if (!location) {
+        setIsLocationShareSetupModalOpen(true);
+        return;
+      }
+
+      onResolveLocation(location);
       setIsFindCompanionModalOpen(true);
       return;
     }
