@@ -21,6 +21,7 @@ interface MainMapViewProps {
   onMapDragEnd: (map: kakao.maps.Map) => void;
   onManualMapClick: (map: kakao.maps.Map, mouseEvent: kakao.maps.event.MouseEvent) => void;
   onManualMarkerDragEnd: (marker: kakao.maps.Marker) => void;
+  onCurrentMarkerDragEnd: (marker: kakao.maps.Marker) => void;
   onFindCompanion: () => void;
   onOpenManualLocationSetting: () => void;
   onResolveLocation: (location: LatLng) => void;
@@ -40,6 +41,7 @@ export default function MainMapView({
   onMapDragEnd,
   onManualMapClick,
   onManualMarkerDragEnd,
+  onCurrentMarkerDragEnd,
   onFindCompanion,
   onOpenManualLocationSetting,
   onResolveLocation,
@@ -57,7 +59,12 @@ export default function MainMapView({
         style={{ width: "100%", height: "100%" }}
       >
         {currentLocation && !isManualLocationMode ? (
-          <MapMarker position={currentLocation} image={PIN_ME} />
+          <MapMarker
+            position={currentLocation}
+            image={PIN_ME}
+            draggable={isSheetOpen}
+            onDragEnd={onCurrentMarkerDragEnd}
+          />
         ) : null}
         {isManualLocationMode ? (
           <MapMarker
@@ -81,6 +88,7 @@ export default function MainMapView({
         key={sheetKey}
         isOpen={isSheetOpen}
         onClose={() => {}}
+        showBackdrop={false}
         backdropClick="collapse"
         draggable
         onSnapChange={onBottomSheetSnapChange}

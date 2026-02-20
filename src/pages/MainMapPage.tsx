@@ -124,6 +124,25 @@ export default function MainMapPage() {
     ]
   );
 
+  const handleCurrentMarkerDragEnd = useCallback(
+    (marker: kakao.maps.Marker) => {
+      const position = marker.getPosition();
+      const nextLocation = { lat: position.getLat(), lng: position.getLng() };
+      clearManualConfirmTimer();
+      setCurrentLocation(nextLocation);
+      centerMapOnLocation(nextLocation);
+      setPersistedLocation(nextLocation, "manual");
+      lookupAddress(nextLocation);
+    },
+    [
+      centerMapOnLocation,
+      clearManualConfirmTimer,
+      lookupAddress,
+      setCurrentLocation,
+      setPersistedLocation,
+    ]
+  );
+
   useEffect(() => {
     if (!currentLocationSheet.isOpen || !currentLocation) return;
     panMapToLocation(currentLocation);
@@ -188,6 +207,7 @@ export default function MainMapPage() {
       onMapDragEnd={handleMapDragEnd}
       onManualMapClick={handleManualMapClick}
       onManualMarkerDragEnd={handleManualMarkerDragEnd}
+      onCurrentMarkerDragEnd={handleCurrentMarkerDragEnd}
       onFindCompanion={handleFindCompanion}
       onOpenManualLocationSetting={handleOpenManualLocationSetting}
       onResolveLocation={handleResolveLocation}

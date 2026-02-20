@@ -365,7 +365,7 @@ export default function BottomSheet({
               }
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
+            <div className="mobile-scroll-container min-h-0 flex-1 overflow-y-auto overscroll-contain"
               onTouchMove={(e) => {
                 if (e.currentTarget.scrollTop === 0) {
                   e.stopPropagation();
