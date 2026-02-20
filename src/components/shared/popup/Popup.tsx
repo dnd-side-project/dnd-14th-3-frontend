@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { Button } from "@/components/shared/button";
@@ -100,7 +100,14 @@ export default function Popup({
         <h2 id="shared-popup-title" className="text-center text-heading-2 font-bold text-gray-900">
           {title}
         </h2>
-        <p className="mt-1 text-center text-body-1 text-gray-500">{content}</p>
+        <p className="mt-1 whitespace-pre-line text-center text-body-1 text-gray-500">
+          {content.split("\n").map((line, index) => (
+            <Fragment key={`${line}-${index}`}>
+              {index > 0 ? <br /> : null}
+              {line}
+            </Fragment>
+          ))}
+        </p>
 
         {shouldShowActions && (
           <div className="mt-5 flex flex-col gap-2">
