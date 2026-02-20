@@ -2,11 +2,12 @@ import { useState } from "react";
 
 import { LocateFixed, Search } from "lucide-react";
 
+import { type LatLng } from "@/types/main-map/location.type";
+
 import ExpandableFabMenu from "@/components/main-map/ExpandableFabMenu";
 import FabActionPopups from "@/components/main-map/FabActionPopups";
 
 type LocationPermissionState = PermissionState | "unknown";
-type LatLng = { lat: number; lng: number };
 
 interface ExpandableFabProps {
   onFindCompanion: () => void;
