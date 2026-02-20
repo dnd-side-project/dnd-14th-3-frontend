@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from "react";
+﻿import { useCallback, useEffect, useRef, useState } from "react";
 
 import { MapPin } from "lucide-react";
 import { Map, MapMarker, useKakaoLoader } from "react-kakao-maps-sdk";
@@ -15,10 +15,10 @@ import { LoadingIndicator } from "@/components/shared/loading";
 const DEFAULT_CENTER = { lat: 37.5665, lng: 126.978 };
 const MANUAL_CONFIRM_DELAY_MS = 5000;
 const ADDRESS_LOOKUP_TIMEOUT_MS = 5000;
-const MY_PIN_IMAGE = {
+const PIN_ME = {
   src: "/main-map/pin_me.png",
-  size: { width: 52, height: 52 },
-  options: { offset: { x: 26, y: 52 } },
+  size: { width: 60, height: 60 },
+  options: { offset: { x: 30, y: 40 } },
 };
 
 interface LocationAddressInfo {
@@ -43,6 +43,7 @@ export default function MainMapPage() {
 
   const manualConfirmTimerRef = useRef<number | null>(null);
   const addressRequestSeqRef = useRef(0);
+  const mapRef = useRef<kakao.maps.Map | null>(null);
   const currentLocationSheet = useBottomSheet();
 
   const [loading, error] = useKakaoLoader({
@@ -64,6 +65,13 @@ export default function MainMapPage() {
     window.clearTimeout(manualConfirmTimerRef.current);
     manualConfirmTimerRef.current = null;
   };
+  const centerMapOnLocation = useCallback((location: LatLng) => {
+    const normalizedLocation = { lat: location.lat, lng: location.lng };
+    setMapCenter(normalizedLocation);
+
+    if (!mapRef.current || !window.kakao?.maps?.LatLng) return;
+    mapRef.current.setCenter(new window.kakao.maps.LatLng(location.lat, location.lng));
+  }, []);
 
   // 선택한 좌표를 바텀시트에 표시할 도로명/지번/건물명으로 변환
   const lookupAddress = (location: LatLng) => {
@@ -108,7 +116,7 @@ export default function MainMapPage() {
   const confirmManualLocation = (location: LatLng) => {
     clearManualConfirmTimer();
     setCurrentLocation(location);
-    setMapCenter(location);
+    centerMapOnLocation(location);
     setPersistedLocation(location, "manual");
     setIsManualLocationMode(false);
     currentLocationSheet.open();
@@ -136,7 +144,7 @@ export default function MainMapPage() {
       return;
     }
 
-    setMapCenter(currentLocation);
+    centerMapOnLocation(currentLocation);
     currentLocationSheet.open();
     lookupAddress(currentLocation);
   };
@@ -208,10 +216,15 @@ export default function MainMapPage() {
   const handleResolveLocation = (location: LatLng) => {
     clearManualConfirmTimer();
     setCurrentLocation(location);
-    setMapCenter(location);
+    centerMapOnLocation(location);
     setPersistedLocation(location, "shared");
     lookupAddress(location);
   };
+
+  useEffect(() => {
+    if (!currentLocationSheet.isOpen || !currentLocation) return;
+    centerMapOnLocation(currentLocation);
+  }, [currentLocationSheet.isOpen, currentLocation, centerMapOnLocation]);
 
   if (!appKey) {
     return (
@@ -249,14 +262,17 @@ export default function MainMapPage() {
         center={mapCenter}
         level={3}
         draggable
+        onCreate={(map) => {
+          mapRef.current = map;
+        }}
         onClick={handleManualMapClick}
         style={{ width: "100%", height: "100%" }}
       >
-        {currentLocation ? <MapMarker position={currentLocation} image={MY_PIN_IMAGE} /> : null}
+        {currentLocation ? <MapMarker position={currentLocation} image={PIN_ME} /> : null}
         {isManualLocationMode ? (
           <MapMarker
             position={manualLocationDraft}
-            image={MY_PIN_IMAGE}
+            image={PIN_ME}
             draggable
             onDragEnd={handleManualMarkerDragEnd}
           />
@@ -275,8 +291,12 @@ export default function MainMapPage() {
         key={currentLocationSheet.key}
         isOpen={currentLocationSheet.isOpen}
         onClose={() => {}}
-        backdropClick="none"
+        backdropClick="collapse"
         draggable
+        onSnapChange={(snapState) => {
+          if (snapState !== "full" || !currentLocation) return;
+          centerMapOnLocation(currentLocation);
+        }}
         header={
           <div className="flex flex-row items-center gap-2 px-4 pt-2 pb-4">
             <MapPin />

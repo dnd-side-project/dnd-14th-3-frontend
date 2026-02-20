@@ -26,10 +26,9 @@ export function useBottomSheet() {
   const [key, setKey] = useState(() => generateUUID());
 
   const open = useCallback(() => {
-    if (isOpen) return;
     setKey(generateUUID());
     setIsOpen(true);
-  }, [isOpen]);
+  }, []);
 
   const close = useCallback(() => {
     setIsOpen(false);
