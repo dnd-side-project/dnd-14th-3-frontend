@@ -24,6 +24,7 @@ const meta = {
           "- **펼친 높이**: 본문(renderContent) 높이에 따라 측정\n" +
           '- **헤더**: header render prop으로 close / collapse / expand 액션 전달\n' +
           "- **dim 클릭**: backdropClick — none | collapse | close (기본 close)\n" +
+          "- **dim 표시**: showBackdrop 으로 dim 렌더링 여부 제어 (기본 true)\n" +
           "- **드래그**: draggable, dragToClose 로 접기·닫기 동작 제어",
       },
     },
@@ -42,6 +43,10 @@ const meta = {
       options: ["none", "collapse", "close"],
       description: "dim(배경) 클릭 시 동작",
     },
+    showBackdrop: {
+      control: "boolean",
+      description: "Show dim backdrop",
+    },
     draggable: {
       control: "boolean",
       description: "드래그로 접기/펼치기 허용",
@@ -56,6 +61,7 @@ const meta = {
   args: {
     initialSnap: "full",
     backdropClick: "close",
+    showBackdrop: true,
     draggable: true,
     dragToClose: true,
   },
