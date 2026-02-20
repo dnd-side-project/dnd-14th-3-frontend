@@ -15,6 +15,7 @@ import { LoadingIndicator } from "@/components/shared/loading";
 const DEFAULT_CENTER = { lat: 37.5665, lng: 126.978 };
 const MANUAL_CONFIRM_DELAY_MS = 5000;
 const ADDRESS_LOOKUP_TIMEOUT_MS = 5000;
+const CENTER_SYNC_EPSILON = 1e-7;
 const PIN_ME = {
   src: "/main-map/pin_me.png",
   size: { width: 60, height: 60 },
@@ -65,12 +66,38 @@ export default function MainMapPage() {
     window.clearTimeout(manualConfirmTimerRef.current);
     manualConfirmTimerRef.current = null;
   };
-  const centerMapOnLocation = useCallback((location: LatLng) => {
-    const normalizedLocation = { lat: location.lat, lng: location.lng };
-    setMapCenter(normalizedLocation);
 
+  const panMapToLocation = useCallback((location: LatLng) => {
     if (!mapRef.current || !window.kakao?.maps?.LatLng) return;
     mapRef.current.setCenter(new window.kakao.maps.LatLng(location.lat, location.lng));
+  }, []);
+
+  const centerMapOnLocation = useCallback((location: LatLng) => {
+    const normalizedLocation = { lat: location.lat, lng: location.lng };
+    setMapCenter((prevCenter) => {
+      if (
+        Math.abs(prevCenter.lat - normalizedLocation.lat) < CENTER_SYNC_EPSILON &&
+        Math.abs(prevCenter.lng - normalizedLocation.lng) < CENTER_SYNC_EPSILON
+      ) {
+        return prevCenter;
+      }
+      return normalizedLocation;
+    });
+    panMapToLocation(location);
+  }, [panMapToLocation]);
+
+  const handleMapDragEnd = useCallback((map: kakao.maps.Map) => {
+    const center = map.getCenter();
+    const nextCenter = { lat: center.getLat(), lng: center.getLng() };
+    setMapCenter((prevCenter) => {
+      if (
+        Math.abs(prevCenter.lat - nextCenter.lat) < CENTER_SYNC_EPSILON &&
+        Math.abs(prevCenter.lng - nextCenter.lng) < CENTER_SYNC_EPSILON
+      ) {
+        return prevCenter;
+      }
+      return nextCenter;
+    });
   }, []);
 
   // 선택한 좌표를 바텀시트에 표시할 도로명/지번/건물명으로 변환
@@ -154,7 +181,10 @@ export default function MainMapPage() {
     currentLocationSheet.close();
     setIsManualLocationMode(true);
     setHasManualLocationInteracted(false);
-    setManualLocationDraft(mapCenter);
+    const center = mapRef.current?.getCenter();
+    setManualLocationDraft(
+      center ? { lat: center.getLat(), lng: center.getLng() } : mapCenter
+    );
   };
 
   useEffect(() => {
@@ -223,8 +253,16 @@ export default function MainMapPage() {
 
   useEffect(() => {
     if (!currentLocationSheet.isOpen || !currentLocation) return;
-    centerMapOnLocation(currentLocation);
-  }, [currentLocationSheet.isOpen, currentLocation, centerMapOnLocation]);
+    panMapToLocation(currentLocation);
+  }, [currentLocationSheet.isOpen, currentLocation, panMapToLocation]);
+
+  const handleBottomSheetSnapChange = useCallback(
+    (snapState: "collapsed" | "full") => {
+      if (snapState !== "full" || !currentLocation) return;
+      centerMapOnLocation(currentLocation);
+    },
+    [centerMapOnLocation, currentLocation]
+  );
 
   if (!appKey) {
     return (
@@ -262,13 +300,16 @@ export default function MainMapPage() {
         center={mapCenter}
         level={3}
         draggable
+        onDragEnd={handleMapDragEnd}
         onCreate={(map) => {
           mapRef.current = map;
         }}
         onClick={handleManualMapClick}
         style={{ width: "100%", height: "100%" }}
       >
-        {currentLocation ? <MapMarker position={currentLocation} image={PIN_ME} /> : null}
+        {currentLocation && !isManualLocationMode ? (
+          <MapMarker position={currentLocation} image={PIN_ME} />
+        ) : null}
         {isManualLocationMode ? (
           <MapMarker
             position={manualLocationDraft}
@@ -293,10 +334,7 @@ export default function MainMapPage() {
         onClose={() => {}}
         backdropClick="collapse"
         draggable
-        onSnapChange={(snapState) => {
-          if (snapState !== "full" || !currentLocation) return;
-          centerMapOnLocation(currentLocation);
-        }}
+        onSnapChange={handleBottomSheetSnapChange}
         header={
           <div className="flex flex-row items-center gap-2 px-4 pt-2 pb-4">
             <MapPin />
