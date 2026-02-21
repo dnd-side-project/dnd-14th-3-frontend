@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+
 import { FALLBACK_SHOOTING_STYLES } from "@/constants/on-board";
 
 import { useProfileSetupStore } from "@/store/on-board/profile-setup.provider";
@@ -22,7 +24,8 @@ export default function ShootingStyleStep() {
   } = useProfileFunnel();
   const { data: apiStyles, isLoading, isError, refetch } = useShootingStyles();
 
-  const styles = isError ? FALLBACK_SHOOTING_STYLES : apiStyles ?? [];
+  const styles = useMemo(() => isError ? FALLBACK_SHOOTING_STYLES : apiStyles ?? [], [isError, apiStyles]);
+  const styleLength = useMemo(() => styles.length, [styles]);
 
   return (
     <ProfileStepLayout
@@ -36,7 +39,7 @@ export default function ShootingStyleStep() {
     >
       {isLoading && (
         <div className="flex flex-wrap gap-3">
-          {Array.from({ length: 7 }).map((_, i) => (
+          {Array.from({ length: styleLength }).map((_, i) => (
             <div
               key={i}
               className="h-12 w-24 animate-pulse rounded-md bg-gray-200"
