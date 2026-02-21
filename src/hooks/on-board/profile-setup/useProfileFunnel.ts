@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import {
   nicknameSchema,
-  profileSubmitSchema,
+  profileSetupDataSchema,
 } from "@/types/on-board";
 
 import { PROFILE_SETUP_STEPS } from "@/constants/on-board";
@@ -25,7 +25,8 @@ export function useProfileFunnel() {
         return result.success;
       }
       case "introduction":
-        return (data.introduction?.length ?? 0) > 0;
+        // 자기소개는 필수 입력 항목이 아니므로 항상 통과
+        return true
       case "gender":
         return data.gender !== undefined;
       case "shooting-style":
@@ -39,10 +40,8 @@ export function useProfileFunnel() {
 
   const validateAll = (): { isValid: true } | { isValid: false; errors: string[] } => {
     try {
-      profileSubmitSchema.parse({
-        newUsername: data.newUsername,
-        gender: data.gender,
-        preferredStyles: data.preferredStyles,
+      profileSetupDataSchema.parse({
+        ...data
       });
       return { isValid: true };
     } catch (error) {
