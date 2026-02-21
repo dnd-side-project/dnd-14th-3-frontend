@@ -47,29 +47,10 @@ export function useExpandableFabFlow({
     onOpenManualLocationSetting();
   }, [closeAllModals, onOpenManualLocationSetting]);
 
-  const handleLocationShareClick = useCallback(async () => {
+  const handleLocationShareClick = useCallback(() => {
     closeFab();
-
-    const permissionState = await getLocationPermissionState();
-    if (permissionState === "granted") {
-      const location = await requestCurrentLocation();
-      if (!location) {
-        openLocationShareSetupModal();
-        return;
-      }
-
-      onResolveLocation(location);
-      openFindCompanionModal();
-      return;
-    }
-
-    if (permissionState === "denied") {
-      openLocationShareSetupModal("denied");
-      return;
-    }
-
     openLocationShareSetupModal("request");
-  }, [closeFab, onResolveLocation, openFindCompanionModal, openLocationShareSetupModal]);
+  }, [closeFab, openLocationShareSetupModal]);
 
   const handleFindCompanionButtonClick = useCallback(() => {
     closeFab();
@@ -85,7 +66,8 @@ export function useExpandableFabFlow({
 
     const location = await requestCurrentLocation();
     if (!location) {
-      openLocationShareSetupModal("request");
+      const latestPermissionState = await getLocationPermissionState();
+      openLocationShareSetupModal(latestPermissionState === "denied" ? "denied" : "request");
       return;
     }
 
