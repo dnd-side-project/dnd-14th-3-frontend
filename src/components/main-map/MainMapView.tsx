@@ -79,6 +79,14 @@ export default function MainMapView({
         </div>
       ) : null}
 
+      {isSheetOpen && !isManualSearchPage ? (
+        <div className="pointer-events-none absolute top-1/2 left-1/2 z-20 -translate-x-1/2 -translate-y-[310%]">
+          <div className="rounded-md bg-mint-500 px-2 py-1 text-caption-1 text-white shadow-sm">
+            내 위치
+          </div>
+        </div>
+      ) : null}
+
       <ManualLocationSearchOverlay
         isOpen={isManualSearchPage}
         onSelectLocation={manualActions.selectSearchLocation}
@@ -94,7 +102,11 @@ export default function MainMapView({
         renderContent={
           <div className="space-y-3">
             <ManualLocationSearchButton onClick={manualActions.openSearchPage} className="mt-2" />
-            <Button.Primary fullWidth onClick={manualActions.confirmLocation} disabled={!currentLocation}>
+            <Button.Primary
+              fullWidth
+              onClick={manualActions.confirmLocation}
+              disabled={!currentLocation}
+            >
               이 위치로 설정
             </Button.Primary>
           </div>
