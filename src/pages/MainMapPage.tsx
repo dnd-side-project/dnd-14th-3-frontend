@@ -5,13 +5,14 @@ import { useKakaoLoader } from "react-kakao-maps-sdk";
 import { type LatLng, type SearchLocationResult } from "@/types/main-map/location.type";
 
 import { useMainMapLocationStore } from "@/store/main-map/location.store";
-import { Toast } from "@/store/shared/toast/toast.store";
 
+import { useMainMapFabActions } from "@/hooks/main-map/useMainMapFabActions";
 import { useMainMapState } from "@/hooks/main-map/useMainMapState";
 import { useManualLocationFlow } from "@/hooks/main-map/useManualLocationFlow";
 import { useMapAddressLookup } from "@/hooks/main-map/useMapAddressLookup";
 import { useBottomSheet } from "@/hooks/shared/bottom-sheet";
 
+import ExpandableFab from "@/components/main-map/ExpandableFab";
 import MainMapView from "@/components/main-map/MainMapView";
 import { LoadingIndicator } from "@/components/shared/loading";
 
@@ -75,53 +76,19 @@ export default function MainMapPage() {
       onConfirmManualLocation: confirmManualLocation,
     });
 
-  const handleFindCompanion = useCallback(() => {
-    clearManualConfirmTimer();
-    setIsManualLocationMode(false);
-
-    if (!currentLocation) {
-      Toast.show({
-        message: "위치가 아직 설정되지 않았어요. 위치 공유를 허용하거나 수동 위치를 설정해 주세요.",
-        type: "warning",
-        duration: 2500,
-      });
-      return;
-    }
-
-    centerMapOnLocation(currentLocation);
-    currentLocationSheet.open();
-    lookupAddress(currentLocation);
-  }, [
-    centerMapOnLocation,
-    clearManualConfirmTimer,
-    currentLocation,
-    currentLocationSheet,
-    lookupAddress,
-    setIsManualLocationMode,
-  ]);
-
-  const handleOpenManualLocationSetting = useCallback(() => {
-    clearManualConfirmTimer();
-    currentLocationSheet.close();
-    enterManualLocationMode();
-  }, [clearManualConfirmTimer, currentLocationSheet, enterManualLocationMode]);
-
-  const handleResolveLocation = useCallback(
-    (location: LatLng) => {
-      clearManualConfirmTimer();
-      setCurrentLocation(location);
-      centerMapOnLocation(location);
-      setPersistedLocation(location, "shared");
-      lookupAddress(location);
-    },
-    [
-      centerMapOnLocation,
+  const { handleFindCompanion, handleOpenManualLocationSetting, handleResolveLocation } =
+    useMainMapFabActions({
+      currentLocation,
       clearManualConfirmTimer,
+      setIsManualLocationMode,
+      centerMapOnLocation,
+      openCurrentLocationSheet: currentLocationSheet.open,
+      closeCurrentLocationSheet: currentLocationSheet.close,
       lookupAddress,
-      setCurrentLocation,
+      enterManualLocationMode,
+      setCurrentLocation: (location) => setCurrentLocation(location),
       setPersistedLocation,
-    ]
-  );
+    });
 
   const handleMapDragEnd = useCallback(
     (map: kakao.maps.Map) => {
@@ -282,23 +249,30 @@ export default function MainMapPage() {
   }
 
   return (
-    <MainMapView
-      mapCenter={mapCenter}
-      currentLocation={currentLocation}
-      isManualLocationMode={isManualLocationMode}
-      isSheetOpen={currentLocationSheet.isOpen}
-      sheetKey={currentLocationSheet.key}
-      addressInfo={addressInfo}
-      isResolvingAddress={isResolvingAddress}
-      onMapCreate={handleMapCreate}
-      onMapDragEnd={handleMapDragEnd}
-      onManualMapClick={handleManualMapClick}
-      onSearchLocation={handleSearchLocation}
-      onSelectSearchLocation={handleSelectSearchLocation}
-      onFindCompanion={handleFindCompanion}
-      onOpenManualLocationSetting={handleOpenManualLocationSetting}
-      onResolveLocation={handleResolveLocation}
-      onBottomSheetSnapChange={handleBottomSheetSnapChange}
-    />
+    <>
+      <MainMapView
+        mapCenter={mapCenter}
+        currentLocation={currentLocation}
+        isManualLocationMode={isManualLocationMode}
+        isSheetOpen={currentLocationSheet.isOpen}
+        sheetKey={currentLocationSheet.key}
+        addressInfo={addressInfo}
+        isResolvingAddress={isResolvingAddress}
+        onMapCreate={handleMapCreate}
+        onMapDragEnd={handleMapDragEnd}
+        onManualMapClick={handleManualMapClick}
+        onSearchLocation={handleSearchLocation}
+        onSelectSearchLocation={handleSelectSearchLocation}
+        onBottomSheetSnapChange={handleBottomSheetSnapChange}
+      />
+
+      {!isManualLocationMode ? (
+        <ExpandableFab
+          onFindCompanion={handleFindCompanion}
+          onOpenManualLocationSetting={handleOpenManualLocationSetting}
+          onResolveLocation={handleResolveLocation}
+        />
+      ) : null}
+    </>
   );
 }

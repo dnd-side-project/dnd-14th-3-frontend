@@ -11,7 +11,6 @@ import {
 
 import { PIN_ME } from "@/constants/main-map/location.constants";
 
-import ExpandableFab from "@/components/main-map/ExpandableFab";
 import { BottomSheet } from "@/components/shared/bottom-sheet";
 import { LoadingIndicator } from "@/components/shared/loading";
 
@@ -28,9 +27,6 @@ interface MainMapViewProps {
   onManualMapClick: (map: kakao.maps.Map, mouseEvent: kakao.maps.event.MouseEvent) => void;
   onSearchLocation: (query: string) => Promise<SearchLocationResult[]>;
   onSelectSearchLocation: (location: LatLng) => void;
-  onFindCompanion: () => void;
-  onOpenManualLocationSetting: () => void;
-  onResolveLocation: (location: LatLng) => void;
   onBottomSheetSnapChange: (snapState: "collapsed" | "full") => void;
 }
 
@@ -47,9 +43,6 @@ export default function MainMapView({
   onManualMapClick,
   onSearchLocation,
   onSelectSearchLocation,
-  onFindCompanion,
-  onOpenManualLocationSetting,
-  onResolveLocation,
   onBottomSheetSnapChange,
 }: MainMapViewProps) {
   const isCenterPinMode = isManualLocationMode || isSheetOpen;
@@ -168,14 +161,6 @@ export default function MainMapView({
             )}
           </div>
         </div>
-      ) : null}
-
-      {!isManualLocationMode ? (
-        <ExpandableFab
-          onFindCompanion={onFindCompanion}
-          onOpenManualLocationSetting={onOpenManualLocationSetting}
-          onResolveLocation={onResolveLocation}
-        />
       ) : null}
 
       <BottomSheet

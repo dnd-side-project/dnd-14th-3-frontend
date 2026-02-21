@@ -1,15 +1,11 @@
-import { useState } from "react";
-
 import { LocateFixed, Search } from "lucide-react";
 
 import { type LatLng } from "@/types/main-map/location.type";
 
+import { useExpandableFabFlow } from "@/hooks/main-map/useExpandableFabFlow";
+
 import ExpandableFabMenu from "@/components/main-map/ExpandableFabMenu";
 import FabActionPopups from "@/components/main-map/FabActionPopups";
-
-import { requestCurrentLocation } from "@/utils/main-map/geolocation";
-
-type LocationPermissionState = PermissionState | "unknown";
 
 interface ExpandableFabProps {
   onFindCompanion: () => void;
@@ -18,75 +14,28 @@ interface ExpandableFabProps {
   defaultOpenFindCompanionModal?: boolean;
 }
 
-async function getLocationPermissionState(): Promise<LocationPermissionState> {
-  if (typeof navigator === "undefined") return "unknown";
-
-  if (typeof navigator.permissions?.query === "function") {
-    try {
-      const status = await navigator.permissions.query({ name: "geolocation" as PermissionName });
-      return status.state;
-    } catch {
-      return "unknown";
-    }
-  }
-
-  return "unknown";
-}
-
 export default function ExpandableFab({
   onFindCompanion,
   onOpenManualLocationSetting,
   onResolveLocation,
   defaultOpenFindCompanionModal = false,
 }: ExpandableFabProps) {
-  const [isFabExpanded, setIsFabExpanded] = useState(false);
-  const [isLocationShareSetupModalOpen, setIsLocationShareSetupModalOpen] = useState(false);
-  const [isFindCompanionModalOpen, setIsFindCompanionModalOpen] = useState(
-    defaultOpenFindCompanionModal
-  );
-
-  const closeAllModals = () => {
-    setIsLocationShareSetupModalOpen(false);
-    setIsFindCompanionModalOpen(false);
-  };
-
-  const openManualLocationSetting = () => {
-    closeAllModals();
-    onOpenManualLocationSetting();
-  };
-
-  const handleLocationShareClick = async () => {
-    setIsFabExpanded(false);
-
-    const permissionState = await getLocationPermissionState();
-    if (permissionState === "granted") {
-      const location = await requestCurrentLocation();
-      if (!location) {
-        setIsLocationShareSetupModalOpen(true);
-        return;
-      }
-
-      onResolveLocation(location);
-      setIsFindCompanionModalOpen(true);
-      return;
-    }
-
-    setIsLocationShareSetupModalOpen(true);
-  };
-
-  const handleFindCompanionButtonClick = () => {
-    setIsFabExpanded(false);
-    onFindCompanion();
-  };
-
-  const handleConfirmLocationShare = async () => {
-    const location = await requestCurrentLocation();
-    if (!location) return;
-    onResolveLocation(location);
-
-    setIsLocationShareSetupModalOpen(false);
-    setIsFindCompanionModalOpen(true);
-  };
+  const {
+    isFabExpanded,
+    setFabExpanded,
+    closeAllModals,
+    openManualLocationSetting,
+    handleLocationShareClick,
+    handleFindCompanionButtonClick,
+    handleConfirmLocationShare,
+    handleConfirmFindCompanion,
+    handlePauseFromFindCompanion,
+  } = useExpandableFabFlow({
+    onFindCompanion,
+    onOpenManualLocationSetting,
+    onResolveLocation,
+    defaultOpenFindCompanionModal,
+  });
 
   const fabItems = [
     {
@@ -108,21 +57,16 @@ export default function ExpandableFab({
       <ExpandableFabMenu
         isExpanded={isFabExpanded}
         items={fabItems}
-        onToggle={() => setIsFabExpanded((prev) => !prev)}
-        onClose={() => setIsFabExpanded(false)}
+        onToggle={() => setFabExpanded(!isFabExpanded)}
+        onClose={() => setFabExpanded(false)}
       />
 
       <FabActionPopups
-        isLocationShareSetupModalOpen={isLocationShareSetupModalOpen}
-        isFindCompanionModalOpen={isFindCompanionModalOpen}
         onCloseAll={closeAllModals}
         onConfirmLocationShare={handleConfirmLocationShare}
         onPauseFromLocationShare={openManualLocationSetting}
-        onConfirmFindCompanion={() => {
-          onFindCompanion();
-          closeAllModals();
-        }}
-        onPauseFromFindCompanion={() => setIsFindCompanionModalOpen(false)}
+        onConfirmFindCompanion={handleConfirmFindCompanion}
+        onPauseFromFindCompanion={handlePauseFromFindCompanion}
       />
     </>
   );

@@ -1,8 +1,8 @@
+import { useMainMapFabFlowStore } from "@/store/main-map/fab-flow.store";
+
 import { Popup } from "@/components/shared/popup";
 
 interface FabActionPopupsProps {
-  isLocationShareSetupModalOpen: boolean;
-  isFindCompanionModalOpen: boolean;
   onCloseAll: () => void;
   onConfirmLocationShare: () => void;
   onPauseFromLocationShare: () => void;
@@ -11,14 +11,17 @@ interface FabActionPopupsProps {
 }
 
 export default function FabActionPopups({
-  isLocationShareSetupModalOpen,
-  isFindCompanionModalOpen,
   onCloseAll,
   onConfirmLocationShare,
   onPauseFromLocationShare,
   onConfirmFindCompanion,
   onPauseFromFindCompanion,
 }: FabActionPopupsProps) {
+  const isLocationShareSetupModalOpen = useMainMapFabFlowStore(
+    (state) => state.isLocationShareSetupModalOpen
+  );
+  const isFindCompanionModalOpen = useMainMapFabFlowStore((state) => state.isFindCompanionModalOpen);
+
   return (
     <>
       <Popup
