@@ -1,10 +1,13 @@
-﻿import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import { useKakaoLoader } from "react-kakao-maps-sdk";
 
-import { type LatLng, type SearchLocationResult } from "@/types/main-map/location.type";
+import { type LatLng } from "@/types/main-map/location.type";
 
+import { usePageLayoutStore } from "@/store/layout/pageLayout.store";
 import { useMainMapLocationStore } from "@/store/main-map/location.store";
+import { Toast } from "@/store/shared/toast/toast.store";
 
 import { useMainMapFabActions } from "@/hooks/main-map/useMainMapFabActions";
 import { useMainMapState } from "@/hooks/main-map/useMainMapState";
@@ -18,9 +21,14 @@ import { LoadingIndicator } from "@/components/shared/loading";
 
 export default function MainMapPage() {
   const appKey = import.meta.env.VITE_KAKAO_MAP_APP_KEY;
+  const [searchParams, setSearchParams] = useSearchParams();
   const persistedLocation = useMainMapLocationStore((state) => state.selectedLocation);
   const setPersistedLocation = useMainMapLocationStore((state) => state.setSelectedLocation);
+  const setLayoutOptions = usePageLayoutStore((state) => state.setLayoutOptions);
+  const resetLayoutOptions = usePageLayoutStore((state) => state.resetLayoutOptions);
   const currentLocationSheet = useBottomSheet();
+  const isManualSearchPage = searchParams.get("manualSearch") === "1";
+  const wasManualLocationModeRef = useRef(false);
 
   const {
     mapCenter,
@@ -66,20 +74,17 @@ export default function MainMapPage() {
     ]
   );
 
-  const { clearManualConfirmTimer, handleManualMapDragEnd, handleManualMapClick } =
-    useManualLocationFlow({
-      isManualLocationMode,
-      hasManualLocationInteracted,
-      setHasManualLocationInteracted,
-      setManualLocationDraft,
-      setCurrentLocation,
-      onConfirmManualLocation: confirmManualLocation,
-    });
+  const { handleManualMapDragEnd, handleManualMapClick } = useManualLocationFlow({
+    isManualLocationMode,
+    hasManualLocationInteracted,
+    setHasManualLocationInteracted,
+    setManualLocationDraft,
+    setCurrentLocation,
+  });
 
   const { handleFindCompanion, handleOpenManualLocationSetting, handleResolveLocation } =
     useMainMapFabActions({
       currentLocation,
-      clearManualConfirmTimer,
       setIsManualLocationMode,
       centerMapOnLocation,
       openCurrentLocationSheet: currentLocationSheet.open,
@@ -102,13 +107,11 @@ export default function MainMapPage() {
       if (!currentLocationSheet.isOpen) return;
       const center = map.getCenter();
       const nextLocation = { lat: center.getLat(), lng: center.getLng() };
-      clearManualConfirmTimer();
       setCurrentLocation(nextLocation);
       setPersistedLocation(nextLocation, "manual");
       lookupAddress(nextLocation);
     },
     [
-      clearManualConfirmTimer,
       currentLocationSheet.isOpen,
       handleManualMapDragEnd,
       isManualLocationMode,
@@ -119,62 +122,50 @@ export default function MainMapPage() {
     ]
   );
 
-  const handleSearchLocation = useCallback(
-    (query: string) =>
-      new Promise<SearchLocationResult[]>((resolve) => {
-        if (typeof window === "undefined" || !window.kakao?.maps?.services) {
-          resolve([]);
-          return;
-        }
-
-        const geocoder = new window.kakao.maps.services.Geocoder();
-        geocoder.addressSearch(query, (addressResults, addressStatus) => {
-          if (addressStatus === window.kakao.maps.services.Status.OK && addressResults.length > 0) {
-            const results: SearchLocationResult[] = addressResults.map((item, index) => ({
-              id: `address-${item.x}-${item.y}-${index}`,
-              title: item.address_name,
-              address: item.road_address?.address_name ?? item.address_name,
-              location: { lat: Number(item.y), lng: Number(item.x) },
-            }));
-            resolve(results);
-            return;
-          }
-
-          const places = new window.kakao.maps.services.Places();
-          places.keywordSearch(query, (keywordResults, keywordStatus) => {
-            if (
-              keywordStatus !== window.kakao.maps.services.Status.OK ||
-              keywordResults.length === 0
-            ) {
-              // Toast.show({
-              //   message: "검색 결과를 찾지 못했어요.",
-              //   type: "warning",
-              //   duration: 2500,
-              // });
-              resolve([]);
-              return;
-            }
-
-            const results: SearchLocationResult[] = keywordResults.map((item, index) => ({
-              id: `place-${item.id ?? `${item.x}-${item.y}`}-${index}`,
-              title: item.place_name,
-              address: item.road_address_name || item.address_name,
-              location: { lat: Number(item.y), lng: Number(item.x) },
-            }));
-            resolve(results);
-          });
-        });
-      }),
-    []
-  );
-
   const handleSelectSearchLocation = useCallback(
     (location: LatLng) => {
-      clearManualConfirmTimer();
-      confirmManualLocation(location);
+      setCurrentLocation(location);
+      centerMapOnLocation(location);
+
+      if (isManualLocationMode) {
+        setManualLocationDraft(location);
+      } else {
+        setPersistedLocation(location, "manual");
+        lookupAddress(location);
+      }
+
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete("manualSearch");
+      setSearchParams(nextParams);
     },
-    [clearManualConfirmTimer, confirmManualLocation]
+    [
+      centerMapOnLocation,
+      isManualLocationMode,
+      lookupAddress,
+      searchParams,
+      setCurrentLocation,
+      setManualLocationDraft,
+      setPersistedLocation,
+      setSearchParams,
+    ]
   );
+
+  const handleConfirmManualLocation = useCallback(() => {
+    if (!currentLocation) return;
+    confirmManualLocation(currentLocation);
+  }, [confirmManualLocation, currentLocation]);
+
+  const handleOpenManualSearchPage = useCallback(() => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("manualSearch", "1");
+    setSearchParams(nextParams);
+  }, [searchParams, setSearchParams]);
+
+  const closeManualSearchPage = useCallback(() => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("manualSearch");
+    setSearchParams(nextParams);
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     if (!isManualLocationMode) return;
@@ -182,6 +173,41 @@ export default function MainMapPage() {
     if (!center) return;
     setManualLocationDraft({ lat: center.getLat(), lng: center.getLng() });
   }, [isManualLocationMode, mapRef, setManualLocationDraft]);
+
+  useEffect(() => {
+    if (!isManualLocationMode || wasManualLocationModeRef.current) return;
+    Toast.show({
+      message: "현재 내 위치로 핀을 이동해 주세요",
+      type: "info",
+      duration: 3000,
+    });
+  }, [isManualLocationMode]);
+
+  useEffect(() => {
+    wasManualLocationModeRef.current = isManualLocationMode;
+  }, [isManualLocationMode]);
+
+  useEffect(() => {
+    if (!isManualSearchPage) {
+      resetLayoutOptions();
+      return;
+    }
+
+    setLayoutOptions({
+      leftAction: "back",
+      onLeftActionClick: closeManualSearchPage,
+      showRightActions: false,
+      showBottomNav: false,
+    });
+
+    return () => resetLayoutOptions();
+  }, [closeManualSearchPage, isManualSearchPage, resetLayoutOptions, setLayoutOptions]);
+
+  useEffect(() => {
+    if (!isManualSearchPage) return;
+    if (isManualLocationMode || currentLocationSheet.isOpen) return;
+    closeManualSearchPage();
+  }, [closeManualSearchPage, currentLocationSheet.isOpen, isManualLocationMode, isManualSearchPage]);
 
   useEffect(() => {
     if (!currentLocationSheet.isOpen || isManualLocationMode) return;
@@ -254,23 +280,31 @@ export default function MainMapPage() {
         mapCenter={mapCenter}
         currentLocation={currentLocation}
         isManualLocationMode={isManualLocationMode}
+        isManualSearchPage={isManualSearchPage}
         isSheetOpen={currentLocationSheet.isOpen}
         sheetKey={currentLocationSheet.key}
         addressInfo={addressInfo}
         isResolvingAddress={isResolvingAddress}
-        onMapCreate={handleMapCreate}
-        onMapDragEnd={handleMapDragEnd}
-        onManualMapClick={handleManualMapClick}
-        onSearchLocation={handleSearchLocation}
-        onSelectSearchLocation={handleSelectSearchLocation}
+        mapHandlers={{
+          create: handleMapCreate,
+          dragEnd: handleMapDragEnd,
+          manualClick: handleManualMapClick,
+        }}
+        manualActions={{
+          selectSearchLocation: handleSelectSearchLocation,
+          openSearchPage: handleOpenManualSearchPage,
+          confirmLocation: handleConfirmManualLocation,
+        }}
         onBottomSheetSnapChange={handleBottomSheetSnapChange}
       />
 
-      {!isManualLocationMode ? (
+      {!isManualLocationMode && !isManualSearchPage ? (
         <ExpandableFab
-          onFindCompanion={handleFindCompanion}
-          onOpenManualLocationSetting={handleOpenManualLocationSetting}
-          onResolveLocation={handleResolveLocation}
+          actions={{
+            findCompanion: handleFindCompanion,
+            openManualLocationSetting: handleOpenManualLocationSetting,
+            resolveLocation: handleResolveLocation,
+          }}
         />
       ) : null}
     </>

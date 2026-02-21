@@ -8,16 +8,16 @@ import ExpandableFabMenu from "@/components/main-map/ExpandableFabMenu";
 import FabActionPopups from "@/components/main-map/FabActionPopups";
 
 interface ExpandableFabProps {
-  onFindCompanion: () => void;
-  onOpenManualLocationSetting: () => void;
-  onResolveLocation: (location: LatLng) => void;
+  actions: {
+    findCompanion: () => void;
+    openManualLocationSetting: () => void;
+    resolveLocation: (location: LatLng) => void;
+  };
   defaultOpenFindCompanionModal?: boolean;
 }
 
 export default function ExpandableFab({
-  onFindCompanion,
-  onOpenManualLocationSetting,
-  onResolveLocation,
+  actions,
   defaultOpenFindCompanionModal = false,
 }: ExpandableFabProps) {
   const {
@@ -31,9 +31,9 @@ export default function ExpandableFab({
     handleConfirmFindCompanion,
     handlePauseFromFindCompanion,
   } = useExpandableFabFlow({
-    onFindCompanion,
-    onOpenManualLocationSetting,
-    onResolveLocation,
+    onFindCompanion: actions.findCompanion,
+    onOpenManualLocationSetting: actions.openManualLocationSetting,
+    onResolveLocation: actions.resolveLocation,
     defaultOpenFindCompanionModal,
   });
 
@@ -62,11 +62,13 @@ export default function ExpandableFab({
       />
 
       <FabActionPopups
-        onCloseAll={closeAllModals}
-        onConfirmLocationShare={handleConfirmLocationShare}
-        onPauseFromLocationShare={openManualLocationSetting}
-        onConfirmFindCompanion={handleConfirmFindCompanion}
-        onPauseFromFindCompanion={handlePauseFromFindCompanion}
+        actions={{
+          closeAll: closeAllModals,
+          confirmLocationShare: handleConfirmLocationShare,
+          pauseFromLocationShare: openManualLocationSetting,
+          confirmFindCompanion: handleConfirmFindCompanion,
+          pauseFromFindCompanion: handlePauseFromFindCompanion,
+        }}
       />
     </>
   );

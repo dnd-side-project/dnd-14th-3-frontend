@@ -6,7 +6,6 @@ import { Toast } from "@/store/shared/toast/toast.store";
 
 interface UseMainMapFabActionsParams {
   currentLocation: LatLng | null;
-  clearManualConfirmTimer: () => void;
   setIsManualLocationMode: (isManualLocationMode: boolean) => void;
   centerMapOnLocation: (location: LatLng) => void;
   openCurrentLocationSheet: () => void;
@@ -19,7 +18,6 @@ interface UseMainMapFabActionsParams {
 
 export function useMainMapFabActions({
   currentLocation,
-  clearManualConfirmTimer,
   setIsManualLocationMode,
   centerMapOnLocation,
   openCurrentLocationSheet,
@@ -30,7 +28,6 @@ export function useMainMapFabActions({
   setPersistedLocation,
 }: UseMainMapFabActionsParams) {
   const handleFindCompanion = useCallback(() => {
-    clearManualConfirmTimer();
     setIsManualLocationMode(false);
 
     if (!currentLocation) {
@@ -47,7 +44,6 @@ export function useMainMapFabActions({
     lookupAddress(currentLocation);
   }, [
     centerMapOnLocation,
-    clearManualConfirmTimer,
     currentLocation,
     lookupAddress,
     openCurrentLocationSheet,
@@ -55,14 +51,12 @@ export function useMainMapFabActions({
   ]);
 
   const handleOpenManualLocationSetting = useCallback(() => {
-    clearManualConfirmTimer();
     closeCurrentLocationSheet();
     enterManualLocationMode();
-  }, [clearManualConfirmTimer, closeCurrentLocationSheet, enterManualLocationMode]);
+  }, [closeCurrentLocationSheet, enterManualLocationMode]);
 
   const handleResolveLocation = useCallback(
     (location: LatLng) => {
-      clearManualConfirmTimer();
       setCurrentLocation(location);
       centerMapOnLocation(location);
       setPersistedLocation(location, "shared");
@@ -70,7 +64,6 @@ export function useMainMapFabActions({
     },
     [
       centerMapOnLocation,
-      clearManualConfirmTimer,
       lookupAddress,
       setCurrentLocation,
       setPersistedLocation,

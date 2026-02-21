@@ -2,20 +2,20 @@
 
 import { Popup } from "@/components/shared/popup";
 
+interface FabPopupActions {
+  closeAll: () => void;
+  confirmLocationShare: () => void;
+  pauseFromLocationShare: () => void;
+  confirmFindCompanion: () => void;
+  pauseFromFindCompanion: () => void;
+}
+
 interface FabActionPopupsProps {
-  onCloseAll: () => void;
-  onConfirmLocationShare: () => void;
-  onPauseFromLocationShare: () => void;
-  onConfirmFindCompanion: () => void;
-  onPauseFromFindCompanion: () => void;
+  actions: FabPopupActions;
 }
 
 export default function FabActionPopups({
-  onCloseAll,
-  onConfirmLocationShare,
-  onPauseFromLocationShare,
-  onConfirmFindCompanion,
-  onPauseFromFindCompanion,
+  actions,
 }: FabActionPopupsProps) {
   const isLocationShareSetupModalOpen = useMainMapFabFlowStore(
     (state) => state.isLocationShareSetupModalOpen
@@ -38,9 +38,11 @@ export default function FabActionPopups({
         }
         confirmMessage={isDeniedState ? "수동으로 위치 설정" : "위치 공유 허용하기"}
         cancelMessage="잠시 멈출래요"
-        onClose={onCloseAll}
-        onConfirm={isDeniedState ? onPauseFromLocationShare : onConfirmLocationShare}
-        onCancel={isDeniedState ? onCloseAll : onPauseFromLocationShare}
+        onClose={actions.closeAll}
+        onConfirm={
+          isDeniedState ? actions.pauseFromLocationShare : actions.confirmLocationShare
+        }
+        onCancel={isDeniedState ? actions.closeAll : actions.pauseFromLocationShare}
       />
 
       <Popup
@@ -49,9 +51,9 @@ export default function FabActionPopups({
         content={"현재 위치 기준 500m 이내에서\n사진 동행을 찾아요."}
         confirmMessage="동행을 찾을게요"
         cancelMessage="잠시 멈출래요"
-        onClose={onCloseAll}
-        onConfirm={onConfirmFindCompanion}
-        onCancel={onPauseFromFindCompanion}
+        onClose={actions.closeAll}
+        onConfirm={actions.confirmFindCompanion}
+        onCancel={actions.pauseFromFindCompanion}
       />
     </>
   );
