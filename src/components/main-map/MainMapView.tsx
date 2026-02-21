@@ -174,7 +174,7 @@ export default function MainMapView({
         header={
           <div className="flex flex-row items-center gap-2 px-4 pt-2 pb-4">
             <MapPin />
-            <div className="text-heading-2 font-bold text-gray-900">현재 선택 위치</div>
+            <div className="text-heading-2 font-bold text-gray-900">현재 내 위치</div>
           </div>
         }
         renderContent={

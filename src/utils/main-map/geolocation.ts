@@ -3,6 +3,7 @@ import { type LatLng } from "@/types/main-map/location.type";
 export type LocationPermissionState = PermissionState | "unknown";
 
 export async function getLocationPermissionState(): Promise<LocationPermissionState> {
+  if (typeof window === "undefined" || !window.isSecureContext) return "unknown";
   if (typeof navigator === "undefined") return "unknown";
 
   if (typeof navigator.permissions?.query === "function") {
@@ -18,7 +19,7 @@ export async function getLocationPermissionState(): Promise<LocationPermissionSt
 }
 
 export async function requestCurrentLocation(): Promise<LatLng | null> {
-  if (typeof window === "undefined" || window.location.protocol !== "https:") return null;
+  if (typeof window === "undefined" || !window.isSecureContext) return null;
   if (typeof navigator === "undefined" || !navigator.geolocation) return null;
 
   return new Promise((resolve) => {
