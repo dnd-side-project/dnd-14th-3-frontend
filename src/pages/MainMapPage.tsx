@@ -2,7 +2,7 @@
 
 import { useKakaoLoader } from "react-kakao-maps-sdk";
 
-import { type LatLng } from "@/types/main-map/location.type";
+import { type LatLng, type SearchLocationResult } from "@/types/main-map/location.type";
 
 import { useMainMapLocationStore } from "@/store/main-map/location.store";
 import { Toast } from "@/store/shared/toast/toast.store";
@@ -24,7 +24,6 @@ export default function MainMapPage() {
   const {
     mapCenter,
     currentLocation,
-    manualLocationDraft,
     isManualLocationMode,
     hasManualLocationInteracted,
     mapRef,
@@ -34,7 +33,7 @@ export default function MainMapPage() {
     setHasManualLocationInteracted,
     panMapToLocation,
     centerMapOnLocation,
-    handleMapDragEnd,
+    handleMapDragEnd: syncMapCenterOnDragEnd,
     enterManualLocationMode,
   } = useMainMapState({ persistedLocation });
 
@@ -66,7 +65,7 @@ export default function MainMapPage() {
     ]
   );
 
-  const { clearManualConfirmTimer, handleManualMarkerDragEnd, handleManualMapClick } =
+  const { clearManualConfirmTimer, handleManualMapDragEnd, handleManualMapClick } =
     useManualLocationFlow({
       isManualLocationMode,
       hasManualLocationInteracted,
@@ -124,24 +123,113 @@ export default function MainMapPage() {
     ]
   );
 
-  const handleCurrentMarkerDragEnd = useCallback(
-    (marker: kakao.maps.Marker) => {
-      const position = marker.getPosition();
-      const nextLocation = { lat: position.getLat(), lng: position.getLng() };
+  const handleMapDragEnd = useCallback(
+    (map: kakao.maps.Map) => {
+      syncMapCenterOnDragEnd(map);
+
+      if (isManualLocationMode) {
+        handleManualMapDragEnd(map);
+        return;
+      }
+
+      if (!currentLocationSheet.isOpen) return;
+      const center = map.getCenter();
+      const nextLocation = { lat: center.getLat(), lng: center.getLng() };
       clearManualConfirmTimer();
       setCurrentLocation(nextLocation);
-      centerMapOnLocation(nextLocation);
       setPersistedLocation(nextLocation, "manual");
       lookupAddress(nextLocation);
     },
     [
-      centerMapOnLocation,
       clearManualConfirmTimer,
+      currentLocationSheet.isOpen,
+      handleManualMapDragEnd,
+      isManualLocationMode,
       lookupAddress,
       setCurrentLocation,
       setPersistedLocation,
+      syncMapCenterOnDragEnd,
     ]
   );
+
+  const handleSearchLocation = useCallback(
+    (query: string) =>
+      new Promise<SearchLocationResult[]>((resolve) => {
+        if (typeof window === "undefined" || !window.kakao?.maps?.services) {
+          resolve([]);
+          return;
+        }
+
+        const geocoder = new window.kakao.maps.services.Geocoder();
+        geocoder.addressSearch(query, (addressResults, addressStatus) => {
+          if (addressStatus === window.kakao.maps.services.Status.OK && addressResults.length > 0) {
+            const results: SearchLocationResult[] = addressResults.map((item, index) => ({
+              id: `address-${item.x}-${item.y}-${index}`,
+              title: item.address_name,
+              address: item.road_address?.address_name ?? item.address_name,
+              location: { lat: Number(item.y), lng: Number(item.x) },
+            }));
+            resolve(results);
+            return;
+          }
+
+          const places = new window.kakao.maps.services.Places();
+          places.keywordSearch(query, (keywordResults, keywordStatus) => {
+            if (
+              keywordStatus !== window.kakao.maps.services.Status.OK ||
+              keywordResults.length === 0
+            ) {
+              // Toast.show({
+              //   message: "검색 결과를 찾지 못했어요.",
+              //   type: "warning",
+              //   duration: 2500,
+              // });
+              resolve([]);
+              return;
+            }
+
+            const results: SearchLocationResult[] = keywordResults.map((item, index) => ({
+              id: `place-${item.id ?? `${item.x}-${item.y}`}-${index}`,
+              title: item.place_name,
+              address: item.road_address_name || item.address_name,
+              location: { lat: Number(item.y), lng: Number(item.x) },
+            }));
+            resolve(results);
+          });
+        });
+      }),
+    []
+  );
+
+  const handleSelectSearchLocation = useCallback(
+    (location: LatLng) => {
+      clearManualConfirmTimer();
+      confirmManualLocation(location);
+    },
+    [clearManualConfirmTimer, confirmManualLocation]
+  );
+
+  useEffect(() => {
+    if (!isManualLocationMode) return;
+    const center = mapRef.current?.getCenter();
+    if (!center) return;
+    setManualLocationDraft({ lat: center.getLat(), lng: center.getLng() });
+  }, [isManualLocationMode, mapRef, setManualLocationDraft]);
+
+  useEffect(() => {
+    if (!currentLocationSheet.isOpen || isManualLocationMode) return;
+    const center = mapRef.current?.getCenter();
+    if (!center) return;
+    const nextLocation = { lat: center.getLat(), lng: center.getLng() };
+    setCurrentLocation(nextLocation);
+    lookupAddress(nextLocation);
+  }, [
+    currentLocationSheet.isOpen,
+    isManualLocationMode,
+    lookupAddress,
+    mapRef,
+    setCurrentLocation,
+  ]);
 
   useEffect(() => {
     if (!currentLocationSheet.isOpen || !currentLocation) return;
@@ -169,7 +257,7 @@ export default function MainMapPage() {
         <p className="text-center text-body-2 text-warning-700">
           {import.meta.env.DEV
             ? "카카오맵 키가 설정되지 않았습니다. .env의 VITE_KAKAO_MAP_APP_KEY를 확인해주세요."
-            : "지도를 불러올 수 없습니다. 잠시 후 다시 시도해주세요."}
+            : "불러올 수 없습니다. 잠시 후 다시 시도해주세요."}
         </p>
       </div>
     );
@@ -197,7 +285,6 @@ export default function MainMapPage() {
     <MainMapView
       mapCenter={mapCenter}
       currentLocation={currentLocation}
-      manualLocationDraft={manualLocationDraft}
       isManualLocationMode={isManualLocationMode}
       isSheetOpen={currentLocationSheet.isOpen}
       sheetKey={currentLocationSheet.key}
@@ -206,8 +293,8 @@ export default function MainMapPage() {
       onMapCreate={handleMapCreate}
       onMapDragEnd={handleMapDragEnd}
       onManualMapClick={handleManualMapClick}
-      onManualMarkerDragEnd={handleManualMarkerDragEnd}
-      onCurrentMarkerDragEnd={handleCurrentMarkerDragEnd}
+      onSearchLocation={handleSearchLocation}
+      onSelectSearchLocation={handleSelectSearchLocation}
       onFindCompanion={handleFindCompanion}
       onOpenManualLocationSetting={handleOpenManualLocationSetting}
       onResolveLocation={handleResolveLocation}

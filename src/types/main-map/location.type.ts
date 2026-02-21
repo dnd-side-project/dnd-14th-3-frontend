@@ -5,3 +5,10 @@ export interface LocationAddressInfo {
   jibunAddress: string;
   buildingName: string;
 }
+
+export interface SearchLocationResult {
+  id: string;
+  title: string;
+  address: string;
+  location: LatLng;
+}

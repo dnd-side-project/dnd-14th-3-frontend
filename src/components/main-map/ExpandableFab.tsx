@@ -7,6 +7,8 @@ import { type LatLng } from "@/types/main-map/location.type";
 import ExpandableFabMenu from "@/components/main-map/ExpandableFabMenu";
 import FabActionPopups from "@/components/main-map/FabActionPopups";
 
+import { requestCurrentLocation } from "@/utils/main-map/geolocation";
+
 type LocationPermissionState = PermissionState | "unknown";
 
 interface ExpandableFabProps {
@@ -29,19 +31,6 @@ async function getLocationPermissionState(): Promise<LocationPermissionState> {
   }
 
   return "unknown";
-}
-
-async function requestLocationPermissionWithPrompt(): Promise<LatLng | null> {
-  if (typeof window === "undefined" || window.location.protocol !== "https:") return null;
-  if (typeof navigator === "undefined" || !navigator.geolocation) return null;
-
-  return new Promise((resolve) => {
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => resolve({ lat: coords.latitude, lng: coords.longitude }),
-      () => resolve(null),
-      { enableHighAccuracy: false, timeout: 8000, maximumAge: 0 }
-    );
-  });
 }
 
 export default function ExpandableFab({
@@ -71,7 +60,7 @@ export default function ExpandableFab({
 
     const permissionState = await getLocationPermissionState();
     if (permissionState === "granted") {
-      const location = await requestLocationPermissionWithPrompt();
+      const location = await requestCurrentLocation();
       if (!location) {
         setIsLocationShareSetupModalOpen(true);
         return;
@@ -91,7 +80,7 @@ export default function ExpandableFab({
   };
 
   const handleConfirmLocationShare = async () => {
-    const location = await requestLocationPermissionWithPrompt();
+    const location = await requestCurrentLocation();
     if (!location) return;
     onResolveLocation(location);
 

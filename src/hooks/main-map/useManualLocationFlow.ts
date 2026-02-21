@@ -1,4 +1,4 @@
-﻿import { type Dispatch, type SetStateAction,useCallback, useEffect, useRef } from "react";
+import { type Dispatch, type SetStateAction, useCallback, useEffect, useRef } from "react";
 
 import { type LatLng } from "@/types/main-map/location.type";
 
@@ -41,21 +41,21 @@ export function useManualLocationFlow({
     [clearManualConfirmTimer, onConfirmManualLocation]
   );
 
-  useEffect(() => {
-    if (!isManualLocationMode) return;
-    const timer = window.setTimeout(() => {
-      Toast.show({
-        message: "현재 내 위치로 아이콘을 이동해주세요",
-        type: "info",
-        duration: 86400000,
-      });
-    }, 100);
+  // useEffect(() => {
+  //   if (!isManualLocationMode) return;
+  //   const timer = window.setTimeout(() => {
+  //     Toast.show({
+  //       message: "지도를 움직여 현재 위치를 가운데 핀에 맞춰주세요",
+  //       type: "info",
+  //       duration: 86400000,
+  //     });
+  //   }, 100);
 
-    return () => {
-      window.clearTimeout(timer);
-      Toast.hide();
-    };
-  }, [isManualLocationMode]);
+  //   return () => {
+  //     window.clearTimeout(timer);
+  //     Toast.hide();
+  //   };
+  // }, [isManualLocationMode]);
 
   useEffect(() => clearManualConfirmTimer, [clearManualConfirmTimer]);
 
@@ -65,10 +65,8 @@ export function useManualLocationFlow({
     Toast.hide();
   }, [hasManualLocationInteracted, setHasManualLocationInteracted]);
 
-  const handleManualMarkerDragEnd = useCallback(
-    (marker: kakao.maps.Marker) => {
-      const position = marker.getPosition();
-      const nextLocation = { lat: position.getLat(), lng: position.getLng() };
+  const applyManualLocation = useCallback(
+    (nextLocation: LatLng) => {
       markInteraction();
       setManualLocationDraft(nextLocation);
       setCurrentLocation(nextLocation);
@@ -77,28 +75,30 @@ export function useManualLocationFlow({
     [markInteraction, scheduleManualConfirm, setCurrentLocation, setManualLocationDraft]
   );
 
+  const handleManualMapDragEnd = useCallback(
+    (map: kakao.maps.Map) => {
+      if (!isManualLocationMode) return;
+      const center = map.getCenter();
+      applyManualLocation({ lat: center.getLat(), lng: center.getLng() });
+    },
+    [applyManualLocation, isManualLocationMode]
+  );
+
   const handleManualMapClick = useCallback(
-    (_map: kakao.maps.Map, mouseEvent: kakao.maps.event.MouseEvent) => {
+    (map: kakao.maps.Map, mouseEvent: kakao.maps.event.MouseEvent) => {
       if (!isManualLocationMode) return;
       const clicked = mouseEvent.latLng;
       const nextLocation = { lat: clicked.getLat(), lng: clicked.getLng() };
-      markInteraction();
-      setManualLocationDraft(nextLocation);
-      setCurrentLocation(nextLocation);
-      scheduleManualConfirm(nextLocation);
+      map.panTo(clicked);
+      applyManualLocation(nextLocation);
     },
-    [
-      isManualLocationMode,
-      markInteraction,
-      scheduleManualConfirm,
-      setCurrentLocation,
-      setManualLocationDraft,
-    ]
+    [applyManualLocation, isManualLocationMode]
   );
 
   return {
+    applyManualLocation,
     clearManualConfirmTimer,
-    handleManualMarkerDragEnd,
+    handleManualMapDragEnd,
     handleManualMapClick,
   };
 }
