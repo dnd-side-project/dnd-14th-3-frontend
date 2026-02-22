@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { ChevronUp, MapPin, X } from "lucide-react";
 import { Map, MapMarker } from "react-kakao-maps-sdk";
@@ -15,8 +15,6 @@ import { Button } from "@/components/shared/button";
 import { ChipButton } from "@/components/shared/chip-button";
 import { TextArea } from "@/components/shared/textarea";
 
-import { getLocationPermissionState } from "@/utils/main-map/geolocation";
-
 interface MainMapViewProps {
   mapCenter: LatLng;
   currentLocation: LatLng | null;
@@ -26,6 +24,7 @@ interface MainMapViewProps {
   sheetKey: string;
   addressInfo: LocationAddressInfo | null;
   isResolvingAddress: boolean;
+  showManualSearchInCurrentLocationSheet: boolean;
   mapHandlers: {
     create: (map: kakao.maps.Map) => void;
     dragEnd: (map: kakao.maps.Map) => void;
@@ -64,14 +63,13 @@ export default function MainMapView({
   sheetKey,
   addressInfo,
   isResolvingAddress,
+  showManualSearchInCurrentLocationSheet,
   mapHandlers,
   manualActions,
   currentLocationActions,
   companionRequestSheet,
   onBottomSheetSnapChange,
 }: MainMapViewProps) {
-  const [showManualSearchInCurrentLocationSheet, setShowManualSearchInCurrentLocationSheet] =
-    useState(false);
   const [companionRequestSnapState, setCompanionRequestSnapState] = useState<"collapsed" | "full">(
     "full"
   );
@@ -79,27 +77,6 @@ export default function MainMapView({
   const isCenterPinMode = isManualLocationMode || isSheetOpen;
   const shouldDisableRequestButton =
     !addressInfo?.roadAddress && !addressInfo?.jibunAddress && !addressInfo?.buildingName;
-
-  useEffect(() => {
-    let isActive = true;
-
-    if (!isSheetOpen) {
-      return () => {
-        isActive = false;
-      };
-    }
-
-    const updatePermissionState = async () => {
-      const permissionState = await getLocationPermissionState();
-      if (!isActive) return;
-      setShowManualSearchInCurrentLocationSheet(permissionState === "denied");
-    };
-
-    void updatePermissionState();
-    return () => {
-      isActive = false;
-    };
-  }, [isSheetOpen]);
 
   return (
     <div className="relative h-full">
