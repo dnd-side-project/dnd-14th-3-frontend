@@ -12,7 +12,7 @@ export interface CreateMatchRequestPayload {
 
 export interface CreateMatchRequestData {
   matchRequestId: number;
-  status: "WAITING" | string;
+  status: "WAITING" | "MATCHED" | "CANCELLED" | "EXPIRED";
   specificPlace: string;
   location: {
     latitude: number;
@@ -30,4 +30,3 @@ export interface CreateMatchRequestResponse {
   code: string;
   data: CreateMatchRequestData;
 }
-
