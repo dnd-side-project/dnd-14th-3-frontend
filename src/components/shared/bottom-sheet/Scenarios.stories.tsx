@@ -55,9 +55,7 @@ export const Scenario1_TwoStep_DimClose: Story = {
     };
     return (
       <TriggerWrapper>
-        <StoryTriggerButton onClick={openSheet}>
-          시나리오 1 열기
-        </StoryTriggerButton>
+        <StoryTriggerButton onClick={openSheet}>시나리오 1 열기</StoryTriggerButton>
         <BottomSheet
           {...args}
           key={sheet.key}
@@ -100,9 +98,7 @@ export const Scenario1_TwoStep_DimClose: Story = {
                 1단계. 오른쪽 버튼 누르면 다음 단계(80vh).
               </p>
             ) : (
-              <div className="h-[80vh] text-body-1 text-gray-700">
-                2단계. 80vh 높이.
-              </div>
+              <div className="h-[80vh] text-body-1 text-gray-700">2단계. 80vh 높이.</div>
             )
           }
         />
@@ -112,15 +108,13 @@ export const Scenario1_TwoStep_DimClose: Story = {
   args: { draggable: false, backdropClick: "close" } satisfies StoryArgs,
 };
 
-/** 2. 접힘 없음, dim 닫힘 없음, 헤더 없음, 푸터 [취소]로만 닫기 */
+/** 2. 접힘 없음, dim 표시X, dim 닫힘 없음, 헤더 없음, 푸터 [취소]로만 닫기 */
 export const Scenario2_FooterCancelOnly: Story = {
   render: (args) => {
     const sheet = useBottomSheet();
     return (
       <TriggerWrapper>
-        <StoryTriggerButton onClick={sheet.open}>
-          시나리오 2 열기
-        </StoryTriggerButton>
+        <StoryTriggerButton onClick={sheet.open}>시나리오 2 열기</StoryTriggerButton>
         <BottomSheet
           {...args}
           key={sheet.key}
@@ -128,6 +122,7 @@ export const Scenario2_FooterCancelOnly: Story = {
           onClose={sheet.close}
           draggable={false}
           backdropClick="none"
+          showBackdrop={false}
           footer={(actions) => (
             <button
               type="button"
@@ -139,14 +134,14 @@ export const Scenario2_FooterCancelOnly: Story = {
           )}
           renderContent={() => (
             <p className="text-body-1 text-gray-700">
-              헤더 없음. dim으로는 안 닫히고, 푸터 취소로만 닫기.
+              헤더 없음. dim 표시X. dim으로는 안 닫히고, 푸터 취소로만 닫기.
             </p>
           )}
         />
       </TriggerWrapper>
     );
   },
-  args: { draggable: false, backdropClick: "none" } satisfies StoryArgs,
+  args: { draggable: false, backdropClick: "none", showBackdrop: false } satisfies StoryArgs,
 };
 
 /** 3. 접힘·dim 접힘·닫기 없음, 푸터 [다음] → 80vh 후 [확인]으로 닫기 */
@@ -160,9 +155,7 @@ export const Scenario3_Collapse_TwoStep: Story = {
     };
     return (
       <TriggerWrapper>
-        <StoryTriggerButton onClick={openSheet}>
-          시나리오 3 열기
-        </StoryTriggerButton>
+        <StoryTriggerButton onClick={openSheet}>시나리오 3 열기</StoryTriggerButton>
         <BottomSheet
           {...args}
           key={sheet.key}
@@ -204,9 +197,7 @@ export const Scenario3_Collapse_TwoStep: Story = {
                 접기/펼치기만 가능. 닫기 없음. 푸터 버튼으로 다음 단계(80vh).
               </p>
             ) : (
-              <div className="h-[80vh] text-body-1 text-gray-700">
-                2단계. 80vh.
-              </div>
+              <div className="h-[80vh] text-body-1 text-gray-700">2단계. 80vh.</div>
             )
           }
         />
@@ -222,9 +213,7 @@ export const Scenario4_Collapse_FooterClose: Story = {
     const sheet = useBottomSheet();
     return (
       <TriggerWrapper>
-        <StoryTriggerButton onClick={sheet.open}>
-          시나리오 4 열기
-        </StoryTriggerButton>
+        <StoryTriggerButton onClick={sheet.open}>시나리오 4 열기</StoryTriggerButton>
         <BottomSheet
           {...args}
           key={sheet.key}
@@ -232,9 +221,7 @@ export const Scenario4_Collapse_FooterClose: Story = {
           onClose={sheet.close}
           backdropClick="collapse"
           dragToClose={false}
-          header={(actions) => (
-            <SheetHeaderCollapseExpandOnly title="제목" actions={actions} />
-          )}
+          header={(actions) => <SheetHeaderCollapseExpandOnly title="제목" actions={actions} />}
           footer={(actions) => (
             <button
               type="button"
@@ -262,18 +249,14 @@ export const Scenario5_Input_ConfirmClose: Story = {
     const sheet = useBottomSheet();
     return (
       <TriggerWrapper>
-        <StoryTriggerButton onClick={sheet.open}>
-          시나리오 5 열기
-        </StoryTriggerButton>
+        <StoryTriggerButton onClick={sheet.open}>시나리오 5 열기</StoryTriggerButton>
         <BottomSheet
           {...args}
           key={sheet.key}
           isOpen={sheet.isOpen}
           onClose={sheet.close}
           initialSnap="collapsed"
-          header={(actions) => (
-            <SheetHeaderWithActions title="입력" actions={actions} />
-          )}
+          header={(actions) => <SheetHeaderWithActions title="입력" actions={actions} />}
           renderContent={(actions) => (
             <div className="space-y-4">
               <label className="block text-body-2 text-gray-700">
@@ -306,9 +289,7 @@ export const Scenario6_CollapsedInitial: Story = {
     const sheet = useBottomSheet();
     return (
       <TriggerWrapper>
-        <StoryTriggerButton onClick={sheet.open}>
-          시나리오 6 열기
-        </StoryTriggerButton>
+        <StoryTriggerButton onClick={sheet.open}>시나리오 6 열기</StoryTriggerButton>
         <BottomSheet
           {...args}
           key={sheet.key}
@@ -320,8 +301,7 @@ export const Scenario6_CollapsedInitial: Story = {
           )}
           renderContent={() => (
             <p className="text-body-1 text-gray-700">
-              열릴 때 접힌 높이로 시작합니다. 헤더 펼치기 버튼이나 드래그로
-              펼쳐보세요.
+              열릴 때 접힌 높이로 시작합니다. 헤더 펼치기 버튼이나 드래그로 펼쳐보세요.
             </p>
           )}
         />

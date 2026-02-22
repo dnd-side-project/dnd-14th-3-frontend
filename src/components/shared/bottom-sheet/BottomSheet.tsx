@@ -48,6 +48,8 @@ export interface BottomSheetProps {
   initialSnap?: BottomSheetSnapState;
   /** dim(배경) 클릭 시 동작. 미입력 시 'close'. */
   backdropClick?: "none" | "collapse" | "close";
+  /** dim(배경) 표시 여부. 기본 `true`. */
+  showBackdrop?: boolean;
   /**
    * 드래그로 접기/펼치기 허용 여부. 기본 `true`.
    * false면 접힘 없이 항상 펼친 상태만
@@ -147,6 +149,7 @@ export default function BottomSheet({
   renderContent,
   initialSnap = "full",
   backdropClick,
+  showBackdrop = true,
   draggable = true,
   dragToClose = false,
   onSnapChange,
@@ -302,20 +305,22 @@ export default function BottomSheet({
     <AnimatePresence>
       {isOpen && (
         <>
-          <motion.div
-            role="presentation"
-            aria-hidden
-            className="fixed w-full top-0 bottom-0 z-50 bg-gray-900/50"
-            style={{
-              maxWidth: layoutWidth != null ? `${layoutWidth}px` : undefined,
-              pointerEvents: snapState === "collapsed" ? "none" : "auto",
-            }}
-            initial={BACKDROP.initial}
-            animate={{ opacity: snapState === "collapsed" ? 0 : 1 }}
-            exit={BACKDROP.exit}
-            transition={BACKDROP.transition}
-            onClick={handleBackdropClick}
-          />
+          {showBackdrop && (
+            <motion.div
+              role="presentation"
+              aria-hidden
+              className="fixed w-full top-0 bottom-0 z-50 bg-gray-900/50"
+              style={{
+                maxWidth: layoutWidth != null ? `${layoutWidth}px` : undefined,
+                pointerEvents: snapState === "collapsed" ? "none" : "auto",
+              }}
+              initial={BACKDROP.initial}
+              animate={{ opacity: snapState === "collapsed" ? 0 : 1 }}
+              exit={BACKDROP.exit}
+              transition={BACKDROP.transition}
+              onClick={handleBackdropClick}
+            />
+          )}
           <motion.div
             ref={panelScope}
             role="dialog"
@@ -360,7 +365,7 @@ export default function BottomSheet({
               }
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
+            <div className="mobile-scroll-container min-h-0 flex-1 overflow-y-auto overscroll-contain"
               onTouchMove={(e) => {
                 if (e.currentTarget.scrollTop === 0) {
                   e.stopPropagation();
