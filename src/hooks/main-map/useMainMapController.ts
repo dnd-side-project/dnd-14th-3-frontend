@@ -251,7 +251,7 @@ export function useMainMapController() {
   useEffect(() => {
     if (!isManualLocationMode || wasManualLocationModeRef.current) return;
     Toast.show({
-      message: "Move the pin to your current location.",
+      message: "현재 내 위치로 핀을 이동해 주세요.",
       type: "info",
       duration: 3000,
     });
@@ -391,7 +391,6 @@ export function useMainMapController() {
   );
 
   const isFabVisible =
-    phase !== "requesting-companion" &&
     phase !== "matching-in-progress" &&
     !isManualLocationMode &&
     !isManualSearchPage;

@@ -129,13 +129,13 @@ export default function MainMapView({
         renderContent={
           <div className="space-y-3">
             <ManualLocationSearchButton onClick={manualActions.openSearchPage} className="mt-2" />
-            <Button.Primary
+            <Button.Secondary
               fullWidth
               onClick={manualActions.confirmLocation}
               disabled={!currentLocation}
             >
-              현재 위치로 설정
-            </Button.Primary>
+              주소 확정하기
+            </Button.Secondary>
           </div>
         }
       />
