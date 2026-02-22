@@ -373,8 +373,9 @@ export function useMainMapController() {
       })
       .catch((error: unknown) => {
         transitionPhase("match-failed");
-        const apiMessage = (error as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message;
+        const apiMessage = axios.isAxiosError<{ message?: string }>(error)
+          ? error.response?.data?.message
+          : undefined;
 
         Toast.show({
           type: "error",
