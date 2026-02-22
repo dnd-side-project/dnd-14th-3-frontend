@@ -75,6 +75,8 @@ export default function MainMapView({
     "full"
   );
   const isCenterPinMode = isManualLocationMode || isSheetOpen;
+  const shouldDisableRequestButton =
+    !addressInfo?.roadAddress && !addressInfo?.jibunAddress && !addressInfo?.buildingName;
 
   useEffect(() => {
     let isActive = true;
@@ -209,7 +211,11 @@ export default function MainMapView({
                 재시도
               </Button.Secondary>
             ) : null}
-            <Button.Primary fullWidth onClick={currentLocationActions.request}>
+            <Button.Primary
+              fullWidth
+              disabled={shouldDisableRequestButton}
+              onClick={currentLocationActions.request}
+            >
               요청하기
             </Button.Primary>
           </div>
