@@ -10,7 +10,6 @@ export function useManualSearchPermissionGate(isSheetOpen: boolean) {
     let isActive = true;
 
     if (!isSheetOpen) {
-      setShowManualSearchInCurrentLocationSheet(false);
       return () => {
         isActive = false;
       };
@@ -29,6 +28,9 @@ export function useManualSearchPermissionGate(isSheetOpen: boolean) {
     };
   }, [isSheetOpen]);
 
-  return { showManualSearchInCurrentLocationSheet };
+  return {
+    showManualSearchInCurrentLocationSheet: isSheetOpen
+      ? showManualSearchInCurrentLocationSheet
+      : false,
+  };
 }
-
