@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import { useKakaoLoader } from "react-kakao-maps-sdk";
 
 import { type LatLng } from "@/types/main-map/location.type";
+import { type MatchExpectedDuration } from "@/types/main-map/match-request.type";
 
 import { usePageLayoutStore } from "@/store/layout/pageLayout.store";
 import { useMainMapLocationStore } from "@/store/main-map/location.store";
@@ -14,6 +15,8 @@ import { useMainMapState } from "@/hooks/main-map/useMainMapState";
 import { useManualLocationFlow } from "@/hooks/main-map/useManualLocationFlow";
 import { useMapAddressLookup } from "@/hooks/main-map/useMapAddressLookup";
 import { useBottomSheet } from "@/hooks/shared/bottom-sheet";
+
+import { useCreateMatchRequest } from "@/queries/match";
 
 import ExpandableFab from "@/components/main-map/ExpandableFab";
 import MainMapView from "@/components/main-map/MainMapView";
@@ -27,8 +30,12 @@ export default function MainMapPage() {
   const setLayoutOptions = usePageLayoutStore((state) => state.setLayoutOptions);
   const resetLayoutOptions = usePageLayoutStore((state) => state.resetLayoutOptions);
   const currentLocationSheet = useBottomSheet();
+  const companionRequestSheet = useBottomSheet();
   const isManualSearchPage = searchParams.get("manualSearch") === "1";
   const wasManualLocationModeRef = useRef(false);
+  const [selectedCompanionDuration, setSelectedCompanionDuration] =
+    useState<MatchExpectedDuration | null>(null);
+  const [companionRequestMessage, setCompanionRequestMessage] = useState("");
 
   const {
     mapCenter,
@@ -54,6 +61,8 @@ export default function MainMapPage() {
     appkey: appKey ?? "",
     libraries: ["services"],
   });
+  const { mutateAsync: createMatchRequest, isPending: isCreatingMatchRequest } =
+    useCreateMatchRequest();
 
   const confirmManualLocation = useCallback(
     (location: LatLng) => {
@@ -207,7 +216,12 @@ export default function MainMapPage() {
     if (!isManualSearchPage) return;
     if (isManualLocationMode || currentLocationSheet.isOpen) return;
     closeManualSearchPage();
-  }, [closeManualSearchPage, currentLocationSheet.isOpen, isManualLocationMode, isManualSearchPage]);
+  }, [
+    closeManualSearchPage,
+    currentLocationSheet.isOpen,
+    isManualLocationMode,
+    isManualSearchPage,
+  ]);
 
   useEffect(() => {
     if (!currentLocationSheet.isOpen || isManualLocationMode) return;
@@ -236,6 +250,82 @@ export default function MainMapPage() {
     },
     [centerMapOnLocation, currentLocation]
   );
+
+  const handleRetryCurrentLocation = useCallback(() => {
+    if (!currentLocation) return;
+    centerMapOnLocation(currentLocation);
+    lookupAddress(currentLocation);
+  }, [centerMapOnLocation, currentLocation, lookupAddress]);
+
+  const handleRequestCompanion = useCallback(() => {
+    setSelectedCompanionDuration(null);
+    setCompanionRequestMessage("");
+    currentLocationSheet.close();
+    companionRequestSheet.open();
+  }, [companionRequestSheet, currentLocationSheet]);
+
+  const handleCloseCompanionRequestSheet = useCallback(() => {
+    companionRequestSheet.close();
+  }, [companionRequestSheet]);
+
+  const handleSelectCompanionDuration = useCallback((duration: MatchExpectedDuration) => {
+    setSelectedCompanionDuration(duration);
+  }, []);
+
+  const handleSubmitCompanionRequest = useCallback(() => {
+    if (!selectedCompanionDuration || !currentLocation) return;
+
+    const specificPlace =
+      addressInfo?.roadAddress ||
+      addressInfo?.jibunAddress ||
+      addressInfo?.buildingName ||
+      "";
+
+    if (!specificPlace.trim()) {
+      Toast.show({
+        type: "warning",
+        message: "구체적인 장소를 먼저 확인해 주세요.",
+        duration: 2500,
+      });
+      return;
+    }
+
+    void createMatchRequest({
+      location: {
+        latitude: currentLocation.lat,
+        longitude: currentLocation.lng,
+      },
+      specificPlace,
+      requestMessage: companionRequestMessage.trim(),
+      expectedDuration: selectedCompanionDuration,
+    })
+      .then((response) => {
+        companionRequestSheet.close();
+        Toast.show({
+          type: "success",
+          message: response.message || "매칭 요청이 접수됐어요.",
+          duration: 2500,
+        });
+      })
+      .catch((error: unknown) => {
+        const apiMessage =
+          (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+        Toast.show({
+          type: "error",
+          message: apiMessage || "매칭 요청에 실패했습니다. 잠시 후 다시 시도해 주세요.",
+          duration: 3000,
+        });
+      });
+  }, [
+    addressInfo?.buildingName,
+    addressInfo?.jibunAddress,
+    addressInfo?.roadAddress,
+    companionRequestMessage,
+    companionRequestSheet,
+    createMatchRequest,
+    currentLocation,
+    selectedCompanionDuration,
+  ]);
 
   const handleMapCreate = useCallback(
     (map: kakao.maps.Map) => {
@@ -294,6 +384,21 @@ export default function MainMapPage() {
           selectSearchLocation: handleSelectSearchLocation,
           openSearchPage: handleOpenManualSearchPage,
           confirmLocation: handleConfirmManualLocation,
+        }}
+        currentLocationActions={{
+          retry: handleRetryCurrentLocation,
+          request: handleRequestCompanion,
+        }}
+        companionRequestSheet={{
+          isOpen: companionRequestSheet.isOpen,
+          key: companionRequestSheet.key,
+          isSubmitting: isCreatingMatchRequest,
+          selectedDuration: selectedCompanionDuration,
+          requestMessage: companionRequestMessage,
+          close: handleCloseCompanionRequestSheet,
+          selectDuration: handleSelectCompanionDuration,
+          changeMessage: setCompanionRequestMessage,
+          submit: handleSubmitCompanionRequest,
         }}
         onBottomSheetSnapChange={handleBottomSheetSnapChange}
       />
