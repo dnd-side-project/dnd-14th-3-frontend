@@ -1,6 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 
+import { z } from "zod";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm, useWatch } from "react-hook-form";
 import { useKakaoLoader } from "react-kakao-maps-sdk";
 
 import { type LatLng } from "@/types/main-map/location.type";
@@ -22,6 +26,13 @@ import ExpandableFab from "@/components/main-map/ExpandableFab";
 import MainMapView from "@/components/main-map/MainMapView";
 import { LoadingIndicator } from "@/components/shared/loading";
 
+const companionRequestSchema = z.object({
+  expectedDuration: z.enum(["TEN_MINUTES", "TWENTY_MINUTES", "OVER_THIRTY_MINUTES"]).nullable(),
+  requestMessage: z.string().max(200, "요청 메세지는 200자 이하로 입력해 주세요."),
+});
+
+type CompanionRequestFormValues = z.infer<typeof companionRequestSchema>;
+
 export default function MainMapPage() {
   const appKey = import.meta.env.VITE_KAKAO_MAP_APP_KEY;
   const [searchParams, setSearchParams] = useSearchParams();
@@ -33,9 +44,26 @@ export default function MainMapPage() {
   const companionRequestSheet = useBottomSheet();
   const isManualSearchPage = searchParams.get("manualSearch") === "1";
   const wasManualLocationModeRef = useRef(false);
-  const [selectedCompanionDuration, setSelectedCompanionDuration] =
-    useState<MatchExpectedDuration | null>(null);
-  const [companionRequestMessage, setCompanionRequestMessage] = useState("");
+
+  const companionRequestForm = useForm<CompanionRequestFormValues>({
+    resolver: zodResolver(companionRequestSchema),
+    mode: "onChange",
+    defaultValues: {
+      expectedDuration: null,
+      requestMessage: "",
+    },
+  });
+
+  const selectedCompanionDuration = useWatch({
+    control: companionRequestForm.control,
+    name: "expectedDuration",
+  });
+  const companionRequestMessage =
+    useWatch({
+      control: companionRequestForm.control,
+      name: "requestMessage",
+    }) ?? "";
+  const hasRequestMessageError = Boolean(companionRequestForm.formState.errors.requestMessage);
 
   const {
     mapCenter,
@@ -61,6 +89,7 @@ export default function MainMapPage() {
     appkey: appKey ?? "",
     libraries: ["services"],
   });
+
   const { mutateAsync: createMatchRequest, isPending: isCreatingMatchRequest } =
     useCreateMatchRequest();
 
@@ -258,22 +287,31 @@ export default function MainMapPage() {
   }, [centerMapOnLocation, currentLocation, lookupAddress]);
 
   const handleRequestCompanion = useCallback(() => {
-    setSelectedCompanionDuration(null);
-    setCompanionRequestMessage("");
+    companionRequestForm.reset({
+      expectedDuration: null,
+      requestMessage: "",
+    });
     currentLocationSheet.close();
     companionRequestSheet.open();
-  }, [companionRequestSheet, currentLocationSheet]);
+  }, [companionRequestForm, companionRequestSheet, currentLocationSheet]);
 
   const handleCloseCompanionRequestSheet = useCallback(() => {
     companionRequestSheet.close();
   }, [companionRequestSheet]);
 
-  const handleSelectCompanionDuration = useCallback((duration: MatchExpectedDuration) => {
-    setSelectedCompanionDuration(duration);
-  }, []);
+  const handleSelectCompanionDuration = useCallback(
+    (duration: MatchExpectedDuration) => {
+      companionRequestForm.setValue("expectedDuration", duration, {
+        shouldDirty: true,
+        shouldTouch: true,
+        shouldValidate: true,
+      });
+    },
+    [companionRequestForm]
+  );
 
-  const handleSubmitCompanionRequest = useCallback(() => {
-    if (!selectedCompanionDuration || !currentLocation) return;
+  const handleSubmitCompanionRequest = companionRequestForm.handleSubmit((values) => {
+    if (!values.expectedDuration || !currentLocation) return;
 
     const specificPlace =
       addressInfo?.roadAddress ||
@@ -296,8 +334,8 @@ export default function MainMapPage() {
         longitude: currentLocation.lng,
       },
       specificPlace,
-      requestMessage: companionRequestMessage.trim(),
-      expectedDuration: selectedCompanionDuration,
+      requestMessage: values.requestMessage.trim(),
+      expectedDuration: values.expectedDuration,
     })
       .then((response) => {
         companionRequestSheet.close();
@@ -310,22 +348,14 @@ export default function MainMapPage() {
       .catch((error: unknown) => {
         const apiMessage =
           (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+
         Toast.show({
           type: "error",
           message: apiMessage || "매칭 요청에 실패했습니다. 잠시 후 다시 시도해 주세요.",
           duration: 3000,
         });
       });
-  }, [
-    addressInfo?.buildingName,
-    addressInfo?.jibunAddress,
-    addressInfo?.roadAddress,
-    companionRequestMessage,
-    companionRequestSheet,
-    createMatchRequest,
-    currentLocation,
-    selectedCompanionDuration,
-  ]);
+  });
 
   const handleMapCreate = useCallback(
     (map: kakao.maps.Map) => {
@@ -393,11 +423,17 @@ export default function MainMapPage() {
           isOpen: companionRequestSheet.isOpen,
           key: companionRequestSheet.key,
           isSubmitting: isCreatingMatchRequest,
+          hasRequestMessageError,
           selectedDuration: selectedCompanionDuration,
           requestMessage: companionRequestMessage,
           close: handleCloseCompanionRequestSheet,
           selectDuration: handleSelectCompanionDuration,
-          changeMessage: setCompanionRequestMessage,
+          changeMessage: (message) =>
+            companionRequestForm.setValue("requestMessage", message.slice(0, 200), {
+              shouldDirty: true,
+              shouldTouch: true,
+              shouldValidate: true,
+            }),
           submit: handleSubmitCompanionRequest,
         }}
         onBottomSheetSnapChange={handleBottomSheetSnapChange}

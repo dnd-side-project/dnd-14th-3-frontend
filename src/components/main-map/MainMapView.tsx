@@ -44,6 +44,7 @@ interface MainMapViewProps {
     isOpen: boolean;
     key: string;
     isSubmitting: boolean;
+    hasRequestMessageError: boolean;
     selectedDuration: MatchExpectedDuration | null;
     requestMessage: string;
     close: () => void;
@@ -74,6 +75,7 @@ export default function MainMapView({
   const [companionRequestSnapState, setCompanionRequestSnapState] = useState<"collapsed" | "full">(
     "full"
   );
+
   const isCenterPinMode = isManualLocationMode || isSheetOpen;
   const shouldDisableRequestButton =
     !addressInfo?.roadAddress && !addressInfo?.jibunAddress && !addressInfo?.buildingName;
@@ -261,7 +263,7 @@ export default function MainMapView({
           </div>
         )}
         renderContent={
-          <div className="h-[460px] space-y-5 pb-2">
+          <div className="h-[64vh] space-y-5 pb-2">
             <section className="space-y-2">
               <h3 className="text-body-1 font-bold text-gray-900">촬영 예상 소요 시간</h3>
               <div className="flex flex-wrap gap-2">
@@ -291,7 +293,8 @@ export default function MainMapView({
               <TextArea
                 value={companionRequestSheet.requestMessage}
                 onChange={companionRequestSheet.changeMessage}
-                placeholder="요청 메시지를 작성해 주세요."
+                status={companionRequestSheet.hasRequestMessageError ? "error" : "default"}
+                placeholder="요청 메시지를 작성해 주세요"
                 rows={4}
                 maxLength={200}
                 caption={`${companionRequestSheet.requestMessage.length}/200`}
