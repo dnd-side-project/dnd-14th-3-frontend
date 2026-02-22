@@ -344,15 +344,6 @@ export function useMainMapController() {
     const specificPlace =
       addressInfo?.roadAddress || addressInfo?.jibunAddress || addressInfo?.buildingName || "";
 
-    if (!specificPlace.trim()) {
-      Toast.show({
-        type: "warning",
-        message: "Please confirm a specific place first.",
-        duration: 2500,
-      });
-      return;
-    }
-
     void createMatchRequest({
       location: {
         latitude: currentLocation.lat,
