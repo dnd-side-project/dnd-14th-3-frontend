@@ -1,5 +1,6 @@
 import { authHandlers } from "./authHandlers";
 import { exampleHandlers } from "./exampleHandlers";
+import { mainMapHandlers } from "./mainMapHandlers";
 import { profileHandlers } from "./profileHandlers";
 import { userHandlers } from "./userHandlers";
 
@@ -11,6 +12,7 @@ import { userHandlers } from "./userHandlers";
 export const handlers = [
   ...exampleHandlers,
   ...authHandlers,
+  ...mainMapHandlers,
   ...profileHandlers,
   ...userHandlers,
 ];
