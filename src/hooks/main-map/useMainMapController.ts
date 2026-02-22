@@ -151,9 +151,8 @@ export function useMainMapController() {
   });
 
   const handleFindCompanion = useCallback(() => {
-    transitionPhase("location-setting");
     baseHandleFindCompanion();
-  }, [baseHandleFindCompanion, transitionPhase]);
+  }, [baseHandleFindCompanion]);
 
   const handleOpenManualLocationSetting = useCallback(() => {
     baseHandleOpenManualLocationSetting();
