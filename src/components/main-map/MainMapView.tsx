@@ -109,7 +109,7 @@ export default function MainMapView({
       {isSheetOpen && !isManualSearchPage ? (
         <div className="pointer-events-none absolute top-1/2 left-1/2 z-20 -translate-x-1/2 -translate-y-[310%]">
           <div className="rounded-md bg-mint-500 px-2 py-1 text-caption-1 text-white shadow-sm">
-            현재 위치
+            내 위치
           </div>
         </div>
       ) : null}
@@ -266,7 +266,7 @@ export default function MainMapView({
             </section>
 
             <section className="space-y-2">
-              <h3 className="text-body-1 font-bold text-gray-900">요청 메세지</h3>
+              <h3 className="text-body-1 font-bold text-gray-900">요청 메시지</h3>
               <TextArea
                 value={companionRequestSheet.requestMessage}
                 onChange={companionRequestSheet.changeMessage}

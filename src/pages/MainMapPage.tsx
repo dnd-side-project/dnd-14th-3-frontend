@@ -20,8 +20,8 @@ export default function MainMapPage() {
       <div className="flex h-full items-center justify-center p-4">
         <p className="text-center text-body-2 text-warning-700">
           {import.meta.env.DEV
-            ? "Kakao map key is not configured. Check VITE_KAKAO_MAP_APP_KEY in .env."
-            : "Unable to load. Please try again later."}
+            ? "카카오맵 키가 설정되지 않았습니다. .env의 VITE_KAKAO_MAP_APP_KEY를 확인해주세요."
+            : "불러올 수 없습니다. 잠시 후 다시 시도해주세요."}
         </p>
       </div>
     );
