@@ -21,7 +21,7 @@ export function useSubmitProfile() {
 
       // 유효성 검증 실패 시 에러 메시지 반환
       if (!validation.success) {
-        const errorMessage = validation.error.errors.map((e) => e.message).join(", ");
+        const errorMessage = validation.error.issues.map((e) => e.message).join(", ");
         logger.error(errorMessage);
         throw new Error(errorMessage);
       }

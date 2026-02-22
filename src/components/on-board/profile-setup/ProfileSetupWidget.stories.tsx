@@ -1,16 +1,18 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { useFormContext } from "react-hook-form";
 
 import type { AgeRange, Gender, ProfileSetupStep } from "@/types/on-board";
+import { ProfileSetupFormValues, profileSubmitSchema } from "@/types/on-board";
 
 import {
+  ProfileSetupFormProvider,
   ProfileSetupStoreProvider,
   useProfileSetupStore,
-  useProfileSetupStoreApi,
-} from "@/store/on-board/profile-setup.provider";
+} from "@/store/on-board/profile-setup-step";
 
 import { ToastContainer, ToastPortal } from "@/components/shared/toast";
 
@@ -59,29 +61,33 @@ function ProfileSetupWidgetWithInitialState({
   introduction,
   onComplete,
 }: ProfileSetupWidgetInitialState) {
-  const storeApi = useProfileSetupStoreApi();
   const setStep = useProfileSetupStore((s) => s.setStep);
-  const updateNickname = useProfileSetupStore((s) => s.updateNickname);
-  const updateGender = useProfileSetupStore((s) => s.updateGender);
-  const updateAgeRange = useProfileSetupStore((s) => s.updateAgeRange);
-  const updateIntroduction = useProfileSetupStore((s) => s.updateIntroduction);
+  const { setValue, getValues } = useFormContext<ProfileSetupFormValues>();
+
+  const handleComplete = useCallback(() => {
+    const data = getValues();
+    const validation = profileSubmitSchema.safeParse(data);
+    if (!validation.success) {
+      return;
+    }
+    window.alert(JSON.stringify(data));
+    onComplete();
+  }, [getValues, onComplete]);
 
   useEffect(() => {
     setStep(initialStep);
 
-    if (newUsername.trim()) updateNickname(newUsername.trim());
-    if (gender === "MALE" || gender === "FEMALE") updateGender(gender);
-    if (ageRange) updateAgeRange(ageRange as AgeRange);
-    if (introduction.trim()) updateIntroduction(introduction.trim());
+    if (newUsername.trim()) setValue("newUsername", newUsername.trim());
+    if (gender === "MALE" || gender === "FEMALE") setValue("gender", gender);
+    if (ageRange) setValue("ageRange", ageRange as AgeRange);
+    if (introduction.trim()) setValue("introduction", introduction.trim());
 
     const styleIds = preferredStyles
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
     if (styleIds.length > 0) {
-      storeApi.setState((state) => ({
-        data: { ...state.data, preferredStyles: styleIds },
-      }));
+      setValue("preferredStyles", styleIds);
     }
   }, [
     initialStep,
@@ -91,16 +97,12 @@ function ProfileSetupWidgetWithInitialState({
     preferredStyles,
     introduction,
     setStep,
-    updateNickname,
-    updateGender,
-    updateAgeRange,
-    updateIntroduction,
-    storeApi,
+    setValue,
   ]);
 
   return (
     <section className="flex min-h-dvh w-full flex-col">
-      <ProfileSetupFunnel onComplete={onComplete} />
+      <ProfileSetupFunnel onComplete={handleComplete} />
     </section>
   );
 }
@@ -110,7 +112,9 @@ function ProfileSetupWidgetWithProvider(
 ) {
   return (
     <ProfileSetupStoreProvider>
-      <ProfileSetupWidgetWithInitialState {...props} />
+      <ProfileSetupFormProvider>
+        <ProfileSetupWidgetWithInitialState {...props} />
+      </ProfileSetupFormProvider>
     </ProfileSetupStoreProvider>
   );
 }

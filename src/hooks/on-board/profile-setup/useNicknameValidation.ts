@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import { RegisterOptions, useForm, useWatch } from "react-hook-form";
+import { RegisterOptions, useFormContext, useWatch } from "react-hook-form";
 
-import type { NicknameValidation } from "@/types/on-board";
+import type { NicknameValidation, ProfileSetupFormValues } from "@/types/on-board";
 import { nicknameSchema } from "@/types/on-board";
 
 import { useDebounce } from "@/hooks/shared/useDebounce";
@@ -13,16 +13,11 @@ const MAX_LENGTH = 15;
 
 export type NicknameField = { nickname: string };
 
-export function useNicknameValidation(
-  initialNickname: string,
-  syncToStore: (nickname: string) => void
-) {
-  const { register, watch, setValue, setError, clearErrors, formState, control } =
-    useForm<NicknameField>({
-      defaultValues: { nickname: initialNickname },
-    });
+export function useNicknameValidation() {
+  const { register, setValue, formState, control } =
+    useFormContext<ProfileSetupFormValues>();
 
-  const nickname = useWatch({ control, name: "nickname" });
+  const nickname = useWatch<ProfileSetupFormValues>({ control, name: "newUsername" }) as string;
   const debouncedNickname = useDebounce(nickname ?? "", 300);
 
   const [hasEverHadValue, setHasEverHadValue] = useState(false);
@@ -49,7 +44,7 @@ export function useNicknameValidation(
   const isTyping = nickname !== debouncedNickname;
   const isValidating = isPending || formState.isValidating || isTyping;
 
-  const validation: NicknameValidation = (() => {
+  const validation: NicknameValidation = useMemo(() => {
     if (!debouncedNickname.trim()) {
       // 작성했다가 지운 경우: isDirty는 값이 default와 같아지면 false가 되므로 state로 추적
       if (!hasEverHadValue) return { isValid: true };
@@ -63,37 +58,24 @@ export function useNicknameValidation(
       };
 
     return apiValidation ?? { isValid: false, error: "알 수 없는 오류가 발생했습니다." };
-  })();
-
-  useEffect(() => {
-    if (isValidating) return;
-    if (!validation.isValid && validation.error) {
-      setError("nickname", { type: "validate", message: validation.error });
-    } else {
-      clearErrors("nickname");
-    }
-  }, [isValidating, validation.isValid, validation.error, setError, clearErrors]);
-
-  // 검증 완료 후 isValid면 store에 적용
-  useEffect(() => {
-    if (!isValidating && validation.isValid && debouncedNickname) {
-      syncToStore(debouncedNickname.trim());
-    }
-  }, [isValidating, validation.isValid, debouncedNickname, syncToStore]);
+  }, [debouncedNickname, isFormatInvalid, hasEverHadValue, formatValidation, apiValidation]);
 
   return {
-    register: (name: keyof NicknameField, options?:RegisterOptions<NicknameField, keyof NicknameField>) => ({
+    register: (
+      name: "newUsername",
+      options?: RegisterOptions<ProfileSetupFormValues, "newUsername">
+    ) => ({
       ...register(name, options),
       onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
         register(name).onChange(e); // 기존 useForm의 onChange 실행
         handleNicknameChange(e); // 우리가 만든 상태 업데이트 실행
       },
     }),
-    watch,
     setValue,
     formState,
     validation,
     isValidating,
     maxLength: MAX_LENGTH,
+    nickname,
   };
 }

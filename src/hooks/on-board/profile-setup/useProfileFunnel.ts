@@ -2,47 +2,51 @@ import { useCallback, useMemo } from "react";
 
 import { z } from "zod";
 
-import {
-  nicknameSchema,
-  profileSetupDataSchema,
-} from "@/types/on-board";
+import { useFormContext, useWatch } from "react-hook-form";
+
+import { nicknameSchema, profileSetupDataSchema, ProfileSetupFormValues } from "@/types/on-board";
 
 import { PROFILE_SETUP_STEPS } from "@/constants/on-board";
 
-import { useProfileSetupStore } from "@/store/on-board/profile-setup.provider";
+import { useProfileSetupStore } from "@/store/on-board/profile-setup-step";
 
 export function useProfileFunnel() {
-  const { currentStep, setStep, data } = useProfileSetupStore();
+  const currentStep = useProfileSetupStore((state) => state.currentStep);
+  const setStep = useProfileSetupStore((state) => state.setStep);
+  const { getValues } = useFormContext<ProfileSetupFormValues>();
 
+  const currentData = useWatch<ProfileSetupFormValues>();
   const currentIndex = useMemo(() => PROFILE_SETUP_STEPS.indexOf(currentStep), [currentStep]);
   const totalSteps = useMemo(() => PROFILE_SETUP_STEPS.length, []);
-  const progress = useMemo(() => ((currentIndex + 1) / totalSteps) * 100, [currentIndex, totalSteps]);
+  const progress = useMemo(
+    () => ((currentIndex + 1) / totalSteps) * 100,
+    [currentIndex, totalSteps]
+  );
 
-  const canGoNext = (): boolean => {
+  const canGoNext = useMemo(() => {
     switch (currentStep) {
       case "nickname": {
-        const result = nicknameSchema.safeParse(data.newUsername);
+        const result = nicknameSchema.safeParse(currentData.newUsername);
         return result.success;
       }
       case "introduction":
-        // 자기소개는 필수 입력 항목이 아니므로 항상 통과
-        return true
+        return true;
       case "gender":
-        return data.gender !== undefined;
+        return currentData.gender !== undefined;
       case "shooting-style":
-        return (data.preferredStyles?.length ?? 0) > 0;
+        return (currentData.preferredStyles?.length ?? 0) > 0;
       case "age-range":
-        return data.ageRange !== undefined;
+        return currentData.ageRange !== undefined;
       default:
         return false;
     }
-  };
+  }, [currentStep, currentData]);
 
   const validateAll = (): { isValid: true } | { isValid: false; errors: string[] } => {
     try {
-      profileSetupDataSchema.parse({
-        ...data
-      });
+      const data = getValues();
+      profileSetupDataSchema.parse(data);
+
       return { isValid: true };
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -73,7 +77,7 @@ export function useProfileFunnel() {
   return {
     currentStep,
     progress,
-    canGoNext: canGoNext(),
+    canGoNext,
     goNext,
     goBack,
     isFirstStep,

@@ -1,7 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
 
-import { useProfileSetupStore } from "@/store/on-board/profile-setup.provider";
-
 import { useNicknameValidation, useProfileFunnel } from "@/hooks/on-board";
 
 import { WarnCircleIcon } from "@/components/shared/icons";
@@ -9,20 +7,15 @@ import { WarnCircleIcon } from "@/components/shared/icons";
 import ProfileStepLayout from "../ProfileStepLayout";
 
 export default function NicknameStep() {
-  const storeNickname = useProfileSetupStore((s) => s.data.newUsername ?? "");
-  const updateNickname = useProfileSetupStore((s) => s.updateNickname);
-
   const {
     register,
-    watch,
     setValue,
-    formState: { errors },
     validation,
     isValidating,
     maxLength,
-  } = useNicknameValidation(storeNickname, updateNickname);
+    nickname,
+  } = useNicknameValidation();
 
-  const nickname = watch("nickname");
   const {
     canGoNext,
     goNext,
@@ -31,8 +24,8 @@ export default function NicknameStep() {
     isLastStep,
   } = useProfileFunnel();
 
-  const errorMessage = errors.nickname?.message;
-  const borderClass = !isValidating && errorMessage
+  const errorMessage = !isValidating ? validation.error : undefined;
+  const borderClass = errorMessage
     ? "border-b border-warning-500"
     : "border-b border-gray-300 focus-within:border-mint-500" + ((nickname ?? "").length > 0 ? " border-mint-500" : "");
 
@@ -51,11 +44,11 @@ export default function NicknameStep() {
           className={`flex items-center gap-2 ${borderClass} pb-2 px-2 transition-colors`}
         >
           <input
-            {...register("nickname", {
+            {...register("newUsername", {
               maxLength,
               onBlur(e) {
                 const trimmed = e.target.value.trim();
-                if (trimmed !== e.target.value) setValue("nickname", trimmed);
+                if (trimmed !== e.target.value) setValue("newUsername", trimmed);
               },
             })}
             type="text"
@@ -72,7 +65,7 @@ export default function NicknameStep() {
               aria-hidden
             />
           )}
-          {validation.isValid && !isValidating && !!nickname.trim() && (
+          {validation.isValid && !isValidating && !!(nickname ?? "").trim() && (
             <span className="text-mint-500" aria-hidden>
               ✓
             </span>
@@ -82,7 +75,7 @@ export default function NicknameStep() {
           </span>
         </div>
         <AnimatePresence>
-          {!isValidating && errorMessage && (
+          {errorMessage && (
             <motion.p
               id="nickname-error"
               role="alert"

@@ -1,6 +1,6 @@
-import type { AgeRange } from "@/types/on-board";
+import { Controller, useFormContext } from "react-hook-form";
 
-import { useProfileSetupStore } from "@/store/on-board/profile-setup.provider";
+import type { AgeRange, ProfileSetupFormValues } from "@/types/on-board";
 
 import { useProfileFunnel } from "@/hooks/on-board";
 
@@ -19,8 +19,7 @@ const AGE_RANGE_OPTIONS: { value: AgeRange; label: string }[] = [
 ];
 
 export default function AgeRangeStep() {
-  const ageRange = useProfileSetupStore((s) => s.data.ageRange);
-  const updateAgeRange = useProfileSetupStore((s) => s.updateAgeRange);
+  const { control } = useFormContext<ProfileSetupFormValues>();
   const {
     canGoNext,
     goNext,
@@ -39,23 +38,30 @@ export default function AgeRangeStep() {
       onNext={goNext}
       onBack={goBack}
     >
-      <div className="flex flex-col gap-2">
-        {AGE_RANGE_OPTIONS.map(({ value, label }) => {
-          const isSelected = ageRange === value;
-          return (
-            <ChipButton
-              key={value}
-              type="button"
-              size="medium"
-              selected={isSelected}
-              onClick={() => updateAgeRange(value)}
-              className={`flex-1 rounded-lg py-2 w-full text-body-1 font-bold transition-colors`}
-            >
-              {label}
-            </ChipButton>
-          );
-        })}
-      </div>
+      <Controller
+        control={control}
+        name="ageRange"
+        render={({ field }) => (
+          <div className="flex flex-col gap-2">
+            {AGE_RANGE_OPTIONS.map(({ value, label }) => {
+              const isSelected = field.value === value;
+              return (
+                <ChipButton
+                  key={value}
+                  type="button"
+                  size="medium"
+                  selected={isSelected}
+                  onClick={() => field.onChange(value)}
+                  className={`flex-1 rounded-lg py-2 w-full text-body-1 font-bold transition-colors`}
+                >
+                  {label}
+                </ChipButton>
+              );
+            })}
+          </div>
+        )}
+      />
+
     </ProfileStepLayout>
   );
 }

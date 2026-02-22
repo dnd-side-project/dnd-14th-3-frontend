@@ -1,10 +1,13 @@
 import { useState } from "react";
 
-import { profileSubmitSchema } from "@/types/on-board";
+import { Controller, useFormContext } from "react-hook-form";
+
+import { ProfileSetupFormValues, profileSubmitSchema } from "@/types/on-board";
 
 import { logger } from "@/lib/shared/logger";
 
-import { useProfileSetupStore } from "@/store/on-board/profile-setup.provider";
+import { FIELD_TO_STEP } from "@/constants/on-board";
+
 import { Toast } from "@/store/shared/toast/toast.store";
 
 import { useProfileFunnel } from "@/hooks/on-board";
@@ -22,31 +25,28 @@ interface IntroductionStepProps {
 }
 
 export default function IntroductionStep({ onComplete }: IntroductionStepProps) {
-  const introduction = useProfileSetupStore((s) => s.data.introduction ?? "");
-  const updateIntroduction = useProfileSetupStore((s) => s.updateIntroduction);
-  const data = useProfileSetupStore((s) => s.data);
+  const { control, getValues } = useFormContext<ProfileSetupFormValues>();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { setStep, goBack, isFirstStep, isLastStep, canGoNext } = useProfileFunnel();
-  const handleChange = (value: string) => {
-    updateIntroduction(value.slice(0, MAX_LENGTH));
-  };
 
   const { mutateAsync: submitProfile, isPending } = useSubmitProfile();
 
   const handleSubmit = async () => {
+    const data = getValues();
     const validation = profileSubmitSchema.safeParse(data);
 
     if (!validation.success) {
-      const message = validation.error.errors[0].message;
+      const firstIssue = validation.error.issues[0];
+      const message = firstIssue?.message ?? "유효성 검증 실패";
       Toast.show({ type: "error", message });
       logger.error(message);
-      if (!data.newUsername) setStep("nickname");
-      else if (!data.gender) setStep("gender");
-      else if (!data.preferredStyles?.length) setStep("shooting-style");
+      const firstField = firstIssue?.path[0];
+      if (typeof firstField === "string" && firstField in FIELD_TO_STEP) {
+        setStep(FIELD_TO_STEP[firstField as keyof ProfileSetupFormValues]);
+      }
       return;
     }
-
     setIsSubmitting(true);
     try {
       await submitProfile(validation.data);
@@ -81,14 +81,19 @@ export default function IntroductionStep({ onComplete }: IntroductionStepProps) 
         <h1 className="text-body-1 font-semibold text-gray-900">
           {"한 줄 자기소개"}
         </h1>
-        <TextArea
-          value={introduction}
-          onChange={handleChange}
-          placeholder="자기소개를 입력해주세요"
-          autoFocus
-          rows={3}
-          maxLength={MAX_LENGTH}
-          caption={`${introduction.length}/${MAX_LENGTH}`}
+
+        <Controller
+          control={control}
+          name="introduction"
+          render={({ field }) => (
+            <TextArea
+              value={field.value ?? ""}
+              onChange={(value) => field.onChange(value.slice(0, MAX_LENGTH))}
+              placeholder="자기소개를 입력해주세요"
+              autoFocus
+              rows={3}
+            />
+          )}
         />
       </div>
     </ProfileStepLayout>

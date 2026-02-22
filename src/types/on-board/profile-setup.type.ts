@@ -1,12 +1,10 @@
 import { z } from "zod";
 
-/* =====================
- * API Enums (서버 스펙)
- * ===================== */
-export const GenderEnum = {
-  MALE: "MALE",
-  FEMALE: "FEMALE",
-} as const;
+import {
+  AGE_RANGE_ENUM,
+  GENDER_ENUM,
+  PROFILE_SETUP_STEPS,
+} from "@/constants/on-board";
 
 /* =====================
  * Zod Schemas
@@ -25,9 +23,13 @@ const introductionSchema = z
   .max(100, "자기소개는 100자 이하여야 합니다")
   .optional();
 
-const genderSchema = z.enum(["MALE", "FEMALE"]);
+export const genderSchema = z.enum(
+  Object.values(GENDER_ENUM) as [string, ...string[]]
+);
 
-const ageRangeSchema = z.enum(["10s", "20s", "30s", "40s", "50s", "60s", "over-70s"]);
+export const ageRangeSchema = z.enum(
+  Object.values(AGE_RANGE_ENUM) as [string, ...string[]]
+);
 
 /** 서버에서 받아오는 촬영 스타일 항목: { id, label }[] */
 export const shootingStyleSchema = z.object({
@@ -58,7 +60,6 @@ export type ShootingStyle = z.infer<typeof shootingStyleSchema>;
 export type ShootingStyleId = string;
 export type ProfileSetupData = z.infer<typeof profileSetupDataSchema>;
 export type ProfileSubmitData = z.infer<typeof profileSubmitSchema>;
-import { PROFILE_SETUP_STEPS } from "@/constants/on-board";
 
 export type ProfileSetupStep = (typeof PROFILE_SETUP_STEPS)[number];
 

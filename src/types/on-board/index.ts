@@ -1,8 +1,9 @@
 export { type IntroStepContent } from "./intro-step-content.type";
 export {
   type AgeRange,
+  ageRangeSchema,
   type Gender,
-  GenderEnum,
+  genderSchema,
   nicknameSchema,
   type NicknameValidation,
   type ProfileSetupData,
@@ -15,3 +16,7 @@ export {
   shootingStyleSchema,
   type ShootingStylesResponse,
 } from "./profile-setup.type";
+export {
+  PROFILE_SETUP_FORM_DEFAULTS,
+  type ProfileSetupFormValues,
+} from "./profile-setup-form.type";

@@ -1,6 +1,6 @@
-import type { Gender } from "@/types/on-board";
+import { Controller, useFormContext } from "react-hook-form";
 
-import { useProfileSetupStore } from "@/store/on-board/profile-setup.provider";
+import type { Gender, ProfileSetupFormValues } from "@/types/on-board";
 
 import { useProfileFunnel } from "@/hooks/on-board";
 
@@ -14,8 +14,7 @@ const GENDER_OPTIONS: { value: Gender; label: string }[] = [
 ];
 
 export default function GenderStep() {
-  const gender = useProfileSetupStore((s) => s.data.gender);
-  const updateGender = useProfileSetupStore((s) => s.updateGender);
+  const { control } = useFormContext<ProfileSetupFormValues>();
   const {
     canGoNext,
     goNext,
@@ -34,26 +33,32 @@ export default function GenderStep() {
       onNext={goNext}
       onBack={goBack}
     >
-      <div className="flex gap-3">
-        {GENDER_OPTIONS.map(({ value, label }) => {
-          const isSelected = gender === value;
-          return (
-            <ChipButton
-              key={value}
-              type="button"
-              size="medium"
-              selected={isSelected}
-              onClick={() => updateGender(value)}
-              className={`flex-1 rounded-lg py-4 text-body-1 font-bold transition-colors ${isSelected
-                  ? "bg-mint-500 text-gray-900"
-                  : "bg-gray-50 text-gray-500"
-                }`}
-            >
-              {label}
-            </ChipButton>
-          );
-        })}
-      </div>
+      <Controller
+        control={control}
+        name="gender"
+        render={({ field }) => (
+          <div className="flex gap-3">
+            {GENDER_OPTIONS.map(({ value, label }) => {
+              const isSelected = field.value === value;
+              return (
+                <ChipButton
+                  key={value}
+                  type="button"
+                  size="medium"
+                  selected={isSelected}
+                  onClick={() => field.onChange(value)}
+                  className={`flex-1 rounded-lg py-4 text-body-1 font-bold transition-colors ${isSelected
+                    ? "bg-mint-500 text-gray-900"
+                    : "bg-gray-50 text-gray-500"
+                    }`}
+                >
+                  {label}
+                </ChipButton>
+              );
+            })}
+          </div>
+        )}
+      />
     </ProfileStepLayout>
   );
 }

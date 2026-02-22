@@ -31,7 +31,7 @@ export default function ProfileSetupFunnel({ onComplete }: ProfileSetupFunnelPro
     setPrevIndex(currentIndex);
   }, [currentIndex]);
 
-  const renderStep = () => {
+  const renderStep = useMemo(() => {
     switch (currentStep) {
       case "nickname":
         return <NicknameStep />;
@@ -46,7 +46,7 @@ export default function ProfileSetupFunnel({ onComplete }: ProfileSetupFunnelPro
       default:
         return null;
     }
-  };
+  }, [currentStep, onComplete]);
 
   // 방향에 따른 애니메이션 설정
   const variants = {
@@ -86,7 +86,7 @@ export default function ProfileSetupFunnel({ onComplete }: ProfileSetupFunnelPro
           transition={{ duration: 0.3 }}
           className="flex grow"
         >
-          {renderStep()}
+          {renderStep}
         </motion.div>
       </AnimatePresence>
     </div>
