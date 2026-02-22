@@ -18,9 +18,9 @@ export const toastStore = createStore<ToastState>((set) => ({
 }));
 
 export const Toast = {
-  show: ({ message, type = "success", duration = 5000 }: ToastConfig) => {
+  show: ({ message, type = "success", duration = 5000, offsetY }: ToastConfig) => {
     toastStore.setState({
-      toast: { message, type, duration },
+      toast: { message, type, duration, offsetY },
       visible: true,
     });
 

@@ -253,7 +253,8 @@ export function useMainMapController() {
     Toast.show({
       message: "현재 내 위치로 핀을 이동해 주세요.",
       type: "info",
-      duration: 3000,
+      duration: 3500,
+      offsetY: 61,
     });
   }, [isManualLocationMode]);
 
@@ -391,9 +392,7 @@ export function useMainMapController() {
   );
 
   const isFabVisible =
-    phase !== "matching-in-progress" &&
-    !isManualLocationMode &&
-    !isManualSearchPage;
+    phase !== "matching-in-progress" && !isManualLocationMode && !isManualSearchPage;
 
   return {
     phase,
