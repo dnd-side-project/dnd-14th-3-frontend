@@ -69,13 +69,32 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-dvh p-6">
+    <main className="flex min-h-dvh flex-col px-6 pb-8">
+      <section className="flex flex-1 flex-col items-center justify-center">
+        <img
+          src="/login/login_hero_tagline.png"
+          alt="혼자여도, 기록은 함께"
+          className="mt-20 h-auto w-[11rem]"
+        />
+        <img
+          src="/login/login_hero_logo.png"
+          alt="찍어줄게 로고"
+          className="mt-6 h-auto w-[11.3rem]"
+        />
+        <img
+          src="/login/login_hero_map.png"
+          alt="찍어줄게 소개 지도 이미지"
+          className="mt-[10vh] h-auto w-full max-w-[18.5rem]"
+        />
+      </section>
+
       <button
-        className="mt-6 rounded-md bg-mint-600 px-4 py-3 text-white"
+        className="mt-auto rounded-lg bg-[#FEE500] h-[54px] flex flex-row justify-center items-center gap-4 cursor-pointer active:bg-[#E5CF00]"
         onClick={handleKakaoLogin}
         type="button"
       >
-        카카오 로그인
+        <img src="/login/kakao_icon.png" alt="카카오 아이콘" className="inline h-4 w-auto" />
+        <span className="font-semibold">카카오로 시작하기</span>
       </button>
     </main>
   );

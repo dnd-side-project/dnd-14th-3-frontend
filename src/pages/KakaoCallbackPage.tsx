@@ -9,6 +9,8 @@ import { loginWithKakaoCodeApi } from "@/api/auth.api";
 
 import { useAuthStore } from "@/store/auth/auth.store";
 
+import { LoadingIndicator } from "@/components/shared/loading";
+
 const processingKakaoCodes = new Set<string>();
 
 function isSafeRedirectPath(path: string) {
@@ -90,5 +92,9 @@ export default function KakaoCallbackPage() {
       });
   }, [navigate, searchParams, setAuthTokens, setRegisterToken]);
 
-  return <div>카카오 로그인 처리 중</div>;
+  return (
+    <div className="flex min-h-dvh items-center justify-center px-6">
+      <LoadingIndicator />
+    </div>
+  );
 }
