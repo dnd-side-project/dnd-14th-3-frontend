@@ -11,33 +11,43 @@ const __dirname = dirname(__filename);
 const isStorybook = process.env.STORYBOOK === "true";
 // https://vite.dev/config/
 export default defineConfig({
-  
-  plugins: !isStorybook ? [
-    react(),
-    tailwindcss(),
-    VitePWA({
-      registerType: "autoUpdate",
-      manifest: {
-        name: "찍어줄게",
-        short_name: "찍어줄게",
-        description: "사진 동행 서비스",
-        theme_color: "#ffffff",
-        // TODO: 서비스 icon으로 업데이트
-        icons: [
-          {
-            src: "tmpicon.png",
-            sizes: "192x192",
-            type: "image/png",
+  plugins: !isStorybook
+    ? [
+        react(),
+        tailwindcss(),
+        VitePWA({
+          registerType: "autoUpdate",
+          manifest: {
+            name: "찍어줄게",
+            short_name: "찍어줄게",
+            description: "사진 동행 서비스: 혼자여도, 기록은 함께",
+            theme_color: "#ffffff",
+            icons: [
+              {
+                src: "icon1_192.png",
+                sizes: "192x192",
+                type: "image/png",
+              },
+              {
+                src: "icon2_192.png",
+                sizes: "192x192",
+                type: "image/png",
+              },
+              {
+                src: "icon1_512.png",
+                sizes: "512x512",
+                type: "image/png",
+              },
+              {
+                src: "icon2_512.png",
+                sizes: "512x512",
+                type: "image/png",
+              },
+            ],
           },
-          {
-            src: "tmpicon.png",
-            sizes: "512x512",
-            type: "image/png",
-          },
-        ],
-      },
-    }),
-  ] : [react(), tailwindcss()],
+        }),
+      ]
+    : [react(), tailwindcss()],
   resolve: {
     alias: {
       "@": resolve(__dirname, "./src"),

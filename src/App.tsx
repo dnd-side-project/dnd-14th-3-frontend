@@ -1,5 +1,7 @@
 ﻿import { BrowserRouter, Route, Routes } from "react-router-dom";
 
+import RouteChangeTracker from "@/lib/analytics/RouteChangeTracker";
+
 import { ToastContainer, ToastPortal } from "@/components/shared/toast";
 
 import CompanionCreatePage from "@/pages/CompanionCreatePage";
@@ -19,6 +21,7 @@ import MobileLayout from "@/layout/MobileLayout";
 function App() {
   return (
     <BrowserRouter>
+      <RouteChangeTracker />
       <ToastContainer />
       <ToastPortal />
       <Routes>
