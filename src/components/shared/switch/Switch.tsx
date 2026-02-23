@@ -43,8 +43,8 @@ const thumbPositionStyles: Record<SwitchSize, string> = {
 };
 
 const trackStateStyles = {
-  on: "bg-mint-500 hover:bg-mint-600 active:bg-mint-700",
-  off: "bg-gray-200 hover:bg-gray-300 active:bg-gray-400",
+  on: "bg-mint-500",
+  off: "bg-gray-200",
   disabledOn: "bg-mint-100",
   disabledOff: "bg-gray-100",
 };

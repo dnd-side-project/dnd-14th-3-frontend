@@ -29,20 +29,21 @@ const meta: Meta<typeof Toast> = {
       options: ["info", "success", "error", "warning"],
       description: "토스트 타입",
     },
+    offsetY: {
+      control: { type: "number", min: 0, step: 4 },
+      description: "아래에서 위로 올리는 오프셋(px)",
+    },
   },
 };
 
 export default meta;
 type Story = StoryObj<typeof Toast>;
 
-/* =====================
- * Stories
- * ===================== */
-
 export const Default: Story = {
   args: {
     message: "text",
     type: "info",
+    offsetY: 0,
   },
 };
 
@@ -50,6 +51,7 @@ export const LongMessage: Story = {
   args: {
     message: "저장이 완료되었습니다. 변경 사항이 반영되었어요.",
     type: "success",
+    offsetY: 0,
   },
 };
 

@@ -5,32 +5,21 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { BottomSheetHeaderActions } from "./index";
 import { BottomSheet } from "./index";
 
-export const FIGMA_BASE =
-  "https://www.figma.com/design/z8WjEo3rhBbmTzGszMvlJz/DND3%EC%A1%B0";
+export const FIGMA_BASE = "https://www.figma.com/design/z8WjEo3rhBbmTzGszMvlJz/DND3%EC%A1%B0";
 
 export type StoryArgs = Partial<
   Omit<ComponentProps<typeof BottomSheet>, "isOpen" | "onClose" | "renderContent">
 >;
 
-export type Story = StoryObj<
-  Meta<typeof BottomSheet> & { args?: StoryArgs }
->;
+export type Story = StoryObj<Meta<typeof BottomSheet> & { args?: StoryArgs }>;
 
-export default function TriggerWrapper({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex min-h-[80vh] items-center justify-center p-4">
-      {children}
-    </div>
-  );
+export default function TriggerWrapper({ children }: { children: React.ReactNode }) {
+  return <div className="flex min-h-[80vh] items-center justify-center p-4">{children}</div>;
 }
 
 /** 스토리 공통: 시트를 여는 트리거 버튼 스타일 */
 export const TRIGGER_BUTTON_CLASS =
-  "rounded-lg bg-mint-500 px-4 py-2 font-medium text-black hover:bg-mint-600 transition-colors";
+  "rounded-lg bg-mint-500 px-4 py-2 font-medium text-black transition-colors";
 
 /** 스토리 공통: 시트 열기 버튼 (레이블만 넘기면 됨) */
 export function StoryTriggerButton({
@@ -61,24 +50,21 @@ export function SheetHeaderWithActions({
     <div className="flex items-center justify-between border-b border-gray-100 px-4 pb-3">
       <div className="flex min-w-0 flex-1 items-center gap-2">
         {icon}
-        <h2
-          id="bottom-sheet-title"
-          className="truncate text-heading-2 text-gray-900"
-        >
+        <h2 id="bottom-sheet-title" className="truncate text-heading-2 text-gray-900">
           {title}
         </h2>
       </div>
       <div className="flex shrink-0 items-center gap-2">
         <button
           type="button"
-          className="rounded px-2 py-1 text-label-2 text-gray-600 hover:bg-gray-100"
+          className="rounded px-2 py-1 text-label-2 text-gray-600"
           onClick={actions.collapse}
         >
           접기
         </button>
         <button
           type="button"
-          className="rounded px-2 py-1 text-label-2 text-gray-600 hover:bg-gray-100"
+          className="rounded px-2 py-1 text-label-2 text-gray-600"
           onClick={actions.expand}
         >
           펼치기
@@ -86,7 +72,7 @@ export function SheetHeaderWithActions({
         <button
           type="button"
           aria-label="닫기"
-          className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+          className="rounded p-1 text-gray-500"
           onClick={actions.close}
         >
           ✕
@@ -123,7 +109,7 @@ export function SheetHeaderCloseOnly({
       <button
         type="button"
         aria-label="닫기"
-        className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+        className="rounded p-1 text-gray-500"
         onClick={actions.close}
       >
         ✕
@@ -148,14 +134,14 @@ export function SheetHeaderCollapseExpandOnly({
       <div className="flex shrink-0 items-center gap-2">
         <button
           type="button"
-          className="rounded px-2 py-1 text-label-2 text-gray-600 hover:bg-gray-100"
+          className="rounded px-2 py-1 text-label-2 text-gray-600"
           onClick={actions.collapse}
         >
           접기
         </button>
         <button
           type="button"
-          className="rounded px-2 py-1 text-label-2 text-gray-600 hover:bg-gray-100"
+          className="rounded px-2 py-1 text-label-2 text-gray-600"
           onClick={actions.expand}
         >
           펼치기

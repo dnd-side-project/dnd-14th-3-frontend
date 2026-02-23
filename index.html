@@ -2,14 +2,53 @@
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="dns-prefetch" href="//cdn.jsdelivr.net" />
     <link
-      rel="stylesheet"
+      rel="preload"
+      as="style"
       crossorigin
       href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css"
+      onload="
+        this.onload = null;
+        this.rel = 'stylesheet';
+      "
     />
+    <noscript>
+      <link
+        rel="stylesheet"
+        crossorigin
+        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css"
+      />
+    </noscript>
+    <!-- Google tag (gtag.js) -->
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=%VITE_GA_MEASUREMENT_ID%"
+    ></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      const measurementId = "%VITE_GA_MEASUREMENT_ID%";
+      gtag("js", new Date());
+      gtag("config", measurementId, { send_page_view: false });
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>dnd-14th-3-frontend</title>
+    <meta name="description" content="사진 동행 서비스: 혼자여도, 기록은 함께" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="찍어줄게" />
+    <meta property="og:title" content="찍어줄게" />
+    <meta property="og:description" content="사진 동행 서비스: 혼자여도, 기록은 함께" />
+    <meta property="og:image" content="/ogcard.png" />
+    <meta property="og:locale" content="ko_KR" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="찍어줄게" />
+    <meta name="twitter:description" content="사진 동행 서비스: 혼자여도, 기록은 함께" />
+    <meta name="twitter:image" content="/ogcard.png" />
+    <title>찍어줄게</title>
   </head>
   <body>
     <div id="root"></div>

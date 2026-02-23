@@ -51,15 +51,13 @@ const sizeStyles: Record<CheckboxSize, string> = {
 
 const stateStyles: Record<NormalState, string> = {
   unchecked: "bg-white border-gray-200",
-  checked:
-    "bg-mint-500 border-mint-500 hover:bg-mint-600 hover:border-mint-600 active:bg-mint-700 active:border-mint-700",
-  partial:
-    "bg-mint-500 border-mint-500 hover:bg-mint-600 hover:border-mint-600 active:bg-mint-700 active:border-mint-700",
+  checked: "bg-mint-500 border-mint-500 active:bg-mint-600 active:border-mint-600",
+  partial: "bg-mint-500 border-mint-500 active:bg-mint-600 active:border-mint-600",
 };
 
 const checkStateStyles: Record<CheckState, string> = {
-  unchecked: "text-gray-200 hover:text-gray-300 active:text-gray-400",
-  checked: "text-mint-500 hover:text-mint-600 active:text-mint-700",
+  unchecked: "text-gray-200 active:text-gray-300",
+  checked: "text-mint-500 active:text-mint-600",
 };
 
 const disabledStyles = {
