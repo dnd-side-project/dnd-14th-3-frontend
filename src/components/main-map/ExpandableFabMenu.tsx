@@ -1,4 +1,4 @@
-import { type LucideIcon,Plus, X } from "lucide-react";
+import { type LucideIcon, Plus, X } from "lucide-react";
 
 interface FabItem {
   id: string;
@@ -53,7 +53,7 @@ export default function ExpandableFabMenu({
                     type="button"
                     aria-label={item.label}
                     onClick={item.onClick}
-                    className="cursor-pointer flex size-11 items-center justify-center rounded-full bg-mint-500 text-white shadow-[0_8px_16px_rgba(0,0,0,0.2)] transition-transform active:scale-95"
+                    className="cursor-pointer flex size-11 items-center justify-center rounded-full bg-mint-500 text-white shadow-[0_8px_16px_rgba(0,0,0,0.2)] transition-transform active:bg-mint-600"
                   >
                     <item.icon className="size-4" strokeWidth={2.1} />
                   </button>
@@ -65,8 +65,10 @@ export default function ExpandableFabMenu({
               type="button"
               aria-label={isExpanded ? "액션 메뉴 닫기" : "액션 메뉴 열기"}
               onClick={onToggle}
-              className={`cursor-pointer pointer-events-auto flex size-14 items-center justify-center rounded-full shadow-[0_10px_20px_rgba(0,0,0,0.2)] transition-all active:scale-95 ${
-                isExpanded ? "bg-white text-mint-600" : "bg-mint-500 text-white"
+              className={`cursor-pointer pointer-events-auto flex size-14 items-center justify-center rounded-full shadow-[0_10px_20px_rgba(0,0,0,0.2)] transition-all ${
+                isExpanded
+                  ? "bg-white text-mint-600 active:bg-gray-100"
+                  : "bg-mint-500 text-white active:bg-mint-600"
               }`}
             >
               {isExpanded ? (

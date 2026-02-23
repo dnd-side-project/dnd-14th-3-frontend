@@ -16,16 +16,13 @@ import ProfileStepLayout from "../ProfileStepLayout";
 
 export default function ShootingStyleStep() {
   const { control } = useFormContext<ProfileSetupFormValues>();
-  const {
-    canGoNext,
-    goNext,
-    goBack,
-    isFirstStep,
-    isLastStep,
-  } = useProfileFunnel();
+  const { canGoNext, goNext, goBack, isFirstStep, isLastStep } = useProfileFunnel();
   const { data: apiStyles, isLoading, isError, refetch } = useShootingStyles();
 
-  const styles = useMemo(() => isError ? FALLBACK_SHOOTING_STYLES : apiStyles ?? [], [isError, apiStyles]);
+  const styles = useMemo(
+    () => (isError ? FALLBACK_SHOOTING_STYLES : (apiStyles ?? [])),
+    [isError, apiStyles]
+  );
   const styleLength = useMemo(() => styles.length, [styles]);
 
   const toggleStyleTag = useCallback((styleId: string, currentValue: string[]) => {
@@ -53,10 +50,7 @@ export default function ShootingStyleStep() {
             {isLoading && (
               <div className="flex flex-wrap gap-3">
                 {Array.from({ length: styleLength }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="h-12 w-24 animate-pulse rounded-md bg-gray-200"
-                  />
+                  <div key={i} className="h-12 w-24 animate-pulse rounded-md bg-gray-200" />
                 ))}
               </div>
             )}
@@ -70,7 +64,7 @@ export default function ShootingStyleStep() {
                     <button
                       type="button"
                       onClick={() => refetch()}
-                      className="rounded-md px-3 py-1.5 text-label-1 font-medium text-mint-600 hover:bg-mint-50"
+                      className="rounded-md px-3 py-1.5 text-label-1 font-medium text-mint-600"
                     >
                       다시 시도
                     </button>
@@ -95,7 +89,6 @@ export default function ShootingStyleStep() {
           </>
         )}
       />
-
     </ProfileStepLayout>
   );
 }
