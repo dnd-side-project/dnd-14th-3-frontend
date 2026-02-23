@@ -5,3 +5,4 @@ export { useSlideViewport } from "./intro/useSlideViewport";
 export { useNotificationPermission } from "./notification-permission/useNotificationPermission";
 export { useNicknameValidation } from "./profile-setup/useNicknameValidation";
 export { useProfileFunnel } from "./profile-setup/useProfileFunnel";
+export { useProfileSignup } from "./profile-setup/useProfileSignup";
