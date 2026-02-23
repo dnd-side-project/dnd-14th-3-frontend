@@ -20,7 +20,7 @@ export default defineConfig({
           manifest: {
             name: "찍어줄게",
             short_name: "찍어줄게",
-            description: "사진 동행 서비스",
+            description: "혼자여도, 기록은 함께",
             theme_color: "#ffffff",
             icons: [
               {
