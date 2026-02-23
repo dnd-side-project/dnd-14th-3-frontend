@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 
 import type { OnboardingStep } from "@/types/on-board";
 
-import { getOnboardingStep } from "@/lib/on-board/getOnboardingStep";
+import { getOnboardingStep } from "@/lib/on-board";
 
 import { IntroStepWidget, ProfileSetupWidget } from "@/components/on-board";
 import NotificationPermissionWidget from "@/components/on-board/notification-permission/NotificationPermissionWidget";
