@@ -27,7 +27,7 @@ export default function NotificationPermissionWidget({
   const [showDeniedGuide, setShowDeniedGuide] = useState(false);
   const { data: userProfile } = useGetUserProfile();
   const { requestPermission, isRequesting, isSupported } = useNotificationPermission();
-  const { mutateAsync: patchUserConsents } = usePatchUserConsents();
+  const { mutateAsync: patchUserConsents, isPending } = usePatchUserConsents();
 
   const nickname = userProfile?.nickname ?? "회원";
 
@@ -101,11 +101,11 @@ export default function NotificationPermissionWidget({
         </div>
 
         <div className="sticky bottom-0 flex flex-col gap-3 px-5 pt-5 pb-[calc(20px+env(safe-area-inset-bottom))] bg-white [&_button]:h-[52px]">
-          <Button.Primary fullWidth size="large" onClick={handleNotificationAllow} disabled={isRequesting}>
-            알림 허용하기
+          <Button.Primary fullWidth size="large" onClick={handleNotificationAllow} disabled={isRequesting || isPending}>
+            {isPending ? <LoadingIndicator /> : "알림 허용하기"}
           </Button.Primary>
-          <Button.Secondary fullWidth size="large" onClick={handleNotificationSkip} disabled={isRequesting}>
-            다음에 할게요
+          <Button.Secondary fullWidth size="large" onClick={handleNotificationSkip} disabled={isRequesting || isPending}>
+            {isPending ? <LoadingIndicator /> : "다음에 할게요"}
           </Button.Secondary>
         </div>
       </section>
