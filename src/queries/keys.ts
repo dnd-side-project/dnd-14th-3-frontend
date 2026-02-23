@@ -4,6 +4,7 @@ export const queryKeys = {
   },
   user: {
     all: ["user"] as const,
+    consents: ["user", "consents"] as const,
     detail: (id: number) => ["user", id] as const,
     list: (filters?: object) => ["user", "list", filters] as const,
   },

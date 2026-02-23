@@ -15,7 +15,9 @@ export const userHandlers: RequestHandler[] = [
       },
     });
   }),
+
   http.patch("/api/v1/users/profiles", async ({ request }) => {
+    await new Promise((resolve) => setTimeout(resolve, 2500));
 
     const body = (await request.json()) as {
       newUsername?: string;
@@ -36,17 +38,65 @@ export const userHandlers: RequestHandler[] = [
       );
     }
 
+    return HttpResponse.json(
+      {
+        success: true,
+        message: "SUCCESS",
+        code: "",
+        data: {
+          nickname: "홍길동",
+          gender: body.gender,
+          preferredStyles: body.preferredStyles,
+          introduction: body.introduction,
+          photos: body.photos,
+        },
+      },
+      { status: 200 }
+    );
+  }),
+
+  http.get("/api/v1/consents", async () => {
     return HttpResponse.json({
       success: true,
       message: "SUCCESS",
       code: "",
       data: {
-        nickname: "홍길동",
-        gender: body.gender,
-        preferredStyles: body.preferredStyles,
-        introduction: body.introduction,
-        photos: body.photos,
+        notificationAllowed: true,
+        locationAllowed: true,
+        updatedAt: "2025-01-01 12:00:00",
       },
-    }, { status: 203 });
+    });
+  }),
+
+  http.patch("/api/v1/consents", async ({ request }) => {
+    const body = (await request.json()) as {
+      notificationAllowed?: boolean;
+      locationAllowed?: boolean;
+    };
+
+    if (
+      typeof body.notificationAllowed !== "boolean" ||
+      typeof body.locationAllowed !== "boolean"
+    ) {
+      return HttpResponse.json(
+        {
+          success: false,
+          message: "요청한 권한 동의 설정 정보가 올바르지 않습니다.",
+          code: "INVALID_CONSENT_REQUEST",
+          data: null,
+        },
+        { status: 400 }
+      );
+    }
+
+    return HttpResponse.json({
+      success: true,
+      message: "SUCCESS",
+      code: "",
+      data: {
+        notificationAllowed: body.notificationAllowed,
+        locationAllowed: body.locationAllowed,
+      },
+    });
   }),
 ];
