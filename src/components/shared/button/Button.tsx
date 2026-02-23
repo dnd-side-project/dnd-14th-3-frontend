@@ -23,23 +23,22 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 const buttonStyles = {
   primary: {
     base: "font-bold transition-colors",
-    enabled: "bg-mint-500 text-black hover:bg-mint-600 active:bg-mint-700",
+    enabled: "bg-mint-500 text-black active:bg-mint-600",
     disabled: "bg-gray-50 text-gray-500 cursor-not-allowed",
   },
   secondary: {
     base: "font-bold transition-colors",
-    enabled: "bg-gray-100 text-gray-900 hover:bg-gray-200 active:bg-gray-300",
+    enabled: "bg-gray-100 text-gray-900 active:bg-gray-200",
     disabled: "bg-gray-50 text-gray-500 cursor-not-allowed",
   },
   outlined: {
     base: "font-bold border transition-colors",
-    enabled: "border-mint-500 text-black bg-transparent hover:bg-mint-50 active:bg-mint-100",
+    enabled: "border-mint-500 text-black bg-transparent active:bg-mint-100",
     disabled: "border-gray-50 text-gray-400 cursor-not-allowed",
   },
   error: {
     base: "font-bold border transition-colors",
-    enabled:
-      "border-warning-500 text-black bg-transparent hover:bg-warning-50 active:bg-warning-100",
+    enabled: "border-warning-500 text-black bg-transparent active:bg-warning-100",
     disabled: "border-warning-500 text-gray-400 cursor-not-allowed",
   },
 } satisfies Record<ButtonVariant, { base: string; enabled: string; disabled: string }>;

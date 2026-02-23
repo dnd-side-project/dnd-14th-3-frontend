@@ -14,9 +14,15 @@ export default function TriggerWrapper({ children }: { children: ReactNode }) {
 }
 
 export const TRIGGER_BUTTON_CLASS =
-  "rounded-lg bg-mint-500 px-4 py-2 font-medium text-black transition-colors hover:bg-mint-600";
+  "rounded-lg bg-mint-500 px-4 py-2 font-medium text-black transition-colors";
 
-export function StoryTriggerButton({ onClick, children }: { onClick: () => void; children: ReactNode }) {
+export function StoryTriggerButton({
+  onClick,
+  children,
+}: {
+  onClick: () => void;
+  children: ReactNode;
+}) {
   return (
     <button type="button" onClick={onClick} className={TRIGGER_BUTTON_CLASS}>
       {children}

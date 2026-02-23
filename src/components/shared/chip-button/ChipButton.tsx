@@ -18,10 +18,8 @@ export interface ChipButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>
  * ===================== */
 const chipStyles = {
   base: "inline-flex items-center justify-center font-bold transition-colors border",
-  default:
-    "bg-gray-100 border-gray-200 text-gray-700 hover:bg-gray-200 hover:border-gray-300 active:bg-gray-300",
-  selected:
-    "bg-mint-500 border-mint-500 text-black hover:bg-mint-600 hover:border-mint-600 active:bg-mint-700 active:border-mint-700",
+  default: "bg-gray-100 border-gray-200 text-gray-700 active:bg-gray-200",
+  selected: "bg-mint-500 border-mint-500 text-black active:bg-mint-600 active:border-mint-600",
   disabled: "bg-gray-50 border-gray-100 text-gray-400 cursor-not-allowed",
 } as const;
 
