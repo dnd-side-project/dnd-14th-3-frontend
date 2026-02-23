@@ -13,6 +13,7 @@ import MyPage from "@/pages/MyPage";
 import OnboardingPage from "@/pages/OnboardingPage";
 
 import ProtectedRoute from "@/router/ProtectedRoute";
+import OnboardingRoute from "@/router/OnboardingRoute";
 
 import MobileLayout from "@/layout/MobileLayout";
 
@@ -26,8 +27,11 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/auth/kakao/callback" element={<KakaoCallbackPage />} />
 
-          <Route element={<ProtectedRoute />}>
+          <Route element={<OnboardingRoute />}>
             <Route path="/onboarding" element={<OnboardingPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute />}>
             <Route path="/" element={<MainMapPage />} />
             <Route path="/review" element={<MainReviewPage />} />
             <Route path="/companion" element={<CompanionListPage />} />

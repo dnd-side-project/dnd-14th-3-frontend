@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from "react-router-dom";
+﻿import { useLocation, useNavigate } from "react-router-dom";
 
 import { logger } from "@/lib/shared/logger";
 
@@ -33,6 +33,18 @@ export default function LoginPage() {
   const handleKakaoLogin = () => {
     const state = location.state as LocationState | undefined;
     const nextPath = state?.from?.pathname ?? "/";
+    const isMockMode = import.meta.env.VITE_MSW_ENABLED === "true";
+
+    if (isMockMode) {
+      logger.info("[Auth] Mock mode enabled. Bypassing Kakao authorize and using mock callback.", {
+        redirectPath: nextPath,
+      });
+      navigate(`/auth/kakao/callback?code=mock-kakao-code&state=${encodeURIComponent(nextPath)}`, {
+        replace: true,
+      });
+      return;
+    }
+
     const authorizeUrl = buildKakaoAuthorizeUrl(nextPath);
 
     if (!authorizeUrl) {

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+﻿import { useEffect } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 
 import { useAuthStore } from "@/store/auth/auth.store";
@@ -9,7 +9,7 @@ import { LoadingIndicator } from "@/components/shared/loading";
 
 export default function ProtectedRoute() {
   const location = useLocation();
-  const { accessToken, clearAccessToken } = useAuthStore();
+  const { accessToken, clearAuth } = useAuthStore();
 
   const validateQuery = useValidateSessionQuery({
     accessToken,
@@ -18,9 +18,9 @@ export default function ProtectedRoute() {
 
   useEffect(() => {
     if (hasValidationError) {
-      clearAccessToken();
+      clearAuth();
     }
-  }, [clearAccessToken, hasValidationError]);
+  }, [clearAuth, hasValidationError]);
 
   if (!accessToken) {
     return <Navigate to="/login" replace state={{ from: location }} />;
@@ -40,3 +40,4 @@ export default function ProtectedRoute() {
 
   return <Outlet />;
 }
+
