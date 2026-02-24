@@ -1,5 +1,6 @@
-import { apiClient } from "@/api/client";
 import { z } from "zod";
+
+import { apiClient } from "@/api/client";
 
 type TokenPair = {
   accessToken: string;
