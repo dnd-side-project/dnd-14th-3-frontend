@@ -14,8 +14,8 @@ import MainReviewPage from "@/pages/MainReviewPage";
 import MyPage from "@/pages/MyPage";
 import OnboardingPage from "@/pages/OnboardingPage";
 
-import ProtectedRoute from "@/router/ProtectedRoute";
 import OnboardingRoute from "@/router/OnboardingRoute";
+import ProtectedRoute from "@/router/ProtectedRoute";
 
 import MobileLayout from "@/layout/MobileLayout";
 
