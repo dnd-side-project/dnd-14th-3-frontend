@@ -5,3 +5,11 @@ export interface UserProfileResponse {
   email?: string;
   phoneNumber?: string;
 }
+
+/** 사용자 프로필 수정 요청 */
+export interface PatchUserProfileRequest {
+  nickname: string;
+  profileImageUrl?: string;
+  email?: string;
+  phoneNumber?: string;
+}
