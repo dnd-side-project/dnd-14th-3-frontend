@@ -14,6 +14,7 @@ export const profileHandlers: RequestHandler[] = [
       data: FALLBACK_SHOOTING_STYLES.map((style, index) => ({
         id: index,
         name: style.id,
+        label: style.label,
       })),
     });
   }),

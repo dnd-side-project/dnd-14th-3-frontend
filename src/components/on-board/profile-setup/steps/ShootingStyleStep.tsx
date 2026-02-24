@@ -51,7 +51,7 @@ export default function ShootingStyleStep() {
             {isLoading && (
               <div className="flex flex-wrap gap-3">
                 {Array.from({ length: styleLength }).map((_, i) => (
-                  <div key={i} className="h-12 w-24 animate-pulse rounded-md bg-gray-200" />
+                  <div key={i} className="h-9 w-24 animate-pulse rounded-md bg-gray-200" />
                 ))}
               </div>
             )}

@@ -18,6 +18,7 @@ import {
 } from "@/services/auth";
 
 import { Toast } from "@/store/shared/toast/toast.store";
+import { useAuthStore } from "@/store/auth/auth.store";
 
 import { useRequestSignup } from "@/queries/user/useRequestSignup";
 
@@ -27,6 +28,7 @@ export function useProfileSignup(onComplete: () => void) {
   const navigate = useNavigate();
   const { getValues } = useFormContext<ProfileSetupFormValues>();
   const { setStep } = useProfileFunnel();
+  const setAuthTokens = useAuthStore((state) => state.setAuthTokens);
   const { mutateAsync: requestSignup, isPending } = useRequestSignup();
 
   const submit = async () => {
@@ -52,13 +54,28 @@ export function useProfileSignup(onComplete: () => void) {
       Toast.show({
         type: "error",
         message: "회원가입 토큰이 없습니다.\n다시 시도해주세요.",
-        offsetY: 65,
       });
       return;
     }
 
     try {
-      await requestSignup({ token, data: mapSignUpRequestDto(validation.data) });
+      const response = await requestSignup({ token, data: mapSignUpRequestDto(validation.data) });
+      const { accessToken, refreshToken } = response.data ?? {};
+
+      if (!accessToken || !refreshToken) {
+        logger.error(new Error("Missing auth token(s) in signup response."), {
+          scope: "signup",
+          responseData: response.data,
+        });
+        navigate("/login", { replace: true });
+        Toast.show({
+          type: "error",
+          message: "인증 정보 처리에 실패했습니다.\n다시 로그인해주세요.",
+        });
+        return;
+      }
+
+      setAuthTokens({ accessToken, refreshToken });
       Toast.show({
         type: "success",
         message: "프로필이 정상적으로 완성되었어요!",
@@ -71,7 +88,6 @@ export function useProfileSignup(onComplete: () => void) {
         Toast.show({
           type: "error",
           message: "인증이 만료되었습니다.\n다시 로그인해주세요.",
-          offsetY: 65,
         });
         return;
       }
@@ -88,7 +104,6 @@ export function useProfileSignup(onComplete: () => void) {
       Toast.show({
         type: "error",
         message: "프로필 저장에 실패했습니다.\n다시 시도해주세요.",
-        offsetY: 65,
       });
     }
   };
