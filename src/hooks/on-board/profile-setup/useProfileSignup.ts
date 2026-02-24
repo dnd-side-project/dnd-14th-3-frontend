@@ -17,8 +17,8 @@ import {
   isSignupTokenError,
 } from "@/services/auth";
 
-import { Toast } from "@/store/shared/toast/toast.store";
 import { useAuthStore } from "@/store/auth/auth.store";
+import { Toast } from "@/store/shared/toast/toast.store";
 
 import { useRequestSignup } from "@/queries/user/useRequestSignup";
 
