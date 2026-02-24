@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosHeaders } from "axios";
 
 import { useAuthStore } from "@/store/auth/auth.store";
 
@@ -9,6 +9,24 @@ export const apiClient = axios.create({
 });
 
 let isUnauthorizedHandling = false;
+
+apiClient.interceptors.request.use((config) => {
+  const accessToken =
+    useAuthStore.getState().accessToken ??
+    (typeof window !== "undefined" ? localStorage.getItem("access_token") : null);
+
+  if (!accessToken) {
+    return config;
+  }
+
+  const headers = AxiosHeaders.from(config.headers);
+  if (!headers.get("Authorization")) {
+    headers.set("Authorization", `Bearer ${accessToken}`);
+  }
+  config.headers = headers;
+
+  return config;
+});
 
 apiClient.interceptors.response.use(
   (response) => response,
