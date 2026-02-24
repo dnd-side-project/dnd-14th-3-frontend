@@ -1,2 +1,6 @@
 export { getRegisterToken } from "./getRegisterToken.service";
-export { isSignupTokenError } from "./isSignupTokenError.service";
+export {
+  getSignupErrorMessage,
+  isSignupInvalidParameterError,
+  isSignupTokenError,
+} from "./isSignupTokenError.service";

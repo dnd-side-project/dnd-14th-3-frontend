@@ -32,7 +32,7 @@ export const logger = {
   },
 
   error: (e: unknown, context?: Record<string, unknown>) => {
-    console.error(e);
+    console.error(e, context);
     if (Sentry.isInitialized()) {
       Sentry.captureException(toError(e), {
         extra: { original: e, ...context },
