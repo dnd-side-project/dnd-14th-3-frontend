@@ -1,7 +1,5 @@
 export type { ShootingStylesApiResponse } from "./shootingStyles.api";
 export { fetchShootingStylesApi } from "./shootingStyles.api";
-export type { SubmitProfileRequest } from "./submitProfile.api";
-export { submitProfileApi } from "./submitProfile.api";
 export type {
   ValidateNicknameRequest,
   ValidateNicknameResponse,

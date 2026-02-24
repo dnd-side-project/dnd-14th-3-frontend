@@ -1,6 +1,5 @@
 import { http, HttpResponse, type RequestHandler } from "msw";
 
-import type { SubmitProfileRequest } from "@/api/on-board/profile";
 import type { PatchUserConsentsRequest, PatchUserProfileRequest } from "@/api/user";
 
 export const userHandlers: RequestHandler[] = [
@@ -35,30 +34,6 @@ export const userHandlers: RequestHandler[] = [
       profileImageUrl: body.profileImageUrl,
       email: body.email,
       phoneNumber: body.phoneNumber,
-    });
-  }),
-
-  /** 온보딩 프로필 제출 (userId 없음, 토큰 기반) */
-  http.patch("/api/v1/users/profiles", async ({ request }) => {
-    const body = (await request.json()) as SubmitProfileRequest;
-
-    if (!body.newUsername?.trim() || !body.gender || !body.preferredStyles?.length || !body.ageRange) {
-      return HttpResponse.json(
-        {
-          success: false,
-          message: "필수 항목이 누락되었습니다",
-          code: "INVALID_PROFILE_REQUEST",
-          data: null,
-        },
-        { status: 400 }
-      );
-    }
-
-    return HttpResponse.json({
-      success: true,
-      message: "SUCCESS",
-      code: "",
-      data: { nickname: body.newUsername },
     });
   }),
 

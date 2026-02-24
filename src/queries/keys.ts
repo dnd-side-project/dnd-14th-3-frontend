@@ -9,6 +9,5 @@ export const queryKeys = {
   onboard: {
     shootingStyles: ["on-board", "shooting-styles"] as const,
     validateNickname: (nickname: string) => ["on-board", "validate-nickname", nickname] as const,
-    submitProfile: () => ["on-board", "submit-profile"] as const,
   },
 } as const;
