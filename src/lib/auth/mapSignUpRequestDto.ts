@@ -6,6 +6,7 @@ export function mapSignUpRequestDto(data: ProfileSetupData): SignupRequest {
   return {
     nickname: data.newUsername,
     gender: data.gender,
+    profileImageUrl: "",
     photoStyles: [...data.preferredStyles],
   };
 }

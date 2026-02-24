@@ -1,3 +1,4 @@
+﻿import { isAxiosError } from "axios";
 import { useNavigate } from "react-router-dom";
 
 import { useFormContext } from "react-hook-form";
@@ -33,6 +34,7 @@ export function useProfileSignup(onComplete: () => void) {
       const message = firstIssue?.message ?? "유효성 검증 실패";
       Toast.show({ type: "error", message });
       logger.error(message);
+
       const firstField = firstIssue?.path[0];
       if (typeof firstField === "string" && firstField in FIELD_TO_STEP) {
         setStep(FIELD_TO_STEP[firstField as keyof ProfileSetupFormValues]);
@@ -43,7 +45,7 @@ export function useProfileSignup(onComplete: () => void) {
     const token = getRegisterToken();
     if (!token) {
       navigate("/login", { replace: true });
-      Toast.show({ type: "error", message: "회원가입 토큰이 없습니다\n다시 시도해주세요." });
+      Toast.show({ type: "error", message: "회원가입 토큰이 없습니다.\n다시 시도해주세요." });
       return;
     }
 
@@ -59,13 +61,37 @@ export function useProfileSignup(onComplete: () => void) {
         navigate("/login", { replace: true });
         Toast.show({
           type: "error",
-          message: "인증이 만료되었습니다\n다시 로그인해주세요.",
+          message: "인증이 만료되었습니다.\n다시 로그인해주세요.",
         });
         return;
       }
+
+      if (isAxiosError(error) && error.response?.status === 401) {
+        navigate("/login", { replace: true });
+        Toast.show({
+          type: "error",
+          message: "인증이 만료되었습니다.\n다시 로그인해주세요.",
+        });
+        return;
+      }
+
+      if (isAxiosError(error) && error.response?.status === 400) {
+        const code = error.response.data?.code;
+        const message =
+          typeof error.response.data?.message === "string"
+            ? error.response.data.message
+            : "이미 존재하는 닉네임입니다.";
+
+        if (code === "INVALID_PARAMETER") {
+          setStep("nickname");
+          Toast.show({ type: "error", message });
+          return;
+        }
+      }
+
       Toast.show({
         type: "error",
-        message: "프로필 저장에 실패했습니다\n다시 시도해주세요.",
+        message: "프로필 저장에 실패했습니다.\n다시 시도해주세요.",
       });
     }
   };
