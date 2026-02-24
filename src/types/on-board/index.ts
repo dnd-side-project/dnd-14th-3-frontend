@@ -1,4 +1,5 @@
 export { type IntroStepContent } from "./intro-step-content.type";
+export type { OnboardingStep } from "./onboarding-step.type";
 export {
   type AgeRange,
   ageRangeSchema,

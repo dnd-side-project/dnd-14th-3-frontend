@@ -7,6 +7,7 @@ export const queryKeys = {
     consents: ["user", "consents"] as const,
     detail: (id: number) => ["user", id] as const,
     list: (filters?: object) => ["user", "list", filters] as const,
+    profile: ["user", "profile"] as const,
   },
   onboard: {
     shootingStyles: ["on-board", "shooting-styles"] as const,
