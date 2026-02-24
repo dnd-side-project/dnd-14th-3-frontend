@@ -1,7 +1,5 @@
 ﻿import { useNavigate } from "react-router-dom";
 
-import { isAxiosError } from "axios";
-
 import { useFormContext } from "react-hook-form";
 
 import type { ProfileSetupFormValues } from "@/types/on-board";
@@ -12,7 +10,12 @@ import { logger } from "@/lib/shared/logger";
 
 import { FIELD_TO_STEP } from "@/constants/on-board";
 
-import { getRegisterToken, isSignupTokenError } from "@/services/auth";
+import {
+  getRegisterToken,
+  getSignupErrorMessage,
+  isSignupInvalidParameterError,
+  isSignupTokenError,
+} from "@/services/auth";
 
 import { Toast } from "@/store/shared/toast/toast.store";
 
@@ -69,28 +72,13 @@ export function useProfileSignup(onComplete: () => void) {
         return;
       }
 
-      if (isAxiosError(error) && error.response?.status === 401) {
-        navigate("/login", { replace: true });
+      if (isSignupInvalidParameterError(error)) {
+        setStep("nickname");
         Toast.show({
           type: "error",
-          message: "인증이 만료되었습니다.\n다시 로그인해주세요.",
-          offsetY: 65,
+          message: getSignupErrorMessage(error) ?? "이미 존재하는 닉네임입니다.",
         });
         return;
-      }
-
-      if (isAxiosError(error) && error.response?.status === 400) {
-        const code = error.response.data?.code;
-        const message =
-          typeof error.response.data?.message === "string"
-            ? error.response.data.message
-            : "이미 존재하는 닉네임입니다.";
-
-        if (code === "INVALID_PARAMETER") {
-          setStep("nickname");
-          Toast.show({ type: "error", message });
-          return;
-        }
       }
 
       Toast.show({
