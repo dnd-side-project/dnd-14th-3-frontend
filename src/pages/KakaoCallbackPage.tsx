@@ -26,6 +26,10 @@ function toErrorLogPayload(error: unknown) {
   };
 }
 
+function getStringFromCandidate(candidate: unknown): string | null {
+  return typeof candidate === "string" && candidate.length > 0 ? candidate : null;
+}
+
 export default function KakaoCallbackPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -61,20 +65,66 @@ export default function KakaoCallbackPage() {
 
     loginWithKakaoCodeApi(code)
       .then(({ data }) => {
+        const payload = data as Record<string, unknown>;
+
         if (data.isNewUser) {
+          const registerToken =
+            getStringFromCandidate(payload.registerToken) ??
+            getStringFromCandidate(payload.register_token) ??
+            getStringFromCandidate((payload.token as Record<string, unknown> | undefined)?.registerToken) ??
+            getStringFromCandidate((payload.token as Record<string, unknown> | undefined)?.register_token);
+
+          if (!registerToken) {
+            logger.error(new Error("Missing register token for new user."), {
+              scope: "kakao-login-callback",
+              redirectPath,
+              payload: data,
+            });
+            navigate("/login", { replace: true });
+            return;
+          }
+
           logger.info("[Auth] New user detected. Redirecting to onboarding.");
-          setRegisterToken(data.registerToken);
+          setRegisterToken(registerToken);
           navigate("/onboarding", { replace: true });
           return;
         }
 
+        const tokenObject = (payload.token as Record<string, unknown> | undefined) ?? null;
+        const tokensObject = (payload.tokens as Record<string, unknown> | undefined) ?? null;
+
+        const accessToken =
+          getStringFromCandidate(payload.accessToken) ??
+          getStringFromCandidate(payload.access_token) ??
+          getStringFromCandidate(tokenObject?.accessToken) ??
+          getStringFromCandidate(tokenObject?.access_token) ??
+          getStringFromCandidate(tokensObject?.accessToken) ??
+          getStringFromCandidate(tokensObject?.access_token);
+        const refreshToken =
+          getStringFromCandidate(payload.refreshToken) ??
+          getStringFromCandidate(payload.refresh_token) ??
+          getStringFromCandidate(tokenObject?.refreshToken) ??
+          getStringFromCandidate(tokenObject?.refresh_token) ??
+          getStringFromCandidate(tokensObject?.refreshToken) ??
+          getStringFromCandidate(tokensObject?.refresh_token);
+
+        if (!accessToken || !refreshToken) {
+          logger.error(new Error("Missing auth token(s) from kakao callback response."), {
+            scope: "kakao-login-callback",
+            redirectPath,
+            payload: data,
+          });
+          navigate("/login", { replace: true });
+          return;
+        }
+
         logger.info("[Auth] Token exchange succeeded.", {
-          tokenLength: data.accessToken.length,
+          tokenLength: accessToken.length,
           redirectPath,
         });
         setAuthTokens({
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
+          accessToken,
+          refreshToken,
         });
         navigate(redirectPath, { replace: true });
       })

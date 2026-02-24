@@ -1,7 +1,4 @@
 export const queryKeys = {
-  auth: {
-    validate: (accessToken: string) => ["auth", "validate", accessToken] as const,
-  },
   user: {
     all: ["user"] as const,
     consents: ["user", "consents"] as const,

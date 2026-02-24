@@ -1,8 +1,4 @@
-﻿import { apiClient } from "@/api/client";
-
-export type SessionUser = {
-  id: number;
-};
+import { apiClient } from "@/api/client";
 
 type TokenPair = {
   accessToken: string;
@@ -64,14 +60,3 @@ export async function refreshTokenApi(refreshToken: string) {
 
   return response.data;
 }
-
-export async function validateSessionApi(accessToken: string) {
-  const response = await apiClient.get<SessionUser>("/users/me", {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
-
-  return response.data;
-}
-
