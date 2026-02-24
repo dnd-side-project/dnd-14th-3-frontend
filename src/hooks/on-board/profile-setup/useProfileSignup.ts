@@ -49,7 +49,11 @@ export function useProfileSignup(onComplete: () => void) {
     const token = getRegisterToken();
     if (!token) {
       navigate("/login", { replace: true });
-      Toast.show({ type: "error", message: "회원가입 토큰이 없습니다.\n다시 시도해주세요." });
+      Toast.show({
+        type: "error",
+        message: "회원가입 토큰이 없습니다.\n다시 시도해주세요.",
+        offsetY: 65,
+      });
       return;
     }
 
