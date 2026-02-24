@@ -62,37 +62,6 @@ export const authHandlers: RequestHandler[] = [
       { status: 200 }
     );
   }),
-  http.post("/api/v1/auth/signup", async ({ request }) => {
-    const registerToken = request.headers.get("register-token");
-
-    if (registerToken !== MOCK_REGISTER_TOKEN) {
-      return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
-
-    const body = (await request.json()) as {
-      nickname?: string;
-      gender?: string;
-      profileImageUrl?: string;
-      photoStyles?: string[];
-    };
-
-    if (!body.nickname || !body.gender || !body.photoStyles?.length) {
-      return HttpResponse.json({ message: "Invalid signup payload" }, { status: 400 });
-    }
-
-    return HttpResponse.json(
-      {
-        success: true,
-        message: "회원가입 성공",
-        code: "",
-        data: {
-          accessToken: MOCK_ACCESS_TOKEN,
-          refreshToken: MOCK_REFRESH_TOKEN,
-        },
-      },
-      { status: 200 }
-    );
-  }),
   http.post("/api/v1/auth/refresh", ({ request }) => {
     const authorization = request.headers.get("authorization");
 
@@ -122,7 +91,7 @@ export const authHandlers: RequestHandler[] = [
   }),
 
   http.post("/api/v1/auth/signup", async ({ request }) => {
-    const registerToken = request.headers.get("Register-Token");
+    const registerToken = request.headers.get("Register-Token") ?? request.headers.get("register-token");
     const body = (await request.json()) as SignupRequest;
 
     if (!body.gender || !body.nickname || !body.photoStyles?.length) {
@@ -160,7 +129,7 @@ export const authHandlers: RequestHandler[] = [
         code: "",
         data: {
           accessToken: MOCK_ACCESS_TOKEN,
-          refreshToken: "mock-refresh-token",
+          refreshToken: MOCK_REFRESH_TOKEN,
         },
       },
       { status: 200 }
