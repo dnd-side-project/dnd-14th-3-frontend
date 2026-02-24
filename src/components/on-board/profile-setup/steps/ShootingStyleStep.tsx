@@ -4,7 +4,7 @@ import { Controller, useFormContext } from "react-hook-form";
 
 import { ProfileSetupFormValues } from "@/types/on-board";
 
-import { FALLBACK_SHOOTING_STYLES, PHOTO_STYLE_LABEL_MAP } from "@/constants/on-board";
+import { FALLBACK_SHOOTING_STYLES } from "@/constants/on-board";
 
 import { useProfileFunnel } from "@/hooks/on-board";
 
@@ -74,7 +74,7 @@ export default function ShootingStyleStep() {
                 <div className="flex flex-wrap gap-3">
                   {styles.map((style) => {
                     const isSelected = field.value.includes(style.id);
-                    const displayLabel = PHOTO_STYLE_LABEL_MAP[style.id] ?? style.label;
+                    const displayLabel = style.label;
                     return (
                       <ChipButton
                         key={style.id}
