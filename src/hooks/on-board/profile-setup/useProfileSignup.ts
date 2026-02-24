@@ -55,6 +55,7 @@ export function useProfileSignup(onComplete: () => void) {
       Toast.show({
         type: "success",
         message: "프로필이 정상적으로 완성되었어요!",
+        offsetY: 65,
       });
       onComplete();
     } catch (error) {
@@ -63,6 +64,7 @@ export function useProfileSignup(onComplete: () => void) {
         Toast.show({
           type: "error",
           message: "인증이 만료되었습니다.\n다시 로그인해주세요.",
+          offsetY: 65,
         });
         return;
       }
@@ -72,6 +74,7 @@ export function useProfileSignup(onComplete: () => void) {
         Toast.show({
           type: "error",
           message: "인증이 만료되었습니다.\n다시 로그인해주세요.",
+          offsetY: 65,
         });
         return;
       }
@@ -93,6 +96,7 @@ export function useProfileSignup(onComplete: () => void) {
       Toast.show({
         type: "error",
         message: "프로필 저장에 실패했습니다.\n다시 시도해주세요.",
+        offsetY: 65,
       });
     }
   };
