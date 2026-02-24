@@ -1,6 +1,6 @@
 import type { ShootingStyle } from "@/types/on-board";
 
-import { PHOTO_STYLE_LABEL_MAP } from "@/constants/on-board";
+import { PHOTO_STYLE_LABEL_MAP } from "@/constants/on-board/profile-setup/shooting-style";
 
 import { apiClient } from "@/api/client";
 
