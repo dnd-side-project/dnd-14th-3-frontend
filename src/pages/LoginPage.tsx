@@ -2,6 +2,8 @@
 
 import { logger } from "@/lib/shared/logger";
 
+import { Toast } from "@/store/shared/toast/toast.store";
+
 type LocationState = {
   from?: {
     pathname?: string;
@@ -52,9 +54,9 @@ export default function LoginPage() {
         hasRestApiKey: Boolean(import.meta.env.VITE_KAKAO_REST_API_KEY),
         redirectUri: import.meta.env.VITE_KAKAO_REDIRECT_URI,
       });
-
-      navigate(`/auth/kakao/callback?code=mock-kakao-code&state=${encodeURIComponent(nextPath)}`, {
-        replace: true,
+      Toast.show({
+        type: "error",
+        message: "로그인 설정이 올바르지 않습니다.\n잠시 후 다시 시도해주세요.",
       });
       return;
     }
