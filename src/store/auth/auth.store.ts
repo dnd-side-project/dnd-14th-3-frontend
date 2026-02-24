@@ -50,6 +50,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
   setRegisterToken: (registerToken) => {
     persistToken(REGISTER_TOKEN_KEY, registerToken);
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
     set({
       registerToken,
       isNewUser: true,
