@@ -5,10 +5,16 @@ import { FALLBACK_SHOOTING_STYLES } from "@/constants/on-board";
 const MOCK_DUPLICATE_NICKNAME = "중복닉네임";
 
 export const profileHandlers: RequestHandler[] = [
-  http.get("/api/v1/profile/shooting-styles", () => {
-    console.log("[MSW] GET /api/shooting-styles");
+  http.get("/api/v1/photo-style", () => {
+    console.log("[MSW] GET /api/v1/photo-style");
     return HttpResponse.json({
-      styles: FALLBACK_SHOOTING_STYLES,
+      success: true,
+      message: "OK",
+      code: "OK",
+      data: FALLBACK_SHOOTING_STYLES.map((style, index) => ({
+        id: index,
+        name: style.id,
+      })),
     });
   }),
 

@@ -4,7 +4,7 @@ import { Controller, useFormContext } from "react-hook-form";
 
 import { ProfileSetupFormValues } from "@/types/on-board";
 
-import { FALLBACK_SHOOTING_STYLES } from "@/constants/on-board";
+import { FALLBACK_SHOOTING_STYLES, PHOTO_STYLE_LABEL_MAP } from "@/constants/on-board";
 
 import { useProfileFunnel } from "@/hooks/on-board";
 
@@ -19,11 +19,12 @@ export default function ShootingStyleStep() {
   const { canGoNext, goNext, goBack, isFirstStep, isLastStep } = useProfileFunnel();
   const { data: apiStyles, isLoading, isError, refetch } = useShootingStyles();
 
-  const styles = useMemo(
-    () => (isError ? FALLBACK_SHOOTING_STYLES : (apiStyles ?? [])),
-    [isError, apiStyles]
-  );
-  const styleLength = useMemo(() => styles.length, [styles]);
+  const styles = useMemo(() => {
+    if (isError) return FALLBACK_SHOOTING_STYLES;
+    if (!apiStyles || apiStyles.length === 0) return FALLBACK_SHOOTING_STYLES;
+    return apiStyles;
+  }, [isError, apiStyles]);
+  const styleLength = FALLBACK_SHOOTING_STYLES.length;
 
   const toggleStyleTag = useCallback((styleId: string, currentValue: string[]) => {
     if (currentValue.includes(styleId)) {
@@ -73,13 +74,14 @@ export default function ShootingStyleStep() {
                 <div className="flex flex-wrap gap-3">
                   {styles.map((style) => {
                     const isSelected = field.value.includes(style.id);
+                    const displayLabel = PHOTO_STYLE_LABEL_MAP[style.id] ?? style.label;
                     return (
                       <ChipButton
                         key={style.id}
                         selected={isSelected}
                         onClick={() => field.onChange(toggleStyleTag(style.id, field.value))}
                       >
-                        {style.label}
+                        {displayLabel}
                       </ChipButton>
                     );
                   })}
