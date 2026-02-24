@@ -10,7 +10,7 @@ type TokenPair = {
 type ApiSuccess<T> = {
   success: true;
   message: string;
-  code: string;
+  code: string | null;
   data: T;
 };
 
@@ -103,7 +103,7 @@ const kakaoLoginResponseSchema = z
   .object({
     success: z.literal(true),
     message: z.string(),
-    code: z.string(),
+    code: z.string().nullable(),
     data: z.unknown(),
   })
   .transform((response) => ({
@@ -115,7 +115,7 @@ const tokenPairResponseSchema = z
   .object({
     success: z.literal(true),
     message: z.string(),
-    code: z.string(),
+    code: z.string().nullable(),
     data: z.unknown(),
   })
   .transform((response) => ({
