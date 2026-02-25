@@ -39,7 +39,7 @@ export const useMainMapLocationStore = create<LocationState>()(
     {
       name: "main-map-location",
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
+      partialize: (state: LocationState) => ({
         selectedLocation: state.selectedLocation,
         source: state.source,
         updatedAt: state.updatedAt,

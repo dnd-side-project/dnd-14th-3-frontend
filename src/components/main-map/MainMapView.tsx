@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 
 import { ChevronUp, MapPin, X } from "lucide-react";
 import { Map, MapMarker } from "react-kakao-maps-sdk";
@@ -51,6 +51,11 @@ interface MainMapViewProps {
     changeMessage: (message: string) => void;
     submit: () => void;
   };
+  matchingWaitSheet: {
+    isOpen: boolean;
+    isCancelling: boolean;
+    cancel: () => void;
+  };
   onBottomSheetSnapChange: (snapState: "collapsed" | "full") => void;
 }
 
@@ -68,6 +73,7 @@ export default function MainMapView({
   manualActions,
   currentLocationActions,
   companionRequestSheet,
+  matchingWaitSheet,
   onBottomSheetSnapChange,
 }: MainMapViewProps) {
   const [companionRequestSnapState, setCompanionRequestSnapState] = useState<"collapsed" | "full">(
@@ -287,6 +293,34 @@ export default function MainMapView({
           >
             {companionRequestSheet.isSubmitting ? "요청 중..." : "보내기"}
           </Button.Primary>
+        }
+      />
+
+      <BottomSheet
+        isOpen={matchingWaitSheet.isOpen}
+        onClose={() => {}}
+        showBackdrop
+        backdropClick="none"
+        draggable={false}
+        dragToClose={false}
+        initialSnap="full"
+        renderContent={
+          <div className="space-y-1 pt-2">
+            <p className="text-gray-500 text-body-2">500m 이내</p>
+            <p className="text-heading-2 font-bold mb-3">오늘의 사진 메이트를 찾고 있어요</p>
+            <p className="text-body-1 text-gray-500">
+              실시간으로 주변 사용자를 찾는 중입니다. 잠시만 기다려 주세요.
+            </p>
+          </div>
+        }
+        footer={
+          <Button.Secondary
+            fullWidth
+            disabled={matchingWaitSheet.isCancelling}
+            onClick={matchingWaitSheet.cancel}
+          >
+            {matchingWaitSheet.isCancelling ? "요청 취소 중..." : "요청 취소"}
+          </Button.Secondary>
         }
       />
     </div>

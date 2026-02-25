@@ -61,6 +61,7 @@ export default function MainMapPage() {
         manualActions={controller.manualActions}
         currentLocationActions={controller.currentLocationActions}
         companionRequestSheet={controller.companionRequestSheet}
+        matchingWaitSheet={controller.matchingWaitSheet}
         onBottomSheetSnapChange={controller.onBottomSheetSnapChange}
       />
 
