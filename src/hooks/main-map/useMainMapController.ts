@@ -489,6 +489,14 @@ export function useMainMapController() {
     transitionPhase("match-accepted");
   }, [transitionPhase]);
 
+  const handleRejectMatchFound = useCallback(() => {
+    // TODO: call proposal reject API when backend endpoint is finalized.
+    logger.info("[match-request] reject proposal and continue waiting");
+    setMatchProposal(null);
+    setMatchSession(null);
+    transitionPhase("matching-in-progress");
+  }, [transitionPhase]);
+
   const handleMapCreate = useCallback(
     (map: kakao.maps.Map) => {
       mapRef.current = map;
@@ -558,9 +566,7 @@ export function useMainMapController() {
     matchFoundSheet: {
       isOpen: phase === "match-success",
       accept: handleAcceptMatchFound,
-      reject: () => {
-        // TODO: wire reject API when backend endpoint is available.
-      },
+      reject: handleRejectMatchFound,
       close: () => transitionPhase("idle"),
     },
     acceptedMatchDetailSheet: {

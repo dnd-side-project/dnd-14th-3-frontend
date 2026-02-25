@@ -13,6 +13,7 @@ import ManualLocationSearchOverlay from "@/components/main-map/ManualLocationSea
 import { BottomSheet } from "@/components/shared/bottom-sheet";
 import { Button } from "@/components/shared/button";
 import { ChipButton } from "@/components/shared/chip-button";
+import { Popup } from "@/components/shared/popup";
 import { TextArea } from "@/components/shared/textarea";
 
 interface MainMapViewProps {
@@ -95,6 +96,7 @@ export default function MainMapView({
   const [acceptedDetailSnapState, setAcceptedDetailSnapState] = useState<"collapsed" | "full">(
     "full"
   );
+  const [isRejectConfirmModalOpen, setIsRejectConfirmModalOpen] = useState(false);
 
   const isCenterPinMode = isManualLocationMode || isSheetOpen;
   const shouldDisableRequestButton =
@@ -357,9 +359,7 @@ export default function MainMapView({
             </div>
             <button
               type="button"
-              aria-label={
-                matchFoundSnapState === "collapsed" ? "바텀시트 펼치기" : "바텀시트 접기"
-              }
+              aria-label={matchFoundSnapState === "collapsed" ? "바텀시트 펼치기" : "바텀시트 접기"}
               className="inline-flex size-7 items-center justify-center rounded-md text-gray-700 hover:bg-gray-100"
               onClick={() => {
                 if (matchFoundSnapState === "collapsed") {
@@ -386,7 +386,13 @@ export default function MainMapView({
         }
         footer={
           <div className="flex items-center gap-3">
-            <Button.Secondary fullWidth onClick={matchFoundSheet.reject}>
+            <Button.Secondary
+              fullWidth
+              onClick={() => {
+                matchFoundSheet.close();
+                setIsRejectConfirmModalOpen(true);
+              }}
+            >
               매칭 거절
             </Button.Secondary>
             <Button.Primary fullWidth onClick={matchFoundSheet.accept}>
@@ -394,6 +400,19 @@ export default function MainMapView({
             </Button.Primary>
           </div>
         }
+      />
+
+      <Popup
+        isOpen={isRejectConfirmModalOpen}
+        title="다른 메이트를 찾아볼까요?"
+        content={`현재 매칭을 취소하고\n다른 메이트를 찾을 수 있어요.`}
+        confirmMessage="동행을 찾을게요"
+        showCancel={false}
+        onClose={() => setIsRejectConfirmModalOpen(false)}
+        onConfirm={() => {
+          setIsRejectConfirmModalOpen(false);
+          matchFoundSheet.reject();
+        }}
       />
 
       <BottomSheet
