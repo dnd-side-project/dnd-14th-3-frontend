@@ -70,6 +70,10 @@ export const reservationDetailDtoSchema = z.object({
   ownerNickname: z.string(),
   ownerProfileImageUrl: z.string().optional(),
   ownerGender: z.enum(["MALE", "FEMALE"]).optional(),
+  ownerAgeGroup: z
+    .enum(["TEENS", "TWENTIES", "THIRTIES", "FORTIES", "FIFTIES_AND_ABOVE"])
+    .optional(),
+  ownerIntroduction: z.string().optional(),
   title: z.string(),
   scheduledAt: z.string(),
   region1Depth: z.string(),
@@ -196,6 +200,14 @@ export const pageResponseReservationCommentDtoSchema = z.object({
 export type ReservationCommentDto = z.infer<typeof reservationCommentDtoSchema>;
 export type PageResponseReservationCommentDto = z.infer<
   typeof pageResponseReservationCommentDtoSchema
+>;
+
+export const reservationCommentCreateRequestSchema = z.object({
+  content: z.string().trim().min(1),
+});
+
+export type ReservationCommentCreateRequest = z.infer<
+  typeof reservationCommentCreateRequestSchema
 >;
 
 // ─── 예약 생성/수정 요청 ─────────────────────────────────────────
