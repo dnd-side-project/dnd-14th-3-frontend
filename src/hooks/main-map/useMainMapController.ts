@@ -117,6 +117,7 @@ export function useMainMapController() {
 
   const confirmManualLocation = useCallback(
     (location: LatLng) => {
+      Toast.hide();
       setCurrentLocation(location);
       centerMapOnLocation(location);
       setPersistedLocation(location, "manual");
@@ -496,7 +497,12 @@ export function useMainMapController() {
   );
 
   const isFabVisible =
-    phase !== "matching-in-progress" && !isManualLocationMode && !isManualSearchPage;
+    (phase === "idle" ||
+      phase === "manual-location-setting" ||
+      phase === "location-setting" ||
+      phase === "requesting-companion") &&
+    !isManualLocationMode &&
+    !isManualSearchPage;
 
   return {
     phase,
