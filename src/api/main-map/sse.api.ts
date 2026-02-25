@@ -29,6 +29,10 @@ type ConnectMatchSseOptions = {
 
 function toSseUrl(): string {
   const endpoint = "/api/sse";
+  const isMockMode = import.meta.env.VITE_MSW_ENABLED === "true";
+  if (isMockMode) {
+    return endpoint;
+  }
   const baseUrl = import.meta.env.VITE_API_BASE_URL;
 
   if (!baseUrl) {

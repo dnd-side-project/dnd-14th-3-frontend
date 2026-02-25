@@ -19,6 +19,7 @@ const ALLOWED_DURATIONS: MatchExpectedDuration[] = [
 ];
 
 let mockMatchRequestId = 100;
+let mockIsWaitingForMatch = false;
 
 export const mainMapHandlers: RequestHandler[] = [
   http.post("/api/v1/match-requests", async ({ request }) => {
@@ -65,6 +66,7 @@ export const mainMapHandlers: RequestHandler[] = [
     }
 
     mockMatchRequestId += 1;
+    mockIsWaitingForMatch = true;
     const nowIso = new Date().toISOString();
 
     return HttpResponse.json(
@@ -89,5 +91,66 @@ export const mainMapHandlers: RequestHandler[] = [
       { status: 201 }
     );
   }),
-];
 
+  http.delete("/api/v1/match-requests/me", () => {
+    mockIsWaitingForMatch = false;
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.get("/api/sse", () => {
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        const encoder = new TextEncoder();
+
+        const pushEvent = (eventName: string, data: unknown) => {
+          controller.enqueue(encoder.encode(`event: ${eventName}\n`));
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+        };
+
+        // Keep-alive comment event for SSE clients.
+        controller.enqueue(encoder.encode(": connected\n\n"));
+
+        const proposalTimer = globalThis.setTimeout(() => {
+          if (!mockIsWaitingForMatch) return;
+          pushEvent("match.proposal", {
+            id: 12,
+            userAId: 3,
+            userBId: 4,
+            status: "ACCEPTED",
+            userADecision: "ACCEPTED",
+            userBDecision: "ACCEPTED",
+          });
+        }, 1500);
+
+        const sessionTimer = globalThis.setTimeout(() => {
+          if (!mockIsWaitingForMatch) return;
+          pushEvent("match.session", {
+            id: 3,
+            userAId: 3,
+            userBId: 4,
+          });
+          mockIsWaitingForMatch = false;
+          controller.close();
+        }, 3500);
+
+        const closeTimer = globalThis.setTimeout(() => {
+          controller.close();
+        }, 5000);
+
+        return () => {
+          globalThis.clearTimeout(proposalTimer);
+          globalThis.clearTimeout(sessionTimer);
+          globalThis.clearTimeout(closeTimer);
+        };
+      },
+    });
+
+    return new HttpResponse(stream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    });
+  }),
+];

@@ -38,13 +38,14 @@ function isTokenExpired(token: string): boolean {
 }
 
 export default function ProtectedRoute() {
+  const isMockMode = import.meta.env.VITE_MSW_ENABLED === "true";
   const location = useLocation();
   const { accessToken, clearAuth } = useAuthStore();
   const persistedAccessToken =
     typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
 
   const hasTokenMismatch = Boolean(accessToken) && !persistedAccessToken;
-  const hasExpiredToken = accessToken ? isTokenExpired(accessToken) : false;
+  const hasExpiredToken = isMockMode ? false : accessToken ? isTokenExpired(accessToken) : false;
 
   useEffect(() => {
     logger.info("[ProtectedRoute] auth check", {
