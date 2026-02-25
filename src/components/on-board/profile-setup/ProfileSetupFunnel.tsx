@@ -10,7 +10,7 @@ import AgeRangeStep from "./steps/AgeRangeStep";
 import GenderStep from "./steps/GenderStep";
 import IntroductionStep from "./steps/IntroductionStep";
 import NicknameStep from "./steps/NicknameStep";
-import ShootingStyleStep from "./steps/ShootingStyleStep";
+import PhotoStyleStep from "./steps/PhotoStyleStep";
 
 interface ProfileSetupFunnelProps {
   onComplete: () => void;
@@ -38,7 +38,7 @@ export default function ProfileSetupFunnel({ onComplete }: ProfileSetupFunnelPro
       case "gender":
         return <GenderStep />;
       case "shooting-style":
-        return <ShootingStyleStep />;
+        return <PhotoStyleStep />;
       case "age-range":
         return <AgeRangeStep />;
       case "introduction":

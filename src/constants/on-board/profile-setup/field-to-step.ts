@@ -1,5 +1,5 @@
 import type { ProfileSetupStep } from "@/types/on-board";
-import type { ProfileSetupFormValues } from "@/types/on-board/profile-setup-form.type";
+import type { ProfileSetupFormValues } from "@/types/profile";
 
 /** 검증 실패 시 첫 에러 필드 → 이동할 스텝 */
 export const FIELD_TO_STEP: Record<

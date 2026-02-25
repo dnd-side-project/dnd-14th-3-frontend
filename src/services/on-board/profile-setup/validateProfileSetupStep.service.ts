@@ -5,7 +5,7 @@ import {
   ageRangeSchema,
   genderSchema,
   nicknameSchema,
-} from "@/types/on-board";
+} from "@/types/profile";
 
 const preferredStylesSchema = z
   .array(z.string())

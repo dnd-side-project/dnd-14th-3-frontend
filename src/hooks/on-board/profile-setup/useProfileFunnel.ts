@@ -4,7 +4,11 @@ import { z } from "zod";
 
 import { useFormContext, useWatch } from "react-hook-form";
 
-import { nicknameSchema, profileSetupDataSchema, ProfileSetupFormValues } from "@/types/on-board";
+import {
+  nicknameSchema,
+  profileSetupDataSchema,
+  type ProfileSetupFormValues,
+} from "@/types/profile";
 
 import { PROFILE_SETUP_STEPS } from "@/constants/on-board";
 

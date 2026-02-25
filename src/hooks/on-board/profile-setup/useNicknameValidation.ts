@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 
 import { RegisterOptions, useFormContext, useWatch } from "react-hook-form";
 
-import type { NicknameValidation, ProfileSetupFormValues } from "@/types/on-board";
-import { nicknameSchema } from "@/types/on-board";
+import type { NicknameValidation, ProfileSetupFormValues } from "@/types/profile";
+import { nicknameSchema } from "@/types/profile";
 
 import { useDebounce } from "@/hooks/shared/useDebounce";
 
@@ -14,8 +14,7 @@ const MAX_LENGTH = 15;
 export type NicknameField = { nickname: string };
 
 export function useNicknameValidation() {
-  const { register, setValue, formState, control } =
-    useFormContext<ProfileSetupFormValues>();
+  const { register, setValue, formState, control } = useFormContext<ProfileSetupFormValues>();
 
   const nickname = useWatch<ProfileSetupFormValues>({ control, name: "newUsername" }) as string;
   const debouncedNickname = useDebounce(nickname ?? "", 300);

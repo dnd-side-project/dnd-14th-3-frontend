@@ -2,29 +2,29 @@ import { useCallback, useMemo } from "react";
 
 import { Controller, useFormContext } from "react-hook-form";
 
-import { ProfileSetupFormValues } from "@/types/on-board";
+import type { ProfileSetupFormValues } from "@/types/profile";
 
-import { FALLBACK_SHOOTING_STYLES } from "@/constants/on-board";
+import { FALLBACK_PHOTO_STYLES } from "@/constants/user";
 
 import { useProfileFunnel } from "@/hooks/on-board";
 
-import { useShootingStyles } from "@/queries/user";
+import { usePhotoStyles } from "@/queries/user";
 
 import { ChipButton } from "@/components/shared/chip-button";
 
 import ProfileStepLayout from "../ProfileStepLayout";
 
-export default function ShootingStyleStep() {
+export default function PhotoStyleStep() {
   const { control } = useFormContext<ProfileSetupFormValues>();
   const { canGoNext, goNext, goBack, isFirstStep, isLastStep } = useProfileFunnel();
-  const { data: apiStyles, isLoading, isError, refetch } = useShootingStyles();
+  const { data: apiStyles, isLoading, isError, refetch } = usePhotoStyles();
 
   const styles = useMemo(() => {
-    if (isError) return FALLBACK_SHOOTING_STYLES;
-    if (!apiStyles || apiStyles.length === 0) return FALLBACK_SHOOTING_STYLES;
+    if (isError) return FALLBACK_PHOTO_STYLES;
+    if (!apiStyles || apiStyles.length === 0) return FALLBACK_PHOTO_STYLES;
     return apiStyles;
   }, [isError, apiStyles]);
-  const styleLength = FALLBACK_SHOOTING_STYLES.length;
+  const styleLength = FALLBACK_PHOTO_STYLES.length;
 
   const toggleStyleTag = useCallback((styleId: string, currentValue: string[]) => {
     if (currentValue.includes(styleId)) {

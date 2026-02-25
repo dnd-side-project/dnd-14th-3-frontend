@@ -17,7 +17,7 @@ export const userHandlers: RequestHandler[] = [
   http.patch("/api/v1/users/:userId/profiles", async ({ request }) => {
     const body = (await request.json()) as PatchUserProfileRequest;
 
-    if (!body.nickname?.trim()) {
+    if (!body.newUsername?.trim()) {
       return HttpResponse.json(
         {
           success: false,
@@ -30,10 +30,9 @@ export const userHandlers: RequestHandler[] = [
     }
 
     return HttpResponse.json({
-      nickname: body.nickname,
-      profileImageUrl: body.profileImageUrl,
-      email: body.email,
-      phoneNumber: body.phoneNumber,
+      nickname: body.newUsername,
+      gender: body.gender,
+      preferredStyles: body.preferredStyles,
     });
   }),
 

@@ -1,4 +1,4 @@
-import { Gender } from "@/types/on-board";
+import type { Gender } from "@/types/profile";
 
 import { apiClient } from "@/api/client";
 
