@@ -67,6 +67,7 @@ interface MainMapViewProps {
     isOpen: boolean;
     accept: () => void;
     reject: () => void;
+    cancelAndBackToIdle: () => void;
     close: () => void;
   };
   acceptedMatchDetailSheet: {
@@ -427,12 +428,16 @@ export default function MainMapView({
         isOpen={isRejectConfirmModalOpen}
         title="다른 메이트를 찾아볼까요?"
         content={"현재 매칭을 취소하고\n다른 메이트를 찾을 수 있어요."}
-        confirmMessage="동행을 찾을게요"
-        showCancel={false}
+        confirmMessage="새로운 동행 찾기"
+        cancelMessage="다음에 다시 찾기"
         onClose={() => setIsRejectConfirmModalOpen(false)}
         onConfirm={() => {
           setIsRejectConfirmModalOpen(false);
           matchFoundSheet.reject();
+        }}
+        onCancel={() => {
+          setIsRejectConfirmModalOpen(false);
+          matchFoundSheet.cancelAndBackToIdle();
         }}
       />
 
@@ -452,7 +457,11 @@ export default function MainMapView({
         title="수락을 기다리는 중이에요"
         content={`사진 메이트가 수락하면\n상세 정보를 볼 수 있어요`}
         showConfirm={false}
-        showCancel={false}
+        cancelMessage="매칭 중단하기"
+        onCancel={() => {
+          acceptedMatchDetailSheet.close();
+          setIsRejectConfirmModalOpen(true);
+        }}
         onClose={acceptedMatchDetailSheet.close}
       />
     </div>

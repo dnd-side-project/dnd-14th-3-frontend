@@ -588,6 +588,10 @@ export function useMainMapController() {
     transitionPhase("matching-in-progress");
   }, [transitionPhase]);
 
+  const handleCancelMatchFoundAndBackToIdle = useCallback(() => {
+    void handleCancelMatchingRequest();
+  }, [handleCancelMatchingRequest]);
+
   const handleCloseMatchExpiredModal = useCallback(() => {
     setIsMatchExpiredModalOpen(false);
     setExpiredMatchRequest(null);
@@ -671,6 +675,7 @@ export function useMainMapController() {
       isOpen: phase === "match-success",
       accept: handleAcceptMatchFound,
       reject: handleRejectMatchFound,
+      cancelAndBackToIdle: handleCancelMatchFoundAndBackToIdle,
       close: () => transitionPhase("idle"),
     },
     acceptedMatchDetailSheet: {
