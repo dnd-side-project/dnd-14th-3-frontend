@@ -12,7 +12,13 @@ import { type LatLng } from "@/types/main-map/location.type";
 import { type MapPhase } from "@/types/main-map/map-phase.type";
 import { type MatchExpectedDuration } from "@/types/main-map/match-request.type";
 
-import { cancelMatchRequestApi, connectMatchSseApi, type SseConnection } from "@/api/main-map";
+import {
+  cancelMatchRequestApi,
+  connectMatchSseApi,
+  type MatchProposalEventData,
+  type MatchSessionEventData,
+  type SseConnection,
+} from "@/api/main-map";
 
 import { usePageLayoutStore } from "@/store/layout/pageLayout.store";
 import { useMainMapLocationStore } from "@/store/main-map/location.store";
@@ -39,6 +45,8 @@ export function useMainMapController() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [phase, setPhase] = useState<MapPhase>("idle");
   const [isCancellingMatchRequest, setIsCancellingMatchRequest] = useState(false);
+  const [matchProposal, setMatchProposal] = useState<MatchProposalEventData | null>(null);
+  const [matchSession, setMatchSession] = useState<MatchSessionEventData | null>(null);
   const persistedLocation = useMainMapLocationStore((state) => state.selectedLocation);
   const setPersistedLocation = useMainMapLocationStore((state) => state.setSelectedLocation);
   const setLayoutOptions = usePageLayoutStore((state) => state.setLayoutOptions);
@@ -320,6 +328,8 @@ export function useMainMapController() {
       logger.info("[match-request] cancelled");
       sseConnectionRef.current?.close();
       sseConnectionRef.current = null;
+      setMatchProposal(null);
+      setMatchSession(null);
       transitionPhase("idle");
       Toast.show({
         type: "success",
@@ -408,6 +418,8 @@ export function useMainMapController() {
           matchRequestId: response.data?.matchRequestId,
         });
 
+        setMatchProposal(null);
+        setMatchSession(null);
         sseConnectionRef.current?.close();
         sseConnectionRef.current = connectMatchSseApi({
           onOpen: () => {
@@ -415,15 +427,13 @@ export function useMainMapController() {
           },
           onMatchProposal: (proposal) => {
             logger.info("[match-sse] match.proposal received", proposal);
-            sseConnectionRef.current?.close();
-            sseConnectionRef.current = null;
+            setMatchProposal(proposal);
             transitionPhase("match-success");
           },
           onMatchSession: (session) => {
             logger.info("[match-sse] match.session received", session);
-            sseConnectionRef.current?.close();
-            sseConnectionRef.current = null;
-            transitionPhase("match-success");
+            setMatchSession(session);
+            transitionPhase("match-accepted");
             Toast.show({
               type: "success",
               message: "매칭이 성사되었어요.",
@@ -463,6 +473,8 @@ export function useMainMapController() {
         });
         sseConnectionRef.current?.close();
         sseConnectionRef.current = null;
+        setMatchProposal(null);
+        setMatchSession(null);
 
         Toast.show({
           type: "error",
@@ -471,6 +483,10 @@ export function useMainMapController() {
         });
       });
   });
+
+  const handleAcceptMatchFound = useCallback(() => {
+    transitionPhase("match-accepted");
+  }, [transitionPhase]);
 
   const handleMapCreate = useCallback(
     (map: kakao.maps.Map) => {
@@ -535,6 +551,14 @@ export function useMainMapController() {
     },
     matchFoundSheet: {
       isOpen: phase === "match-success",
+      accept: handleAcceptMatchFound,
+      reject: () => {
+        // TODO: wire reject API when backend endpoint is available.
+      },
+      close: () => transitionPhase("idle"),
+    },
+    acceptedMatchDetailSheet: {
+      isOpen: phase === "match-accepted",
       close: () => transitionPhase("idle"),
     },
     onBottomSheetSnapChange: handleBottomSheetSnapChange,

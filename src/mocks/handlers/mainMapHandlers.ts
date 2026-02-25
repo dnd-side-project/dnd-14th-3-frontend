@@ -1,6 +1,9 @@
-import { http, HttpResponse, type RequestHandler } from "msw";
+﻿import { http, HttpResponse, type RequestHandler } from "msw";
 
-import { type MatchExpectedDuration } from "@/types/main-map/match-request.type";
+import {
+  type CreateMatchRequestData,
+  type MatchExpectedDuration,
+} from "@/types/main-map/match-request.type";
 
 interface MatchRequestBody {
   location?: {
@@ -20,6 +23,7 @@ const ALLOWED_DURATIONS: MatchExpectedDuration[] = [
 
 let mockMatchRequestId = 100;
 let mockIsWaitingForMatch = false;
+let mockCurrentMatchRequest: CreateMatchRequestData | null = null;
 
 export const mainMapHandlers: RequestHandler[] = [
   http.post("/api/v1/match-requests", async ({ request }) => {
@@ -69,26 +73,65 @@ export const mainMapHandlers: RequestHandler[] = [
     mockIsWaitingForMatch = true;
     const nowIso = new Date().toISOString();
 
+    mockCurrentMatchRequest = {
+      matchRequestId: mockMatchRequestId,
+      status: "WAITING",
+      specificPlace: body.specificPlace ?? "",
+      location: {
+        latitude: body.location!.latitude!,
+        longitude: body.location!.longitude!,
+      },
+      expectedDuration: body.expectedDuration!,
+      requestMessage: body.requestMessage ?? "",
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    };
+
     return HttpResponse.json(
       {
         success: true,
         message: "매칭 대기가 생성되었습니다.",
         code: "MATCH_REQUEST_CREATED",
-        data: {
-          matchRequestId: mockMatchRequestId,
-          status: "WAITING",
-          specificPlace: body.specificPlace,
-          location: {
-            latitude: body.location!.latitude,
-            longitude: body.location!.longitude,
-          },
-          expectedDuration: body.expectedDuration,
-          requestMessage: body.requestMessage ?? "",
-          createdAt: nowIso,
-          updatedAt: nowIso,
-        },
+        data: mockCurrentMatchRequest,
       },
       { status: 201 }
+    );
+  }),
+
+  http.get("/api/v1/match-requests/:matchRequestId", ({ params }) => {
+    const requestId = Number(params.matchRequestId);
+    if (!mockCurrentMatchRequest || !Number.isFinite(requestId)) {
+      return HttpResponse.json(
+        {
+          success: false,
+          message: "매칭 요청을 찾을 수 없습니다.",
+          code: "MATCH_REQUEST_NOT_FOUND",
+          data: null,
+        },
+        { status: 404 }
+      );
+    }
+
+    if (mockCurrentMatchRequest.matchRequestId !== requestId) {
+      return HttpResponse.json(
+        {
+          success: false,
+          message: "매칭 요청을 찾을 수 없습니다.",
+          code: "MATCH_REQUEST_NOT_FOUND",
+          data: null,
+        },
+        { status: 404 }
+      );
+    }
+
+    return HttpResponse.json(
+      {
+        success: true,
+        message: "매칭 대기 조회 성공",
+        code: "MATCH_REQUEST_FOUND",
+        data: mockCurrentMatchRequest,
+      },
+      { status: 200 }
     );
   }),
 
@@ -107,11 +150,19 @@ export const mainMapHandlers: RequestHandler[] = [
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
         };
 
-        // Keep-alive comment event for SSE clients.
         controller.enqueue(encoder.encode(": connected\n\n"));
 
         const proposalTimer = globalThis.setTimeout(() => {
           if (!mockIsWaitingForMatch) return;
+
+          if (mockCurrentMatchRequest) {
+            mockCurrentMatchRequest = {
+              ...mockCurrentMatchRequest,
+              status: "MATCHED",
+              updatedAt: new Date().toISOString(),
+            };
+          }
+
           pushEvent("match.proposal", {
             id: 12,
             userAId: 3,

@@ -58,6 +58,12 @@ interface MainMapViewProps {
   };
   matchFoundSheet: {
     isOpen: boolean;
+    accept: () => void;
+    reject: () => void;
+    close: () => void;
+  };
+  acceptedMatchDetailSheet: {
+    isOpen: boolean;
     close: () => void;
   };
   onBottomSheetSnapChange: (snapState: "collapsed" | "full") => void;
@@ -79,12 +85,16 @@ export default function MainMapView({
   companionRequestSheet,
   matchingWaitSheet,
   matchFoundSheet,
+  acceptedMatchDetailSheet,
   onBottomSheetSnapChange,
 }: MainMapViewProps) {
   const [companionRequestSnapState, setCompanionRequestSnapState] = useState<"collapsed" | "full">(
     "full"
   );
   const [matchFoundSnapState, setMatchFoundSnapState] = useState<"collapsed" | "full">("full");
+  const [acceptedDetailSnapState, setAcceptedDetailSnapState] = useState<"collapsed" | "full">(
+    "full"
+  );
 
   const isCenterPinMode = isManualLocationMode || isSheetOpen;
   const shouldDisableRequestButton =
@@ -375,8 +385,62 @@ export default function MainMapView({
           </div>
         }
         footer={
-          <Button.Primary fullWidth onClick={matchFoundSheet.close}>
-            매칭 수락
+          <div className="flex items-center gap-3">
+            <Button.Secondary fullWidth onClick={matchFoundSheet.reject}>
+              매칭 거절
+            </Button.Secondary>
+            <Button.Primary fullWidth onClick={matchFoundSheet.accept}>
+              매칭 수락
+            </Button.Primary>
+          </div>
+        }
+      />
+
+      <BottomSheet
+        isOpen={acceptedMatchDetailSheet.isOpen}
+        onClose={acceptedMatchDetailSheet.close}
+        showBackdrop
+        backdropClick="none"
+        draggable
+        dragToClose={false}
+        initialSnap="full"
+        onSnapChange={setAcceptedDetailSnapState}
+        header={(actions) => (
+          <div className="flex items-center justify-between gap-2 px-4 pb-4 pt-2">
+            <div className="flex flex-row items-center gap-2">
+              <MapPin />
+              <div className="text-heading-2 font-bold text-gray-900">사진 메이트를 찾았어요</div>
+            </div>
+            <button
+              type="button"
+              aria-label={
+                acceptedDetailSnapState === "collapsed" ? "바텀시트 펼치기" : "바텀시트 접기"
+              }
+              className="inline-flex size-7 items-center justify-center rounded-md text-gray-700 hover:bg-gray-100"
+              onClick={() => {
+                if (acceptedDetailSnapState === "collapsed") {
+                  actions.expand();
+                  return;
+                }
+                actions.collapse();
+              }}
+            >
+              {acceptedDetailSnapState === "collapsed" ? (
+                <ChevronUp className="size-5" />
+              ) : (
+                <X className="size-5" />
+              )}
+            </button>
+          </div>
+        )}
+        renderContent={
+          <div className="space-y-3">
+            <p className="text-body-2 text-gray-700">매칭이 연결되었어요.</p>
+          </div>
+        }
+        footer={
+          <Button.Primary fullWidth onClick={acceptedMatchDetailSheet.close}>
+            확인
           </Button.Primary>
         }
       />

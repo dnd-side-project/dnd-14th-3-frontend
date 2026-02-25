@@ -63,6 +63,7 @@ export default function MainMapPage() {
         companionRequestSheet={controller.companionRequestSheet}
         matchingWaitSheet={controller.matchingWaitSheet}
         matchFoundSheet={controller.matchFoundSheet}
+        acceptedMatchDetailSheet={controller.acceptedMatchDetailSheet}
         onBottomSheetSnapChange={controller.onBottomSheetSnapChange}
       />
 

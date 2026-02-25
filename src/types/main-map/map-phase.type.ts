@@ -5,4 +5,5 @@ export type MapPhase =
   | "requesting-companion"
   | "matching-in-progress"
   | "match-success"
+  | "match-accepted"
   | "match-failed";

@@ -1,7 +1,7 @@
 import { getAccessToken, refreshAccessToken } from "@/api/client";
 import { logger } from "@/lib/shared/logger";
 
-type MatchProposalEventData = {
+export type MatchProposalEventData = {
   id: number;
   userAId: number;
   userBId: number;
@@ -10,7 +10,7 @@ type MatchProposalEventData = {
   userBDecision: string;
 };
 
-type MatchSessionEventData = {
+export type MatchSessionEventData = {
   id: number;
   userAId: number;
   userBId: number;
