@@ -120,27 +120,16 @@ export const mainMapHandlers: RequestHandler[] = [
             userADecision: "ACCEPTED",
             userBDecision: "ACCEPTED",
           });
+          mockIsWaitingForMatch = false;
         }, 1500);
 
-        const sessionTimer = globalThis.setTimeout(() => {
-          if (!mockIsWaitingForMatch) return;
-          pushEvent("match.session", {
-            id: 3,
-            userAId: 3,
-            userBId: 4,
-          });
-          mockIsWaitingForMatch = false;
-          controller.close();
-        }, 3500);
-
-        const closeTimer = globalThis.setTimeout(() => {
-          controller.close();
-        }, 5000);
+        const keepAliveTimer = globalThis.setInterval(() => {
+          controller.enqueue(encoder.encode(": keep-alive\n\n"));
+        }, 15000);
 
         return () => {
           globalThis.clearTimeout(proposalTimer);
-          globalThis.clearTimeout(sessionTimer);
-          globalThis.clearTimeout(closeTimer);
+          globalThis.clearInterval(keepAliveTimer);
         };
       },
     });

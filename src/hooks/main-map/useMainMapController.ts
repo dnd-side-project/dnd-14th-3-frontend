@@ -415,11 +415,9 @@ export function useMainMapController() {
           },
           onMatchProposal: (proposal) => {
             logger.info("[match-sse] match.proposal received", proposal);
-            Toast.show({
-              type: "info",
-              message: "매칭 제안이 도착했어요.",
-              duration: 2500,
-            });
+            sseConnectionRef.current?.close();
+            sseConnectionRef.current = null;
+            transitionPhase("match-success");
           },
           onMatchSession: (session) => {
             logger.info("[match-sse] match.session received", session);
@@ -534,6 +532,10 @@ export function useMainMapController() {
       cancel: () => {
         void handleCancelMatchingRequest();
       },
+    },
+    matchFoundSheet: {
+      isOpen: phase === "match-success",
+      close: () => transitionPhase("idle"),
     },
     onBottomSheetSnapChange: handleBottomSheetSnapChange,
     expandableFabActions: {

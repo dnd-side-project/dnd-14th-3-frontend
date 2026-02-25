@@ -56,6 +56,10 @@ interface MainMapViewProps {
     isCancelling: boolean;
     cancel: () => void;
   };
+  matchFoundSheet: {
+    isOpen: boolean;
+    close: () => void;
+  };
   onBottomSheetSnapChange: (snapState: "collapsed" | "full") => void;
 }
 
@@ -74,11 +78,13 @@ export default function MainMapView({
   currentLocationActions,
   companionRequestSheet,
   matchingWaitSheet,
+  matchFoundSheet,
   onBottomSheetSnapChange,
 }: MainMapViewProps) {
   const [companionRequestSnapState, setCompanionRequestSnapState] = useState<"collapsed" | "full">(
     "full"
   );
+  const [matchFoundSnapState, setMatchFoundSnapState] = useState<"collapsed" | "full">("full");
 
   const isCenterPinMode = isManualLocationMode || isSheetOpen;
   const shouldDisableRequestButton =
@@ -321,6 +327,57 @@ export default function MainMapView({
           >
             {matchingWaitSheet.isCancelling ? "요청 취소 중..." : "요청 취소"}
           </Button.Secondary>
+        }
+      />
+
+      <BottomSheet
+        isOpen={matchFoundSheet.isOpen}
+        onClose={matchFoundSheet.close}
+        showBackdrop
+        backdropClick="none"
+        draggable
+        dragToClose={false}
+        initialSnap="full"
+        onSnapChange={setMatchFoundSnapState}
+        header={(actions) => (
+          <div className="flex items-center justify-between gap-2 px-4 pb-4 pt-2">
+            <div className="flex flex-row items-center gap-2">
+              <MapPin />
+              <div className="text-heading-2 font-bold text-gray-900">사진 메이트를 찾았어요</div>
+            </div>
+            <button
+              type="button"
+              aria-label={
+                matchFoundSnapState === "collapsed" ? "바텀시트 펼치기" : "바텀시트 접기"
+              }
+              className="inline-flex size-7 items-center justify-center rounded-md text-gray-700 hover:bg-gray-100"
+              onClick={() => {
+                if (matchFoundSnapState === "collapsed") {
+                  actions.expand();
+                  return;
+                }
+                actions.collapse();
+              }}
+            >
+              {matchFoundSnapState === "collapsed" ? (
+                <ChevronUp className="size-5" />
+              ) : (
+                <X className="size-5" />
+              )}
+            </button>
+          </div>
+        )}
+        renderContent={
+          <div className="text-gray-500 text-body-2">
+            매칭 후 15분 이내에 이동을 시작해주세요.
+            <br />
+            늦을 경우 매칭이 자동 취소될 수 있어요.
+          </div>
+        }
+        footer={
+          <Button.Primary fullWidth onClick={matchFoundSheet.close}>
+            매칭 수락
+          </Button.Primary>
         }
       />
     </div>
