@@ -8,8 +8,7 @@ export interface UserProfileResponse {
 
 /** 사용자 프로필 수정 요청 */
 export interface PatchUserProfileRequest {
-  nickname: string;
-  profileImageUrl?: string;
-  email?: string;
-  phoneNumber?: string;
+  newUsername: string;
+  gender: string;
+  preferredStyles: string[];
 }

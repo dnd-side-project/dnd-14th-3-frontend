@@ -1,8 +1,8 @@
 import { useMutation } from "@tanstack/react-query";
 
-import type { NicknameValidation } from "@/types/on-board";
+import type { NicknameValidation } from "@/types/profile";
 
-import { validateNicknameApi } from "@/api/on-board/profile";
+import { validateNicknameApi } from "@/api/profile";
 
 interface ValidateNicknameRequest {
   nickname: string;

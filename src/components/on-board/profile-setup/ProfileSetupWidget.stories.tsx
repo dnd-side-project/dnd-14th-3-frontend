@@ -5,8 +5,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useFormContext } from "react-hook-form";
 
-import type { AgeRange, Gender, ProfileSetupStep } from "@/types/on-board";
-import { ProfileSetupFormValues, profileSubmitSchema } from "@/types/on-board";
+import type { ProfileSetupStep } from "@/types/on-board";
+import {
+  type AgeRange,
+  type Gender,
+  profileSetupDataSchema,
+  type ProfileSetupFormValues,
+} from "@/types/profile";
 
 import {
   ProfileSetupFormProvider,
@@ -66,7 +71,7 @@ function ProfileSetupWidgetWithInitialState({
 
   const handleComplete = useCallback(() => {
     const data = getValues();
-    const validation = profileSubmitSchema.safeParse(data);
+    const validation = profileSetupDataSchema.safeParse(data);
     if (!validation.success) {
       return;
     }
@@ -107,9 +112,7 @@ function ProfileSetupWidgetWithInitialState({
   );
 }
 
-function ProfileSetupWidgetWithProvider(
-  props: ProfileSetupWidgetInitialState
-) {
+function ProfileSetupWidgetWithProvider(props: ProfileSetupWidgetInitialState) {
   return (
     <ProfileSetupStoreProvider>
       <ProfileSetupFormProvider>
@@ -183,7 +186,12 @@ export const Default: Story = {
     introduction: "",
     onComplete: () => window.alert("프로필 설정이 완료되었습니다."),
   },
-  render: (args) => <ProfileSetupWidgetWithProvider key={`${args.initialStep}-${args.newUsername}-${args.gender}`} {...args} />,
+  render: (args) => (
+    <ProfileSetupWidgetWithProvider
+      key={`${args.initialStep}-${args.newUsername}-${args.gender}`}
+      {...args}
+    />
+  ),
 };
 
 /** 닉네임 스텝만. Controls에서 newUsername 등 변경 가능 */
@@ -197,13 +205,18 @@ export const StepNickname: Story = {
     introduction: "",
     onComplete: () => window.alert("프로필 설정이 완료되었습니다."),
   },
-  render: (args) => <ProfileSetupWidgetWithProvider key={`${args.initialStep}-${args.newUsername}-${args.gender}`} {...args} />,
+  render: (args) => (
+    <ProfileSetupWidgetWithProvider
+      key={`${args.initialStep}-${args.newUsername}-${args.gender}`}
+      {...args}
+    />
+  ),
 };
 
 /** 성별 스텝. 이전 값(닉네임)을 입력해 두고 확인 */
 export const StepGender: Story = {
   args: {
-    initialStep: "gender",  
+    initialStep: "gender",
     newUsername: "테스트유저",
     gender: "",
     ageRange: "",
@@ -211,7 +224,12 @@ export const StepGender: Story = {
     introduction: "",
     onComplete: () => window.alert("프로필 설정이 완료되었습니다."),
   },
-  render: (args) => <ProfileSetupWidgetWithProvider key={`${args.initialStep}-${args.newUsername}-${args.gender}`} {...args} />,
+  render: (args) => (
+    <ProfileSetupWidgetWithProvider
+      key={`${args.initialStep}-${args.newUsername}-${args.gender}`}
+      {...args}
+    />
+  ),
 };
 
 /** 나이대 스텝. 닉네임·성별까지 채운 상태 */
@@ -225,11 +243,16 @@ export const StepAgeRange: Story = {
     introduction: "",
     onComplete: () => window.alert("프로필 설정이 완료되었습니다."),
   },
-  render: (args) => <ProfileSetupWidgetWithProvider key={`${args.initialStep}-${args.newUsername}-${args.gender}`} {...args} />,
+  render: (args) => (
+    <ProfileSetupWidgetWithProvider
+      key={`${args.initialStep}-${args.newUsername}-${args.gender}`}
+      {...args}
+    />
+  ),
 };
 
-/** 촬영 스타일 스텝. 그 이전 단계까지 채운 상태 */
-export const StepShootingStyle: Story = {
+/** 포토 스타일 스텝. 그 이전 단계까지 채운 상태 */
+export const StepPhotoStyle: Story = {
   args: {
     initialStep: "shooting-style",
     newUsername: "테스트유저",
@@ -239,7 +262,12 @@ export const StepShootingStyle: Story = {
     introduction: "",
     onComplete: () => window.alert("프로필 설정이 완료되었습니다."),
   },
-  render: (args) => <ProfileSetupWidgetWithProvider key={`${args.initialStep}-${args.newUsername}-${args.gender}`} {...args} />,
+  render: (args) => (
+    <ProfileSetupWidgetWithProvider
+      key={`${args.initialStep}-${args.newUsername}-${args.gender}`}
+      {...args}
+    />
+  ),
 };
 
 /** 자기소개 스텝. 선호 스타일까지 채운 상태 (완료 버튼으로 제출 가능) */
@@ -253,5 +281,10 @@ export const StepIntroduction: Story = {
     introduction: "",
     onComplete: () => window.alert("프로필 설정이 완료되었습니다."),
   },
-  render: (args) => <ProfileSetupWidgetWithProvider key={`${args.initialStep}-${args.newUsername}-${args.gender}`} {...args} />,
+  render: (args) => (
+    <ProfileSetupWidgetWithProvider
+      key={`${args.initialStep}-${args.newUsername}-${args.gender}`}
+      {...args}
+    />
+  ),
 };

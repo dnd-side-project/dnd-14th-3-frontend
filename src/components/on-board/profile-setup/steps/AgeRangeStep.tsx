@@ -1,6 +1,6 @@
 import { Controller, useFormContext } from "react-hook-form";
 
-import type { AgeRange, ProfileSetupFormValues } from "@/types/on-board";
+import type { AgeRange, ProfileSetupFormValues } from "@/types/profile";
 
 import { useProfileFunnel } from "@/hooks/on-board";
 
@@ -20,13 +20,7 @@ const AGE_RANGE_OPTIONS: { value: AgeRange; label: string }[] = [
 
 export default function AgeRangeStep() {
   const { control } = useFormContext<ProfileSetupFormValues>();
-  const {
-    canGoNext,
-    goNext,
-    goBack,
-    isFirstStep,
-    isLastStep,
-  } = useProfileFunnel();
+  const { canGoNext, goNext, goBack, isFirstStep, isLastStep } = useProfileFunnel();
 
   return (
     <ProfileStepLayout
@@ -61,7 +55,6 @@ export default function AgeRangeStep() {
           </div>
         )}
       />
-
     </ProfileStepLayout>
   );
 }

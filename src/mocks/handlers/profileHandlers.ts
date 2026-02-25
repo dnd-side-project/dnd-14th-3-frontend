@@ -1,6 +1,6 @@
 import { http, HttpResponse, type RequestHandler } from "msw";
 
-import { FALLBACK_SHOOTING_STYLES } from "@/constants/on-board";
+import { FALLBACK_PHOTO_STYLES } from "@/constants/user";
 
 const MOCK_DUPLICATE_NICKNAME = "중복닉네임";
 
@@ -11,7 +11,7 @@ export const profileHandlers: RequestHandler[] = [
       success: true,
       message: "OK",
       code: "OK",
-      data: FALLBACK_SHOOTING_STYLES.map((style, index) => ({
+      data: FALLBACK_PHOTO_STYLES.map((style, index) => ({
         id: index,
         name: style.id,
         label: style.label,

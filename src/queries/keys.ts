@@ -5,9 +5,9 @@ export const queryKeys = {
     detail: (id: number) => ["user", id] as const,
     list: (filters?: object) => ["user", "list", filters] as const,
     profile: (userId?: string | null) => ["user", "profile", userId ?? "none"] as const,
+    photoStyles: ["user", "photo-styles"] as const,
   },
   onboard: {
-    shootingStyles: ["on-board", "shooting-styles"] as const,
     validateNickname: (nickname: string) => ["on-board", "validate-nickname", nickname] as const,
   },
 } as const;

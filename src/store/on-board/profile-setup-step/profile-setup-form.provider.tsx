@@ -1,7 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormProvider , useForm } from "react-hook-form";
 
-import { PROFILE_SETUP_FORM_DEFAULTS, profileSetupDataSchema, ProfileSetupFormValues } from "@/types/on-board";
+import {
+  PROFILE_SETUP_FORM_DEFAULTS,
+  profileSetupDataSchema,
+  type ProfileSetupFormValues,
+} from "@/types/profile";
 
 export function ProfileSetupFormProvider({ children }: { children: React.ReactNode }) {
     const form = useForm<ProfileSetupFormValues>({

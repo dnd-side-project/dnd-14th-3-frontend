@@ -1,4 +1,4 @@
-import type { ProfileSetupData } from "@/types/on-board";
+import type { ProfileSetupData } from "@/types/profile";
 
 import type { SignupRequest } from "@/api/auth/sign-up.api";
 

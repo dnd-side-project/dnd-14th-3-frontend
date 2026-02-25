@@ -1,6 +1,6 @@
 import { Controller, useFormContext } from "react-hook-form";
 
-import type { Gender, ProfileSetupFormValues } from "@/types/on-board";
+import type { Gender , ProfileSetupFormValues } from "@/types/profile";
 
 import { useProfileFunnel } from "@/hooks/on-board";
 
