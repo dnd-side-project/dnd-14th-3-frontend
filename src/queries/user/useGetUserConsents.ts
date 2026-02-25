@@ -9,7 +9,8 @@ import { queryKeys } from "@/queries/keys";
 export function useGetUserConsents() {
   const userId = getUserIdFromToken();
   return useQuery({
-    queryKey: queryKeys.user.consents,
-    queryFn: () => getUserConsentsApi(userId),
+    queryKey: queryKeys.user.consents(userId),
+    queryFn: () => getUserConsentsApi(userId!),
+    enabled: !!userId,
   });
 }

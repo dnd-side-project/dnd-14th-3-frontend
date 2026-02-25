@@ -11,7 +11,7 @@ export function usePatchUserConsents() {
   const userId = getUserIdFromToken();
 
   return useMutation({
-    mutationKey: queryKeys.user.consents,
+    mutationKey: queryKeys.user.consents(userId),
     mutationFn: (body: PatchUserConsentsRequest) => patchUserConsentsApi(userId, body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.user.all });

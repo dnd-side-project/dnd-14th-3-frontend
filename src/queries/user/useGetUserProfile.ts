@@ -9,7 +9,8 @@ import { queryKeys } from "@/queries/keys";
 export function useGetUserProfile() {
   const userId = getUserIdFromToken();
   return useQuery({
-    queryKey: queryKeys.user.profile,
-    queryFn: () => getUserProfileApi(userId),
+    queryKey: queryKeys.user.profile(userId),
+    queryFn: () => getUserProfileApi(userId!),
+    enabled: !!userId,
   });
 }

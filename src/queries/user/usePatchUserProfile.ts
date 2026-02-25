@@ -11,10 +11,10 @@ export function usePatchUserProfile() {
   const userId = getUserIdFromToken();
 
   return useMutation({
-    mutationKey: queryKeys.user.profile,
+    mutationKey: queryKeys.user.profile(userId),
     mutationFn: (body: PatchUserProfileRequest) => patchUserProfileApi(userId, body),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.user.profile });
+      queryClient.invalidateQueries({ queryKey: queryKeys.user.profile(userId) });
     },
   });
 }
