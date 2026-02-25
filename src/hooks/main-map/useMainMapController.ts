@@ -42,16 +42,60 @@ const companionRequestSchema = z.object({
 
 type CompanionRequestFormValues = z.infer<typeof companionRequestSchema>;
 
+const MATCH_FLOW_STORAGE_KEY = "main-map-match-flow-v1";
+const MATCH_FLOW_TTL_MS = 30 * 60 * 1000;
+
+type PersistedMatchFlow = {
+  phase: MapPhase;
+  matchProposal: MatchProposalEventData | null;
+  matchSession: MatchSessionEventData | null;
+  expiredMatchRequest: MatchRequestExpiredEventData | null;
+  isMatchExpiredModalOpen: boolean;
+  updatedAt: number;
+};
+
+function loadPersistedMatchFlow(): PersistedMatchFlow | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = window.localStorage.getItem(MATCH_FLOW_STORAGE_KEY);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw) as PersistedMatchFlow;
+    if (!parsed || typeof parsed.updatedAt !== "number") return null;
+    if (Date.now() - parsed.updatedAt > MATCH_FLOW_TTL_MS) {
+      window.localStorage.removeItem(MATCH_FLOW_STORAGE_KEY);
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function savePersistedMatchFlow(flow: PersistedMatchFlow) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(MATCH_FLOW_STORAGE_KEY, JSON.stringify(flow));
+}
+
 export function useMainMapController() {
+  const persistedMatchFlowRef = useRef<PersistedMatchFlow | null>(loadPersistedMatchFlow());
+  const persistedMatchFlow = persistedMatchFlowRef.current;
   const [searchParams, setSearchParams] = useSearchParams();
-  const [phase, setPhase] = useState<MapPhase>("idle");
+  const [phase, setPhase] = useState<MapPhase>(persistedMatchFlow?.phase ?? "idle");
   const [isCancellingMatchRequest, setIsCancellingMatchRequest] = useState(false);
-  const [matchProposal, setMatchProposal] = useState<MatchProposalEventData | null>(null);
-  const [matchSession, setMatchSession] = useState<MatchSessionEventData | null>(null);
-  const [expiredMatchRequest, setExpiredMatchRequest] = useState<MatchRequestExpiredEventData | null>(
-    null
+  const [matchProposal, setMatchProposal] = useState<MatchProposalEventData | null>(
+    persistedMatchFlow?.matchProposal ?? null
   );
-  const [isMatchExpiredModalOpen, setIsMatchExpiredModalOpen] = useState(false);
+  const [matchSession, setMatchSession] = useState<MatchSessionEventData | null>(
+    persistedMatchFlow?.matchSession ?? null
+  );
+  const [expiredMatchRequest, setExpiredMatchRequest] = useState<MatchRequestExpiredEventData | null>(
+    persistedMatchFlow?.expiredMatchRequest ?? null
+  );
+  const [isMatchExpiredModalOpen, setIsMatchExpiredModalOpen] = useState(
+    persistedMatchFlow?.isMatchExpiredModalOpen ?? false
+  );
   const persistedLocation = useMainMapLocationStore((state) => state.selectedLocation);
   const setPersistedLocation = useMainMapLocationStore((state) => state.setSelectedLocation);
   const setLayoutOptions = usePageLayoutStore((state) => state.setLayoutOptions);
@@ -115,6 +159,51 @@ export function useMainMapController() {
   const transitionPhase = useCallback((nextPhase: MapPhase) => {
     setPhase(nextPhase);
   }, []);
+
+  const openMatchSseConnection = useCallback(() => {
+    sseConnectionRef.current?.close();
+    sseConnectionRef.current = connectMatchSseApi({
+      onOpen: () => {
+        logger.info("[match-sse] connected");
+      },
+      onMatchProposal: (proposal) => {
+        logger.info("[match-sse] match.proposal received", proposal);
+        setMatchProposal(proposal);
+        transitionPhase("match-success");
+      },
+      onMatchSession: (session) => {
+        logger.info("[match-sse] match.session received", session);
+        setMatchSession(session);
+        sseConnectionRef.current?.close();
+        sseConnectionRef.current = null;
+        transitionPhase("match-accepted");
+        Toast.show({
+          type: "success",
+          message: "매칭이 성사되었어요.",
+          duration: 3000,
+        });
+      },
+      onMatchRequestExpired: (expired) => {
+        logger.info("[match-sse] match.request.expired received", expired);
+        setExpiredMatchRequest(expired);
+        setMatchProposal(null);
+        setMatchSession(null);
+        setIsMatchExpiredModalOpen(true);
+        sseConnectionRef.current?.close();
+        sseConnectionRef.current = null;
+        transitionPhase("match-failed");
+      },
+      onError: (error) => {
+        logger.error(error, { tag: "match-sse" });
+        transitionPhase("match-failed");
+        Toast.show({
+          type: "error",
+          message: "실시간 매칭 연결에 실패했어요.",
+          duration: 3000,
+        });
+      },
+    });
+  }, [transitionPhase]);
 
   useEffect(() => {
     setIsManualLocationMode(isManualLocationPhase);
@@ -319,6 +408,26 @@ export function useMainMapController() {
   }, [isCurrentLocationSheetOpen, currentLocation, panMapToLocation]);
 
   useEffect(() => {
+    savePersistedMatchFlow({
+      phase,
+      matchProposal,
+      matchSession,
+      expiredMatchRequest,
+      isMatchExpiredModalOpen,
+      updatedAt: Date.now(),
+    });
+  }, [expiredMatchRequest, isMatchExpiredModalOpen, matchProposal, matchSession, phase]);
+
+  useEffect(() => {
+    const shouldReconnect = phase === "matching-in-progress" || phase === "match-success";
+    if (!shouldReconnect) return;
+    if (sseConnectionRef.current) return;
+
+    logger.info("[match-sse] reconnect from persisted state", { phase });
+    openMatchSseConnection();
+  }, [openMatchSseConnection, phase]);
+
+  useEffect(() => {
     return () => {
       sseConnectionRef.current?.close();
       sseConnectionRef.current = null;
@@ -430,44 +539,7 @@ export function useMainMapController() {
         setMatchSession(null);
         setExpiredMatchRequest(null);
         setIsMatchExpiredModalOpen(false);
-        sseConnectionRef.current?.close();
-        sseConnectionRef.current = connectMatchSseApi({
-          onOpen: () => {
-            logger.info("[match-sse] connected");
-          },
-          onMatchProposal: (proposal) => {
-            logger.info("[match-sse] match.proposal received", proposal);
-            setMatchProposal(proposal);
-            transitionPhase("match-success");
-          },
-          onMatchSession: (session) => {
-            logger.info("[match-sse] match.session received", session);
-            setMatchSession(session);
-            transitionPhase("match-accepted");
-            Toast.show({
-              type: "success",
-              message: "매칭이 성사되었어요.",
-              duration: 3000,
-            });
-          },
-          onMatchRequestExpired: (expired) => {
-            logger.info("[match-sse] match.request.expired received", expired);
-            setExpiredMatchRequest(expired);
-            setMatchProposal(null);
-            setMatchSession(null);
-            setIsMatchExpiredModalOpen(true);
-            transitionPhase("match-failed");
-          },
-          onError: (error) => {
-            logger.error(error, { tag: "match-sse" });
-            transitionPhase("match-failed");
-            Toast.show({
-              type: "error",
-              message: "실시간 매칭 연결에 실패했어요.",
-              duration: 3000,
-            });
-          },
-        });
+        openMatchSseConnection();
         transitionPhase("matching-in-progress");
 
         companionRequestSheet.close();
