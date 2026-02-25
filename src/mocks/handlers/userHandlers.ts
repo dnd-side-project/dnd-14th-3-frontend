@@ -1,32 +1,23 @@
 import { http, HttpResponse, type RequestHandler } from "msw";
 
-export const userHandlers: RequestHandler[] = [
-  http.get("/api/v1/users/profiles", async () => {
+import type { PatchUserConsentsRequest, PatchUserProfileRequest } from "@/api/user";
 
+export const userHandlers: RequestHandler[] = [
+  /** 본인 프로필 조회 (userId 경로) */
+  http.get("/api/v1/users/:userId/profiles", () => {
     return HttpResponse.json({
-      success: true,
-      message: "SUCCESS",
-      code: "",
-      data: {
-        nickname: "홍길동",
-        profileImageUrl: "https://example.com/updated_profile.jpg",
-        email: "hong@mail.com",
-        phoneNumber: "010-1234-5678",
-      },
+      nickname: "홍길동",
+      profileImageUrl: "https://example.com/updated_profile.jpg",
+      email: "hong@mail.com",
+      phoneNumber: "010-1234-5678",
     });
   }),
 
-  http.patch("/api/v1/users/profiles", async ({ request }) => {
-    await new Promise((resolve) => setTimeout(resolve, 2500));
+  /** 본인 프로필 수정 (userId 경로) */
+  http.patch("/api/v1/users/:userId/profiles", async ({ request }) => {
+    const body = (await request.json()) as PatchUserProfileRequest;
 
-    const body = (await request.json()) as {
-      newUsername?: string;
-      gender?: string;
-      preferredStyles?: string[];
-      introduction?: string;
-      photos?: string[];
-    };
-    if (!body.newUsername || !body.gender || !body.preferredStyles?.length) {
+    if (!body.nickname?.trim()) {
       return HttpResponse.json(
         {
           success: false,
@@ -38,41 +29,26 @@ export const userHandlers: RequestHandler[] = [
       );
     }
 
-    return HttpResponse.json(
-      {
-        success: true,
-        message: "SUCCESS",
-        code: "",
-        data: {
-          nickname: "홍길동",
-          gender: body.gender,
-          preferredStyles: body.preferredStyles,
-          introduction: body.introduction,
-          photos: body.photos,
-        },
-      },
-      { status: 200 }
-    );
-  }),
-
-  http.get("/api/v1/consents", async () => {
     return HttpResponse.json({
-      success: true,
-      message: "SUCCESS",
-      code: "",
-      data: {
-        notificationAllowed: true,
-        locationAllowed: true,
-        updatedAt: "2025-01-01 12:00:00",
-      },
+      nickname: body.nickname,
+      profileImageUrl: body.profileImageUrl,
+      email: body.email,
+      phoneNumber: body.phoneNumber,
     });
   }),
 
-  http.patch("/api/v1/consents", async ({ request }) => {
-    const body = (await request.json()) as {
-      notificationAllowed?: boolean;
-      locationAllowed?: boolean;
-    };
+  /** 본인 동의 설정 조회 */
+  http.get("/api/v1/users/:userId/consents", () => {
+    return HttpResponse.json({
+      notificationAllowed: true,
+      locationAllowed: true,
+      updatedAt: "2025-01-01T12:00:00.000Z",
+    });
+  }),
+
+  /** 본인 동의 설정 수정 */
+  http.patch("/api/v1/users/:userId/consents", async ({ request }) => {
+    const body = (await request.json()) as PatchUserConsentsRequest;
 
     if (
       typeof body.notificationAllowed !== "boolean" ||
@@ -90,13 +66,9 @@ export const userHandlers: RequestHandler[] = [
     }
 
     return HttpResponse.json({
-      success: true,
-      message: "SUCCESS",
-      code: "",
-      data: {
-        notificationAllowed: body.notificationAllowed,
-        locationAllowed: body.locationAllowed,
-      },
+      notificationAllowed: body.notificationAllowed,
+      locationAllowed: body.locationAllowed,
+      updatedAt: new Date().toISOString(),
     });
   }),
 ];
