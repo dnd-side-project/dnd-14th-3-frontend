@@ -1,7 +1,12 @@
 export { createMatchRequestApi } from "./createMatchRequest.api";
 export { cancelMatchRequestApi } from "./cancelMatchRequest.api";
 export { connectMatchSseApi } from "./sse.api";
-export type { MatchProposalEventData, MatchSessionEventData, SseConnection } from "./sse.api";
+export type {
+  MatchProposalEventData,
+  MatchRequestExpiredEventData,
+  MatchSessionEventData,
+  SseConnection,
+} from "./sse.api";
 export type {
   CreateMatchRequestData,
   CreateMatchRequestPayload,

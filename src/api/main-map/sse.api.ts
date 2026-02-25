@@ -16,6 +16,12 @@ export type MatchSessionEventData = {
   userBId: number;
 };
 
+export type MatchRequestExpiredEventData = {
+  userId: number;
+  matchRequestId: number;
+  expiresAt: string;
+};
+
 export type SseConnection = {
   close: () => void;
 };
@@ -25,12 +31,17 @@ type ConnectMatchSseOptions = {
   onError?: (error: unknown) => void;
   onMatchProposal?: (data: MatchProposalEventData) => void;
   onMatchSession?: (data: MatchSessionEventData) => void;
+  onMatchRequestExpired?: (data: MatchRequestExpiredEventData) => void;
 };
 
 function toSseUrl(): string {
   const endpoint = "/api/sse";
   const isMockMode = import.meta.env.VITE_MSW_ENABLED === "true";
   if (isMockMode) {
+    const scenario = import.meta.env.VITE_MSW_MATCH_SSE_SCENARIO;
+    if (scenario) {
+      return `${endpoint}?scenario=${encodeURIComponent(scenario)}`;
+    }
     return endpoint;
   }
   const baseUrl = import.meta.env.VITE_API_BASE_URL;
@@ -44,7 +55,10 @@ function toSseUrl(): string {
 
 function parseSseChunk(
   chunk: string,
-  handlers: Pick<ConnectMatchSseOptions, "onMatchProposal" | "onMatchSession">
+  handlers: Pick<
+    ConnectMatchSseOptions,
+    "onMatchProposal" | "onMatchSession" | "onMatchRequestExpired"
+  >
 ) {
   const blocks = chunk.split("\n\n");
 
@@ -78,6 +92,8 @@ function parseSseChunk(
         handlers.onMatchProposal?.(parsed as MatchProposalEventData);
       } else if (eventName === "match.session") {
         handlers.onMatchSession?.(parsed as MatchSessionEventData);
+      } else if (eventName === "match.request.expired") {
+        handlers.onMatchRequestExpired?.(parsed as MatchRequestExpiredEventData);
       }
     } catch {
       // Ignore malformed event payload.
@@ -180,6 +196,7 @@ export function connectMatchSseApi(options: ConnectMatchSseOptions): SseConnecti
         parseSseChunk(ready, {
           onMatchProposal: options.onMatchProposal,
           onMatchSession: options.onMatchSession,
+          onMatchRequestExpired: options.onMatchRequestExpired,
         });
       }
       logger.warn("[match-sse] stream ended by server");

@@ -64,6 +64,7 @@ export default function MainMapPage() {
         matchingWaitSheet={controller.matchingWaitSheet}
         matchFoundSheet={controller.matchFoundSheet}
         acceptedMatchDetailSheet={controller.acceptedMatchDetailSheet}
+        matchExpiredModal={controller.matchExpiredModal}
         onBottomSheetSnapChange={controller.onBottomSheetSnapChange}
       />
 

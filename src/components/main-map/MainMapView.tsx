@@ -67,6 +67,13 @@ interface MainMapViewProps {
     isOpen: boolean;
     close: () => void;
   };
+  matchExpiredModal: {
+    isOpen: boolean;
+    expiresAt: string | null;
+    retry: () => void;
+    pause: () => void;
+    close: () => void;
+  };
   onBottomSheetSnapChange: (snapState: "collapsed" | "full") => void;
 }
 
@@ -87,6 +94,7 @@ export default function MainMapView({
   matchingWaitSheet,
   matchFoundSheet,
   acceptedMatchDetailSheet,
+  matchExpiredModal,
   onBottomSheetSnapChange,
 }: MainMapViewProps) {
   const [companionRequestSnapState, setCompanionRequestSnapState] = useState<"collapsed" | "full">(
@@ -323,7 +331,7 @@ export default function MainMapView({
         dragToClose={false}
         initialSnap="full"
         renderContent={
-          <div className="space-y-1 pt-2">
+          <div className="space-y-1 pt-4">
             <p className="text-gray-500 text-body-2">500m 이내</p>
             <p className="text-heading-2 font-bold mb-3">오늘의 사진 메이트를 찾고 있어요</p>
             <p className="text-body-1 text-gray-500">
@@ -413,6 +421,17 @@ export default function MainMapView({
           setIsRejectConfirmModalOpen(false);
           matchFoundSheet.reject();
         }}
+      />
+
+      <Popup
+        isOpen={matchExpiredModal.isOpen}
+        title="아직 연결되지 않았어요"
+        content={`지금 근처에 수락 가능한 사용자가 없어요.\n다시 시도해볼까요?`}
+        confirmMessage="재시도"
+        cancelMessage="잠시 멈출게요"
+        onClose={matchExpiredModal.close}
+        onConfirm={matchExpiredModal.retry}
+        onCancel={matchExpiredModal.pause}
       />
 
       <BottomSheet

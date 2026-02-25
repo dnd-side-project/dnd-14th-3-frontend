@@ -16,6 +16,7 @@ import {
   cancelMatchRequestApi,
   connectMatchSseApi,
   type MatchProposalEventData,
+  type MatchRequestExpiredEventData,
   type MatchSessionEventData,
   type SseConnection,
 } from "@/api/main-map";
@@ -47,6 +48,10 @@ export function useMainMapController() {
   const [isCancellingMatchRequest, setIsCancellingMatchRequest] = useState(false);
   const [matchProposal, setMatchProposal] = useState<MatchProposalEventData | null>(null);
   const [matchSession, setMatchSession] = useState<MatchSessionEventData | null>(null);
+  const [expiredMatchRequest, setExpiredMatchRequest] = useState<MatchRequestExpiredEventData | null>(
+    null
+  );
+  const [isMatchExpiredModalOpen, setIsMatchExpiredModalOpen] = useState(false);
   const persistedLocation = useMainMapLocationStore((state) => state.selectedLocation);
   const setPersistedLocation = useMainMapLocationStore((state) => state.setSelectedLocation);
   const setLayoutOptions = usePageLayoutStore((state) => state.setLayoutOptions);
@@ -331,6 +336,8 @@ export function useMainMapController() {
       sseConnectionRef.current = null;
       setMatchProposal(null);
       setMatchSession(null);
+      setExpiredMatchRequest(null);
+      setIsMatchExpiredModalOpen(false);
       transitionPhase("idle");
       Toast.show({
         type: "success",
@@ -421,6 +428,8 @@ export function useMainMapController() {
 
         setMatchProposal(null);
         setMatchSession(null);
+        setExpiredMatchRequest(null);
+        setIsMatchExpiredModalOpen(false);
         sseConnectionRef.current?.close();
         sseConnectionRef.current = connectMatchSseApi({
           onOpen: () => {
@@ -440,6 +449,14 @@ export function useMainMapController() {
               message: "매칭이 성사되었어요.",
               duration: 3000,
             });
+          },
+          onMatchRequestExpired: (expired) => {
+            logger.info("[match-sse] match.request.expired received", expired);
+            setExpiredMatchRequest(expired);
+            setMatchProposal(null);
+            setMatchSession(null);
+            setIsMatchExpiredModalOpen(true);
+            transitionPhase("match-failed");
           },
           onError: (error) => {
             logger.error(error, { tag: "match-sse" });
@@ -476,6 +493,8 @@ export function useMainMapController() {
         sseConnectionRef.current = null;
         setMatchProposal(null);
         setMatchSession(null);
+        setExpiredMatchRequest(null);
+        setIsMatchExpiredModalOpen(false);
 
         Toast.show({
           type: "error",
@@ -496,6 +515,19 @@ export function useMainMapController() {
     setMatchSession(null);
     transitionPhase("matching-in-progress");
   }, [transitionPhase]);
+
+  const handleCloseMatchExpiredModal = useCallback(() => {
+    setIsMatchExpiredModalOpen(false);
+    setExpiredMatchRequest(null);
+    transitionPhase("idle");
+  }, [transitionPhase]);
+
+  const handleRetryMatchExpired = useCallback(() => {
+    // TODO: wire retry API when backend endpoint is available.
+    logger.info("[match-request] retry requested from expired modal", {
+      matchRequestId: expiredMatchRequest?.matchRequestId,
+    });
+  }, [expiredMatchRequest?.matchRequestId]);
 
   const handleMapCreate = useCallback(
     (map: kakao.maps.Map) => {
@@ -572,6 +604,13 @@ export function useMainMapController() {
     acceptedMatchDetailSheet: {
       isOpen: phase === "match-accepted",
       close: () => transitionPhase("idle"),
+    },
+    matchExpiredModal: {
+      isOpen: isMatchExpiredModalOpen,
+      expiresAt: expiredMatchRequest?.expiresAt ?? null,
+      retry: handleRetryMatchExpired,
+      pause: handleCloseMatchExpiredModal,
+      close: handleCloseMatchExpiredModal,
     },
     onBottomSheetSnapChange: handleBottomSheetSnapChange,
     expandableFabActions: {

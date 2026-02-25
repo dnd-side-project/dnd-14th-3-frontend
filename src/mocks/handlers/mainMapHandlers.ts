@@ -140,7 +140,10 @@ export const mainMapHandlers: RequestHandler[] = [
     return new HttpResponse(null, { status: 204 });
   }),
 
-  http.get("/api/sse", () => {
+  http.get("/api/sse", ({ request }) => {
+    const url = new URL(request.url);
+    const scenario = url.searchParams.get("scenario");
+
     const stream = new ReadableStream<Uint8Array>({
       start(controller) {
         const encoder = new TextEncoder();
@@ -152,8 +155,18 @@ export const mainMapHandlers: RequestHandler[] = [
 
         controller.enqueue(encoder.encode(": connected\n\n"));
 
-        const proposalTimer = globalThis.setTimeout(() => {
+        const eventTimer = globalThis.setTimeout(() => {
           if (!mockIsWaitingForMatch) return;
+
+          if (scenario === "expired") {
+            pushEvent("match.request.expired", {
+              userId: 1,
+              matchRequestId: mockCurrentMatchRequest?.matchRequestId ?? mockMatchRequestId,
+              expiresAt: new Date(Date.now() + 60 * 1000).toISOString(),
+            });
+            mockIsWaitingForMatch = false;
+            return;
+          }
 
           if (mockCurrentMatchRequest) {
             mockCurrentMatchRequest = {
@@ -179,7 +192,7 @@ export const mainMapHandlers: RequestHandler[] = [
         }, 15000);
 
         return () => {
-          globalThis.clearTimeout(proposalTimer);
+          globalThis.clearTimeout(eventTimer);
           globalThis.clearInterval(keepAliveTimer);
         };
       },
