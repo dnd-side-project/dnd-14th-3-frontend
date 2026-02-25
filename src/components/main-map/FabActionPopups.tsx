@@ -14,9 +14,7 @@ interface FabActionPopupsProps {
   actions: FabPopupActions;
 }
 
-export default function FabActionPopups({
-  actions,
-}: FabActionPopupsProps) {
+export default function FabActionPopups({ actions }: FabActionPopupsProps) {
   const isLocationShareSetupModalOpen = useMainMapFabFlowStore(
     (state) => state.isLocationShareSetupModalOpen
   );
@@ -37,11 +35,10 @@ export default function FabActionPopups({
             : "근처에서 사진 동행을 찾기 위해\n위치 정보가 필요해요.\n실시간 추적은 하지 않고\n매칭 용도로만 사용해요."
         }
         confirmMessage={isDeniedState ? "수동으로 위치 설정" : "위치 공유 허용하기"}
-        cancelMessage="잠시 멈출래요"
+        cancelMessage="수동으로 위치 찾기"
+        showCancel={!isDeniedState}
         onClose={actions.closeAll}
-        onConfirm={
-          isDeniedState ? actions.pauseFromLocationShare : actions.confirmLocationShare
-        }
+        onConfirm={isDeniedState ? actions.pauseFromLocationShare : actions.confirmLocationShare}
         onCancel={isDeniedState ? actions.closeAll : actions.pauseFromLocationShare}
       />
 

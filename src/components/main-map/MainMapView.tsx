@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { ChevronUp, MapPin, X } from "lucide-react";
 import { Map, MapMarker } from "react-kakao-maps-sdk";
@@ -15,6 +15,12 @@ import { Button } from "@/components/shared/button";
 import { ChipButton } from "@/components/shared/chip-button";
 import { Popup } from "@/components/shared/popup";
 import { TextArea } from "@/components/shared/textarea";
+
+const MATCHING_HINTS = [
+  "지금 3명의 사용자가 보고 있어요",
+  "가장 가까운 순서대로 연결 중이에요",
+  "좋은 구도가 나올 분을 찾는 중이에요",
+] as const;
 
 interface MainMapViewProps {
   mapCenter: LatLng;
@@ -100,15 +106,33 @@ export default function MainMapView({
   const [companionRequestSnapState, setCompanionRequestSnapState] = useState<"collapsed" | "full">(
     "full"
   );
-  const [matchFoundSnapState, setMatchFoundSnapState] = useState<"collapsed" | "full">("full");
-  const [acceptedDetailSnapState, setAcceptedDetailSnapState] = useState<"collapsed" | "full">(
-    "full"
-  );
   const [isRejectConfirmModalOpen, setIsRejectConfirmModalOpen] = useState(false);
+  const [matchingHintIndex, setMatchingHintIndex] = useState(-1);
 
   const isCenterPinMode = isManualLocationMode || isSheetOpen;
   const shouldDisableRequestButton =
     !addressInfo?.roadAddress && !addressInfo?.jibunAddress && !addressInfo?.buildingName;
+
+  useEffect(() => {
+    if (!matchingWaitSheet.isOpen) return;
+
+    setMatchingHintIndex(-1);
+    let intervalId: number | null = null;
+
+    const firstHintTimeoutId = window.setTimeout(() => {
+      setMatchingHintIndex(0);
+      intervalId = window.setInterval(() => {
+        setMatchingHintIndex((prev) => (prev + 1) % MATCHING_HINTS.length);
+      }, 3000);
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(firstHintTimeoutId);
+      if (intervalId !== null) {
+        window.clearInterval(intervalId);
+      }
+    };
+  }, [matchingWaitSheet.isOpen]);
 
   return (
     <div className="relative h-full">
@@ -335,7 +359,7 @@ export default function MainMapView({
             <p className="text-gray-500 text-body-2">500m 이내</p>
             <p className="text-heading-2 font-bold mb-3">오늘의 사진 메이트를 찾고 있어요</p>
             <p className="text-body-1 text-gray-500">
-              실시간으로 주변 사용자를 찾는 중입니다. 잠시만 기다려 주세요.
+              {matchingHintIndex >= 0 ? MATCHING_HINTS[matchingHintIndex] : ""}
             </p>
           </div>
         }
@@ -355,33 +379,22 @@ export default function MainMapView({
         onClose={matchFoundSheet.close}
         showBackdrop
         backdropClick="none"
-        draggable
+        draggable={false}
         dragToClose={false}
         initialSnap="full"
-        onSnapChange={setMatchFoundSnapState}
-        header={(actions) => (
-          <div className="flex items-center justify-between gap-2 px-4 pb-4 pt-2">
+        header={() => (
+          <div className="flex items-center justify-between gap-2 px-4 pb-4 pt-4">
             <div className="flex flex-row items-center gap-2">
               <MapPin />
               <div className="text-heading-2 font-bold text-gray-900">사진 메이트를 찾았어요</div>
             </div>
             <button
               type="button"
-              aria-label={matchFoundSnapState === "collapsed" ? "바텀시트 펼치기" : "바텀시트 접기"}
+              aria-label="바텀시트 닫기"
               className="inline-flex size-7 items-center justify-center rounded-md text-gray-700 hover:bg-gray-100"
-              onClick={() => {
-                if (matchFoundSnapState === "collapsed") {
-                  actions.expand();
-                  return;
-                }
-                actions.collapse();
-              }}
+              onClick={matchFoundSheet.close}
             >
-              {matchFoundSnapState === "collapsed" ? (
-                <ChevronUp className="size-5" />
-              ) : (
-                <X className="size-5" />
-              )}
+              <X className="size-5" />
             </button>
           </div>
         )}
@@ -413,7 +426,7 @@ export default function MainMapView({
       <Popup
         isOpen={isRejectConfirmModalOpen}
         title="다른 메이트를 찾아볼까요?"
-        content={`현재 매칭을 취소하고\n다른 메이트를 찾을 수 있어요.`}
+        content={"현재 매칭을 취소하고\n다른 메이트를 찾을 수 있어요."}
         confirmMessage="동행을 찾을게요"
         showCancel={false}
         onClose={() => setIsRejectConfirmModalOpen(false)}
@@ -426,7 +439,7 @@ export default function MainMapView({
       <Popup
         isOpen={matchExpiredModal.isOpen}
         title="아직 연결되지 않았어요"
-        content={`지금 근처에 수락 가능한 사용자가 없어요.\n다시 시도해볼까요?`}
+        content={"지금 근처에 수락 가능한 사용자가 없어요.\n다시 시도해볼까요?"}
         confirmMessage="재시도"
         cancelMessage="잠시 멈출게요"
         onClose={matchExpiredModal.close}
@@ -434,53 +447,13 @@ export default function MainMapView({
         onCancel={matchExpiredModal.pause}
       />
 
-      <BottomSheet
+      <Popup
         isOpen={acceptedMatchDetailSheet.isOpen}
+        title="수락을 기다리는 중이에요"
+        content={`사진 메이트가 수락하면\n상세 정보를 볼 수 있어요`}
+        showConfirm={false}
+        showCancel={false}
         onClose={acceptedMatchDetailSheet.close}
-        showBackdrop
-        backdropClick="none"
-        draggable
-        dragToClose={false}
-        initialSnap="full"
-        onSnapChange={setAcceptedDetailSnapState}
-        header={(actions) => (
-          <div className="flex items-center justify-between gap-2 px-4 pb-4 pt-2">
-            <div className="flex flex-row items-center gap-2">
-              <MapPin />
-              <div className="text-heading-2 font-bold text-gray-900">사진 메이트를 찾았어요</div>
-            </div>
-            <button
-              type="button"
-              aria-label={
-                acceptedDetailSnapState === "collapsed" ? "바텀시트 펼치기" : "바텀시트 접기"
-              }
-              className="inline-flex size-7 items-center justify-center rounded-md text-gray-700 hover:bg-gray-100"
-              onClick={() => {
-                if (acceptedDetailSnapState === "collapsed") {
-                  actions.expand();
-                  return;
-                }
-                actions.collapse();
-              }}
-            >
-              {acceptedDetailSnapState === "collapsed" ? (
-                <ChevronUp className="size-5" />
-              ) : (
-                <X className="size-5" />
-              )}
-            </button>
-          </div>
-        )}
-        renderContent={
-          <div className="space-y-3">
-            <p className="text-body-2 text-gray-700">매칭이 연결되었어요.</p>
-          </div>
-        }
-        footer={
-          <Button.Primary fullWidth onClick={acceptedMatchDetailSheet.close}>
-            확인
-          </Button.Primary>
-        }
       />
     </div>
   );

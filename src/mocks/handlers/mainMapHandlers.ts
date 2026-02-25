@@ -185,7 +185,7 @@ export const mainMapHandlers: RequestHandler[] = [
             userBDecision: "ACCEPTED",
           });
           mockIsWaitingForMatch = false;
-        }, 1500);
+        }, 20000);
 
         const keepAliveTimer = globalThis.setInterval(() => {
           controller.enqueue(encoder.encode(": keep-alive\n\n"));
