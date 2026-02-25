@@ -168,9 +168,8 @@ export function useMainMapController() {
   const handleResolveLocationWithPhase = useCallback(
     (location: LatLng) => {
       handleResolveLocation(location);
-      transitionPhase("location-setting");
     },
-    [handleResolveLocation, transitionPhase]
+    [handleResolveLocation]
   );
 
   const handleMapDragEnd = useCallback(
