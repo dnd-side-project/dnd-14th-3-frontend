@@ -1,6 +1,7 @@
 export { acceptMatchProposalApi } from "./acceptMatchProposal.api";
 export { cancelMatchRequestApi } from "./cancelMatchRequest.api";
 export { createMatchRequestApi } from "./createMatchRequest.api";
+export { getMatchRequestStatusApi } from "./getMatchRequestStatus.api";
 export { rejectMatchProposalApi } from "./rejectMatchProposal.api";
 export { retryMatchRequestApi } from "./retryMatchRequest.api";
 export type {

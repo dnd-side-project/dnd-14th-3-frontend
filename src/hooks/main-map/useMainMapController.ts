@@ -15,15 +15,11 @@ import { type MatchExpectedDuration } from "@/types/main-map/match-request.type"
 import { logger } from "@/lib/shared/logger";
 
 import {
-  acceptMatchProposalApi,
-  cancelMatchRequestApi,
   connectMatchSseApi,
   type MatchProposalEventData,
   type MatchRequestExpiredEventData,
   type MatchRequestWaitingCountEventData,
   type MatchSessionEventData,
-  rejectMatchProposalApi,
-  retryMatchRequestApi,
   type SseConnection,
 } from "@/api/main-map";
 
@@ -38,7 +34,13 @@ import { useManualSearchPermissionGate } from "@/hooks/main-map/useManualSearchP
 import { useMapAddressLookup } from "@/hooks/main-map/useMapAddressLookup";
 import { useBottomSheet } from "@/hooks/shared/bottom-sheet";
 
-import { useCreateMatchRequest } from "@/queries/match";
+import {
+  useAcceptMatchProposal,
+  useCancelMatchRequest,
+  useCreateMatchRequest,
+  useRejectMatchProposal,
+  useRetryMatchRequest,
+} from "@/queries/match";
 
 const companionRequestSchema = z.object({
   expectedDuration: z.enum(["TEN_MINUTES", "TWENTY_MINUTES", "OVER_THIRTY_MINUTES"]).nullable(),
@@ -189,6 +191,10 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
 
   const { mutateAsync: createMatchRequest, isPending: isCreatingMatchRequest } =
     useCreateMatchRequest();
+  const { mutateAsync: cancelMatchRequest } = useCancelMatchRequest();
+  const { mutateAsync: retryMatchRequest } = useRetryMatchRequest();
+  const { mutateAsync: acceptMatchProposal } = useAcceptMatchProposal();
+  const { mutateAsync: rejectMatchProposal } = useRejectMatchProposal();
 
   const transitionPhase = useCallback((nextPhase: MapPhase) => {
     setPhase(nextPhase);
@@ -561,7 +567,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
 
     setIsCancellingMatchRequest(true);
     try {
-      await cancelMatchRequestApi();
+      await cancelMatchRequest();
       logger.info("[match-request] cancelled");
       sseConnectionRef.current?.close();
       sseConnectionRef.current = null;
@@ -592,7 +598,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     } finally {
       setIsCancellingMatchRequest(false);
     }
-  }, [isCancellingMatchRequest, transitionPhase]);
+  }, [cancelMatchRequest, isCancellingMatchRequest, transitionPhase]);
 
   const handleBottomSheetSnapChange = useCallback(
     (snapState: "collapsed" | "full") => {
@@ -720,7 +726,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   const handleAcceptMatchFound = useCallback(() => {
     const proposalId = matchProposal?.id;
     if (proposalId) {
-      void acceptMatchProposalApi(proposalId).catch((error: unknown) => {
+      void acceptMatchProposal(proposalId).catch((error: unknown) => {
         const apiMessage = axios.isAxiosError<{ message?: string }>(error)
           ? error.response?.data?.message
           : undefined;
@@ -736,12 +742,12 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     }
 
     transitionPhase("match-accepted");
-  }, [matchProposal?.id, transitionPhase]);
+  }, [acceptMatchProposal, matchProposal?.id, transitionPhase]);
 
   const handleRejectProposal = useCallback(() => {
     const proposalId = matchProposal?.id;
     if (proposalId) {
-      void rejectMatchProposalApi(proposalId)
+      void rejectMatchProposal(proposalId)
         .then((response) => {
           logger.info("[match-request] proposal rejected", {
             proposalId,
@@ -763,7 +769,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     } else {
       logger.warn("[match-request] missing proposal id for reject");
     }
-  }, [matchProposal?.id]);
+  }, [matchProposal?.id, rejectMatchProposal]);
 
   const handleRejectMatchFound = useCallback(() => {
     logger.info("[match-request] continue waiting after reject confirmation");
@@ -802,7 +808,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
         matchRequestId,
         nextRetryCount: currentRetryCount + 1,
       });
-      const response = await retryMatchRequestApi(matchRequestId);
+      const response = await retryMatchRequest(matchRequestId);
 
       setMatchProposal(null);
       setMatchSession(null);
@@ -840,6 +846,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     expiredMatchRequest?.matchRequestId,
     isRetryingMatchRequest,
     openMatchSseConnection,
+    retryMatchRequest,
     transitionPhase,
   ]);
 
