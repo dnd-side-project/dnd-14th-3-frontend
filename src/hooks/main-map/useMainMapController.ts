@@ -434,6 +434,12 @@ export function useMainMapController() {
   }, [openMatchSseConnection, phase]);
 
   useEffect(() => {
+    if (phase !== "match-failed") return;
+    if (isMatchExpiredModalOpen) return;
+    transitionPhase("idle");
+  }, [isMatchExpiredModalOpen, phase, transitionPhase]);
+
+  useEffect(() => {
     return () => {
       sseConnectionRef.current?.close();
       sseConnectionRef.current = null;
