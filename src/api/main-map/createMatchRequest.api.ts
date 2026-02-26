@@ -3,8 +3,9 @@ import type {
   CreateMatchRequestResponse,
 } from "@/types/main-map/match-request.type";
 
-import { apiClient } from "@/api/client";
 import { logger } from "@/lib/shared/logger";
+
+import { apiClient } from "@/api/client";
 
 export async function createMatchRequestApi(
   payload: CreateMatchRequestPayload

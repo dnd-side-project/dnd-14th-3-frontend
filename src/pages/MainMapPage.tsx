@@ -65,6 +65,7 @@ export default function MainMapPage() {
         matchFoundSheet={controller.matchFoundSheet}
         acceptedMatchDetailSheet={controller.acceptedMatchDetailSheet}
         matchExpiredModal={controller.matchExpiredModal}
+        matchRetryLimitModal={controller.matchRetryLimitModal}
         onBottomSheetSnapChange={controller.onBottomSheetSnapChange}
       />
 

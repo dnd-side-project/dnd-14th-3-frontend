@@ -1,8 +1,9 @@
 import { useEffect } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 
-import { useAuthStore } from "@/store/auth/auth.store";
 import { logger } from "@/lib/shared/logger";
+
+import { useAuthStore } from "@/store/auth/auth.store";
 
 function parseJwtExp(token: string): number | null {
   const parts = token.split(".");

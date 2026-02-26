@@ -76,6 +76,12 @@ interface MainMapViewProps {
     pause: () => void;
     close: () => void;
   };
+  matchRetryLimitModal: {
+    isOpen: boolean;
+    reserve: () => void;
+    nextTime: () => void;
+    close: () => void;
+  };
   onBottomSheetSnapChange: (snapState: "collapsed" | "full") => void;
 }
 
@@ -97,6 +103,7 @@ export default function MainMapView({
   matchFoundSheet,
   acceptedMatchDetailSheet,
   matchExpiredModal,
+  matchRetryLimitModal,
   onBottomSheetSnapChange,
 }: MainMapViewProps) {
   const [companionRequestSnapState, setCompanionRequestSnapState] = useState<"collapsed" | "full">(
@@ -119,11 +126,17 @@ export default function MainMapView({
     !addressInfo?.roadAddress && !addressInfo?.jibunAddress && !addressInfo?.buildingName;
 
   useEffect(() => {
-    if (!matchingWaitSheet.isOpen) return;
+    const resetTimerId = window.setTimeout(() => {
+      setMatchingHintIndex(-1);
+    }, 0);
 
-    setMatchingHintIndex(-1);
+    if (!matchingWaitSheet.isOpen) {
+      return () => {
+        window.clearTimeout(resetTimerId);
+      };
+    }
+
     let intervalId: number | null = null;
-
     const firstHintTimeoutId = window.setTimeout(() => {
       setMatchingHintIndex(0);
       intervalId = window.setInterval(() => {
@@ -132,6 +145,7 @@ export default function MainMapView({
     }, 3000);
 
     return () => {
+      window.clearTimeout(resetTimerId);
       window.clearTimeout(firstHintTimeoutId);
       if (intervalId !== null) {
         window.clearInterval(intervalId);
@@ -388,19 +402,11 @@ export default function MainMapView({
         dragToClose={false}
         initialSnap="full"
         header={() => (
-          <div className="flex items-center justify-between gap-2 px-4 pb-4 pt-4">
+          <div className="flex items-center gap-2 px-4 pb-4 pt-4">
             <div className="flex flex-row items-center gap-2">
               <MapPin />
               <div className="text-heading-2 font-bold text-gray-900">사진 메이트를 찾았어요</div>
             </div>
-            <button
-              type="button"
-              aria-label="바텀시트 닫기"
-              className="inline-flex size-7 items-center justify-center rounded-md text-gray-700 hover:bg-gray-100"
-              onClick={matchFoundSheet.close}
-            >
-              <X className="size-5" />
-            </button>
           </div>
         )}
         renderContent={
@@ -461,6 +467,7 @@ export default function MainMapView({
         title="수락을 기다리는 중이에요"
         content={`사진 메이트가 수락하면\n상세 정보를 볼 수 있어요`}
         showConfirm={false}
+        closeOnBackdrop={false}
         cancelMessage="매칭 중단하기"
         onCancel={() => {
           acceptedMatchDetailSheet.close();
@@ -468,6 +475,19 @@ export default function MainMapView({
         }}
         onClose={acceptedMatchDetailSheet.close}
       />
+
+      <Popup
+        isOpen={matchRetryLimitModal.isOpen}
+        title="지금은 매칭이 어려운 시간이에요"
+        content={"현재 매칭을 취소하고\n다른 메이트를 찾을 수 있어요"}
+        confirmMessage="사전 예약하기"
+        cancelMessage="다음에 다시 찾기"
+        onClose={matchRetryLimitModal.close}
+        onConfirm={matchRetryLimitModal.reserve}
+        onCancel={matchRetryLimitModal.nextTime}
+      />
     </div>
   );
 }
+
+

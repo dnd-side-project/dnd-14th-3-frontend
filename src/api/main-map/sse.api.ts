@@ -1,5 +1,6 @@
-import { getAccessToken, refreshAccessToken } from "@/api/client";
 import { logger } from "@/lib/shared/logger";
+
+import { getAccessToken, refreshAccessToken } from "@/api/client";
 
 export type MatchProposalEventData = {
   id: number;

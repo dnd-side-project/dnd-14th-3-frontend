@@ -140,6 +140,65 @@ export const mainMapHandlers: RequestHandler[] = [
     return new HttpResponse(null, { status: 204 });
   }),
 
+  http.patch("/api/v1/match-requests/:matchRequestId/retry", ({ params }) => {
+    const requestId = Number(params.matchRequestId);
+    if (!mockCurrentMatchRequest || !Number.isFinite(requestId)) {
+      return HttpResponse.json(
+        {
+          success: false,
+          message: "매칭 요청을 찾을 수 없습니다.",
+          code: "MATCH_REQUEST_NOT_FOUND",
+          data: null,
+        },
+        { status: 404 }
+      );
+    }
+
+    if (mockCurrentMatchRequest.matchRequestId !== requestId) {
+      return HttpResponse.json(
+        {
+          success: false,
+          message: "매칭 요청을 찾을 수 없습니다.",
+          code: "MATCH_REQUEST_NOT_FOUND",
+          data: null,
+        },
+        { status: 404 }
+      );
+    }
+
+    if (mockCurrentMatchRequest.status !== "EXPIRED") {
+      return HttpResponse.json(
+        {
+          success: false,
+          message: "아직 대기 시간이 남아있어 재시도할 수 없습니다.",
+          code: "MATCH_REQUEST_NOT_EXPIRED",
+          data: null,
+        },
+        { status: 409 }
+      );
+    }
+
+    mockCurrentMatchRequest = {
+      ...mockCurrentMatchRequest,
+      status: "WAITING",
+      updatedAt: new Date().toISOString(),
+    };
+    mockIsWaitingForMatch = true;
+
+    return HttpResponse.json(
+      {
+        success: true,
+        message: "재시도에 성공했습니다.",
+        code: "MATCH_REQUEST_RETRIED",
+        data: {
+          ...mockCurrentMatchRequest,
+          nearbyWaitingCount: 3,
+        },
+      },
+      { status: 200 }
+    );
+  }),
+
   http.get("/api/sse", ({ request }) => {
     const url = new URL(request.url);
     const scenario = url.searchParams.get("scenario");
@@ -168,6 +227,13 @@ export const mainMapHandlers: RequestHandler[] = [
           if (!mockIsWaitingForMatch) return;
 
           if (scenario === "expired") {
+            if (mockCurrentMatchRequest) {
+              mockCurrentMatchRequest = {
+                ...mockCurrentMatchRequest,
+                status: "EXPIRED",
+                updatedAt: new Date().toISOString(),
+              };
+            }
             pushEvent("match.request.expired", {
               userId: 1,
               matchRequestId: mockCurrentMatchRequest?.matchRequestId ?? mockMatchRequestId,

@@ -12,6 +12,8 @@ import { type LatLng } from "@/types/main-map/location.type";
 import { type MapPhase } from "@/types/main-map/map-phase.type";
 import { type MatchExpectedDuration } from "@/types/main-map/match-request.type";
 
+import { logger } from "@/lib/shared/logger";
+
 import {
   cancelMatchRequestApi,
   connectMatchSseApi,
@@ -19,6 +21,7 @@ import {
   type MatchRequestExpiredEventData,
   type MatchRequestWaitingCountEventData,
   type MatchSessionEventData,
+  retryMatchRequestApi,
   type SseConnection,
 } from "@/api/main-map";
 
@@ -34,7 +37,6 @@ import { useMapAddressLookup } from "@/hooks/main-map/useMapAddressLookup";
 import { useBottomSheet } from "@/hooks/shared/bottom-sheet";
 
 import { useCreateMatchRequest } from "@/queries/match";
-import { logger } from "@/lib/shared/logger";
 
 const companionRequestSchema = z.object({
   expectedDuration: z.enum(["TEN_MINUTES", "TWENTY_MINUTES", "OVER_THIRTY_MINUTES"]).nullable(),
@@ -45,6 +47,7 @@ type CompanionRequestFormValues = z.infer<typeof companionRequestSchema>;
 
 const MATCH_FLOW_STORAGE_KEY = "main-map-match-flow-v1";
 const MATCH_FLOW_TTL_MS = 30 * 60 * 1000;
+const MAX_MATCH_RETRY_COUNT = 2;
 
 type PersistedMatchFlow = {
   phase: MapPhase;
@@ -91,12 +94,15 @@ export function useMainMapController() {
   const [matchSession, setMatchSession] = useState<MatchSessionEventData | null>(
     persistedMatchFlow?.matchSession ?? null
   );
-  const [expiredMatchRequest, setExpiredMatchRequest] = useState<MatchRequestExpiredEventData | null>(
-    persistedMatchFlow?.expiredMatchRequest ?? null
-  );
+  const [expiredMatchRequest, setExpiredMatchRequest] =
+    useState<MatchRequestExpiredEventData | null>(persistedMatchFlow?.expiredMatchRequest ?? null);
   const [isMatchExpiredModalOpen, setIsMatchExpiredModalOpen] = useState(
     persistedMatchFlow?.isMatchExpiredModalOpen ?? false
   );
+  const [isMatchRetryLimitModalOpen, setIsMatchRetryLimitModalOpen] = useState(false);
+  const [matchRetryCount, setMatchRetryCount] = useState(0);
+  const matchRetryCountRef = useRef(0);
+  const [isRetryingMatchRequest, setIsRetryingMatchRequest] = useState(false);
   const [nearbyWaitingCount, setNearbyWaitingCount] = useState<number | null>(null);
   const persistedLocation = useMainMapLocationStore((state) => state.selectedLocation);
   const setPersistedLocation = useMainMapLocationStore((state) => state.setSelectedLocation);
@@ -187,6 +193,17 @@ export function useMainMapController() {
       },
       onMatchRequestExpired: (expired) => {
         logger.info("[match-sse] match.request.expired received", expired);
+        if (matchRetryCountRef.current >= MAX_MATCH_RETRY_COUNT) {
+          setIsMatchExpiredModalOpen(false);
+          setIsMatchRetryLimitModalOpen(true);
+          setExpiredMatchRequest(expired);
+          setMatchProposal(null);
+          setMatchSession(null);
+          sseConnectionRef.current?.close();
+          sseConnectionRef.current = null;
+          transitionPhase("match-failed");
+          return;
+        }
         setExpiredMatchRequest(expired);
         setMatchProposal(null);
         setMatchSession(null);
@@ -434,10 +451,15 @@ export function useMainMapController() {
   }, [openMatchSseConnection, phase]);
 
   useEffect(() => {
+    matchRetryCountRef.current = matchRetryCount;
+  }, [matchRetryCount]);
+
+  useEffect(() => {
     if (phase !== "match-failed") return;
     if (isMatchExpiredModalOpen) return;
+    if (isMatchRetryLimitModalOpen) return;
     transitionPhase("idle");
-  }, [isMatchExpiredModalOpen, phase, transitionPhase]);
+  }, [isMatchExpiredModalOpen, isMatchRetryLimitModalOpen, phase, transitionPhase]);
 
   useEffect(() => {
     return () => {
@@ -460,6 +482,9 @@ export function useMainMapController() {
       setNearbyWaitingCount(null);
       setExpiredMatchRequest(null);
       setIsMatchExpiredModalOpen(false);
+      setIsMatchRetryLimitModalOpen(false);
+      setMatchRetryCount(0);
+      matchRetryCountRef.current = 0;
       transitionPhase("idle");
       Toast.show({
         type: "success",
@@ -553,6 +578,9 @@ export function useMainMapController() {
         setNearbyWaitingCount(null);
         setExpiredMatchRequest(null);
         setIsMatchExpiredModalOpen(false);
+        setIsMatchRetryLimitModalOpen(false);
+        setMatchRetryCount(0);
+        matchRetryCountRef.current = 0;
         openMatchSseConnection();
         transitionPhase("matching-in-progress");
 
@@ -582,6 +610,9 @@ export function useMainMapController() {
         setNearbyWaitingCount(null);
         setExpiredMatchRequest(null);
         setIsMatchExpiredModalOpen(false);
+        setIsMatchRetryLimitModalOpen(false);
+        setMatchRetryCount(0);
+        matchRetryCountRef.current = 0;
 
         Toast.show({
           type: "error",
@@ -610,15 +641,82 @@ export function useMainMapController() {
   const handleCloseMatchExpiredModal = useCallback(() => {
     setIsMatchExpiredModalOpen(false);
     setExpiredMatchRequest(null);
+    setIsMatchRetryLimitModalOpen(false);
+    setMatchRetryCount(0);
     transitionPhase("idle");
   }, [transitionPhase]);
 
-  const handleRetryMatchExpired = useCallback(() => {
-    // TODO: wire retry API when backend endpoint is available.
-    logger.info("[match-request] retry requested from expired modal", {
-      matchRequestId: expiredMatchRequest?.matchRequestId,
-    });
-  }, [expiredMatchRequest?.matchRequestId]);
+  const handleRetryMatchExpired = useCallback(async () => {
+    if (isRetryingMatchRequest) return;
+    const currentRetryCount = matchRetryCountRef.current;
+    if (currentRetryCount >= MAX_MATCH_RETRY_COUNT) {
+      setIsMatchExpiredModalOpen(false);
+      setIsMatchRetryLimitModalOpen(true);
+      return;
+    }
+
+    const matchRequestId = expiredMatchRequest?.matchRequestId;
+    if (!matchRequestId) return;
+
+    setIsRetryingMatchRequest(true);
+    try {
+      logger.info("[match-request] retry requested", {
+        matchRequestId,
+        nextRetryCount: currentRetryCount + 1,
+      });
+      const response = await retryMatchRequestApi(matchRequestId);
+
+      setMatchProposal(null);
+      setMatchSession(null);
+      setExpiredMatchRequest(null);
+      setIsMatchExpiredModalOpen(false);
+      setNearbyWaitingCount(response.data?.nearbyWaitingCount ?? null);
+      const nextRetryCount = currentRetryCount + 1;
+      matchRetryCountRef.current = nextRetryCount;
+      setMatchRetryCount(nextRetryCount);
+      setIsMatchRetryLimitModalOpen(false);
+
+      sseConnectionRef.current?.close();
+      sseConnectionRef.current = null;
+      openMatchSseConnection();
+      transitionPhase("matching-in-progress");
+      logger.info("[match-request] retry success", {
+        matchRequestId: response.data?.matchRequestId,
+        status: response.data?.status,
+      });
+    } catch (error) {
+      const apiMessage = axios.isAxiosError<{ message?: string }>(error)
+        ? error.response?.data?.message
+        : undefined;
+      logger.error(error, { tag: "match-request-retry" });
+      setIsMatchExpiredModalOpen(true);
+      Toast.show({
+        type: "error",
+        message: apiMessage || "재시도에 실패했어요. 잠시 후 다시 시도해 주세요.",
+        duration: 3000,
+      });
+    } finally {
+      setIsRetryingMatchRequest(false);
+    }
+  }, [
+    expiredMatchRequest?.matchRequestId,
+    isRetryingMatchRequest,
+    openMatchSseConnection,
+    transitionPhase,
+  ]);
+
+  const handleCloseMatchRetryLimitModal = useCallback(() => {
+    setIsMatchRetryLimitModalOpen(false);
+    setIsMatchExpiredModalOpen(false);
+    setExpiredMatchRequest(null);
+    setMatchRetryCount(0);
+    matchRetryCountRef.current = 0;
+    transitionPhase("idle");
+  }, [transitionPhase]);
+
+  const handleReserveMatchRetry = useCallback(() => {
+    logger.info("[match-request] reserve flow requested from retry-limit modal");
+  }, []);
 
   const handleMapCreate = useCallback(
     (map: kakao.maps.Map) => {
@@ -704,6 +802,12 @@ export function useMainMapController() {
       retry: handleRetryMatchExpired,
       pause: handleCloseMatchExpiredModal,
       close: handleCloseMatchExpiredModal,
+    },
+    matchRetryLimitModal: {
+      isOpen: isMatchRetryLimitModalOpen,
+      reserve: handleReserveMatchRetry,
+      close: handleCloseMatchRetryLimitModal,
+      nextTime: handleCloseMatchRetryLimitModal,
     },
     onBottomSheetSnapChange: handleBottomSheetSnapChange,
     expandableFabActions: {

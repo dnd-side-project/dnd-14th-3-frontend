@@ -22,6 +22,7 @@ export interface CreateMatchRequestData {
   requestMessage: string;
   createdAt: string;
   updatedAt: string;
+  nearbyWaitingCount?: number;
 }
 
 export interface CreateMatchRequestResponse {
