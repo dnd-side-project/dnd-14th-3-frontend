@@ -1,6 +1,6 @@
 ﻿import { useEffect, useState } from "react";
 
-import { ChevronUp, MapPin, X } from "lucide-react";
+import { Camera, ChevronUp, MapPin, X } from "lucide-react";
 import { Map, MapMarker } from "react-kakao-maps-sdk";
 
 import { type LatLng, type LocationAddressInfo } from "@/types/main-map/location.type";
@@ -68,6 +68,7 @@ interface MainMapViewProps {
   };
   acceptedMatchDetailSheet: {
     isOpen: boolean;
+    hasMatchSession: boolean;
     close: () => void;
   };
   matchExpiredModal: {
@@ -465,7 +466,7 @@ export default function MainMapView({
       />
 
       <Popup
-        isOpen={acceptedMatchDetailSheet.isOpen}
+        isOpen={acceptedMatchDetailSheet.isOpen && !acceptedMatchDetailSheet.hasMatchSession}
         title="수락을 기다리는 중이에요"
         content={`사진 메이트가 수락하면\n상세 정보를 볼 수 있어요`}
         showConfirm={false}
@@ -477,6 +478,56 @@ export default function MainMapView({
           setIsRejectConfirmModalOpen(true);
         }}
         onClose={acceptedMatchDetailSheet.close}
+      />
+
+      <BottomSheet
+        isOpen={acceptedMatchDetailSheet.isOpen && acceptedMatchDetailSheet.hasMatchSession}
+        onClose={acceptedMatchDetailSheet.close}
+        showBackdrop
+        backdropClick="none"
+        draggable={false}
+        dragToClose={false}
+        initialSnap="full"
+        header={() => (
+          <div className="flex items-center gap-2 px-4 pb-4 pt-4">
+            <div className="flex flex-row items-center gap-2">
+              <MapPin />
+              <div className="text-heading-2 font-bold text-gray-900">사진 메이트를 찾았어요</div>
+            </div>
+          </div>
+        )}
+        renderContent={
+          <div className="space-y-2">
+            <div>
+              <div className="py-2 flex flex-row justify-between">
+                <div className="text-body-1 font-bold">프로필</div>
+                <div className="text-caption-1 text-white font-bold bg-mint-500 px-2 py-1.5 rounded-[8px]">
+                  10분 후 도착 예정
+                </div>
+              </div>
+              <div className="text-body-2 text-gray-500">
+                <div>이하선 | 여 | 26세</div>
+                <div>신뢰도가 높은 메이트예요(5점)</div>
+              </div>
+            </div>
+            <div>
+              <div className="py-2 text-body-1 font-bold">촬영 예상 소요 시간</div>
+              <span className="inline-flex items-center gap-1 border border-mint-500 text-caption-1 rounded-md px-2 py-1">
+                <Camera className="text-mint-500" size={16} />
+                <p>20분</p>
+              </span>
+            </div>
+            <div>
+              <div className="py-2 text-body-1 font-bold">요청 메세지</div>
+              <div className="border border-mint-500 rounded-md p-3">사진 촬영을 도와주세요!</div>
+            </div>
+          </div>
+        }
+        footer={
+          <Button.Primary fullWidth onClick={() => {}}>
+            이동하기
+          </Button.Primary>
+        }
       />
 
       <Popup
@@ -492,5 +543,3 @@ export default function MainMapView({
     </div>
   );
 }
-
-

@@ -24,6 +24,7 @@ const ALLOWED_DURATIONS: MatchExpectedDuration[] = [
 let mockMatchRequestId = 100;
 let mockIsWaitingForMatch = false;
 let mockCurrentMatchRequest: CreateMatchRequestData | null = null;
+let mockPendingMatchSession: { id: number; userAId: number; userBId: number } | null = null;
 
 export const mainMapHandlers: RequestHandler[] = [
   http.post("/api/v1/match-requests", async ({ request }) => {
@@ -137,6 +138,7 @@ export const mainMapHandlers: RequestHandler[] = [
 
   http.delete("/api/v1/match-requests/me", () => {
     mockIsWaitingForMatch = false;
+    mockPendingMatchSession = null;
     return new HttpResponse(null, { status: 204 });
   }),
 
@@ -214,6 +216,8 @@ export const mainMapHandlers: RequestHandler[] = [
       );
     }
 
+    mockPendingMatchSession = null;
+
     return HttpResponse.json(
       {
         success: true,
@@ -246,6 +250,12 @@ export const mainMapHandlers: RequestHandler[] = [
         { status: 404 }
       );
     }
+
+    mockPendingMatchSession = {
+      id: 3,
+      userAId: 3,
+      userBId: 4,
+    };
 
     return HttpResponse.json(
       {
@@ -328,6 +338,12 @@ export const mainMapHandlers: RequestHandler[] = [
           mockIsWaitingForMatch = false;
         }, 20000);
 
+        const matchSessionTimer = globalThis.setInterval(() => {
+          if (!mockPendingMatchSession) return;
+          pushEvent("match.session", mockPendingMatchSession);
+          mockPendingMatchSession = null;
+        }, 5000);
+
         const keepAliveTimer = globalThis.setInterval(() => {
           controller.enqueue(encoder.encode(": keep-alive\n\n"));
         }, 15000);
@@ -335,6 +351,7 @@ export const mainMapHandlers: RequestHandler[] = [
         return () => {
           globalThis.clearInterval(waitingCountTimer);
           globalThis.clearTimeout(eventTimer);
+          globalThis.clearInterval(matchSessionTimer);
           globalThis.clearInterval(keepAliveTimer);
         };
       },

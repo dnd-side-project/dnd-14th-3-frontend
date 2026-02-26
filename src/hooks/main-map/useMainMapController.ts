@@ -110,7 +110,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
       ? persistedFlowWasManualMode
         ? "manual-location-setting"
         : "location-setting"
-      : persistedFlowPhase ?? "idle";
+      : (persistedFlowPhase ?? "idle");
   const [searchParams, setSearchParams] = useSearchParams();
   const [phase, setPhase] = useState<MapPhase>(initialPhase);
   const [isCancellingMatchRequest, setIsCancellingMatchRequest] = useState(false);
@@ -217,11 +217,6 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
         sseConnectionRef.current?.close();
         sseConnectionRef.current = null;
         transitionPhase("match-accepted");
-        Toast.show({
-          type: "success",
-          message: "매칭이 성사되었어요.",
-          duration: 3000,
-        });
       },
       onMatchRequestExpired: (expired) => {
         logger.info("[match-sse] match.request.expired received", expired);
@@ -940,6 +935,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     },
     acceptedMatchDetailSheet: {
       isOpen: phase === "match-accepted",
+      hasMatchSession: Boolean(matchSession),
       close: () => transitionPhase("idle"),
     },
     matchExpiredModal: {
