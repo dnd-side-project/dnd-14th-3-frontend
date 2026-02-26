@@ -8,12 +8,13 @@ import { LoadingIndicator } from "@/components/shared/loading";
 
 export default function MainMapPage() {
   const appKey = import.meta.env.VITE_KAKAO_MAP_APP_KEY;
-  const controller = useMainMapController();
 
   const [loading, error] = useKakaoLoader({
     appkey: appKey ?? "",
     libraries: ["services"],
   });
+
+  const controller = useMainMapController({ isKakaoReady: !loading && !error });
 
   if (!appKey) {
     return (
@@ -61,6 +62,11 @@ export default function MainMapPage() {
         manualActions={controller.manualActions}
         currentLocationActions={controller.currentLocationActions}
         companionRequestSheet={controller.companionRequestSheet}
+        matchingWaitSheet={controller.matchingWaitSheet}
+        matchFoundSheet={controller.matchFoundSheet}
+        acceptedMatchDetailSheet={controller.acceptedMatchDetailSheet}
+        matchExpiredModal={controller.matchExpiredModal}
+        matchRetryLimitModal={controller.matchRetryLimitModal}
         onBottomSheetSnapChange={controller.onBottomSheetSnapChange}
       />
 

@@ -1,6 +1,9 @@
-import { http, HttpResponse, type RequestHandler } from "msw";
+﻿import { http, HttpResponse, type RequestHandler } from "msw";
 
-import { type MatchExpectedDuration } from "@/types/main-map/match-request.type";
+import {
+  type CreateMatchRequestData,
+  type MatchExpectedDuration,
+} from "@/types/main-map/match-request.type";
 
 interface MatchRequestBody {
   location?: {
@@ -19,6 +22,8 @@ const ALLOWED_DURATIONS: MatchExpectedDuration[] = [
 ];
 
 let mockMatchRequestId = 100;
+let mockIsWaitingForMatch = false;
+let mockCurrentMatchRequest: CreateMatchRequestData | null = null;
 
 export const mainMapHandlers: RequestHandler[] = [
   http.post("/api/v1/match-requests", async ({ request }) => {
@@ -65,29 +70,216 @@ export const mainMapHandlers: RequestHandler[] = [
     }
 
     mockMatchRequestId += 1;
+    mockIsWaitingForMatch = true;
     const nowIso = new Date().toISOString();
+
+    mockCurrentMatchRequest = {
+      matchRequestId: mockMatchRequestId,
+      status: "WAITING",
+      specificPlace: body.specificPlace ?? "",
+      location: {
+        latitude: body.location!.latitude!,
+        longitude: body.location!.longitude!,
+      },
+      expectedDuration: body.expectedDuration!,
+      requestMessage: body.requestMessage ?? "",
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    };
 
     return HttpResponse.json(
       {
         success: true,
         message: "매칭 대기가 생성되었습니다.",
         code: "MATCH_REQUEST_CREATED",
-        data: {
-          matchRequestId: mockMatchRequestId,
-          status: "WAITING",
-          specificPlace: body.specificPlace,
-          location: {
-            latitude: body.location!.latitude,
-            longitude: body.location!.longitude,
-          },
-          expectedDuration: body.expectedDuration,
-          requestMessage: body.requestMessage ?? "",
-          createdAt: nowIso,
-          updatedAt: nowIso,
-        },
+        data: mockCurrentMatchRequest,
       },
       { status: 201 }
     );
   }),
-];
 
+  http.get("/api/v1/match-requests/:matchRequestId", ({ params }) => {
+    const requestId = Number(params.matchRequestId);
+    if (!mockCurrentMatchRequest || !Number.isFinite(requestId)) {
+      return HttpResponse.json(
+        {
+          success: false,
+          message: "매칭 요청을 찾을 수 없습니다.",
+          code: "MATCH_REQUEST_NOT_FOUND",
+          data: null,
+        },
+        { status: 404 }
+      );
+    }
+
+    if (mockCurrentMatchRequest.matchRequestId !== requestId) {
+      return HttpResponse.json(
+        {
+          success: false,
+          message: "매칭 요청을 찾을 수 없습니다.",
+          code: "MATCH_REQUEST_NOT_FOUND",
+          data: null,
+        },
+        { status: 404 }
+      );
+    }
+
+    return HttpResponse.json(
+      {
+        success: true,
+        message: "매칭 대기 조회 성공",
+        code: "MATCH_REQUEST_FOUND",
+        data: mockCurrentMatchRequest,
+      },
+      { status: 200 }
+    );
+  }),
+
+  http.delete("/api/v1/match-requests/me", () => {
+    mockIsWaitingForMatch = false;
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.patch("/api/v1/match-requests/:matchRequestId/retry", ({ params }) => {
+    const requestId = Number(params.matchRequestId);
+    if (!mockCurrentMatchRequest || !Number.isFinite(requestId)) {
+      return HttpResponse.json(
+        {
+          success: false,
+          message: "매칭 요청을 찾을 수 없습니다.",
+          code: "MATCH_REQUEST_NOT_FOUND",
+          data: null,
+        },
+        { status: 404 }
+      );
+    }
+
+    if (mockCurrentMatchRequest.matchRequestId !== requestId) {
+      return HttpResponse.json(
+        {
+          success: false,
+          message: "매칭 요청을 찾을 수 없습니다.",
+          code: "MATCH_REQUEST_NOT_FOUND",
+          data: null,
+        },
+        { status: 404 }
+      );
+    }
+
+    if (mockCurrentMatchRequest.status !== "EXPIRED") {
+      return HttpResponse.json(
+        {
+          success: false,
+          message: "아직 대기 시간이 남아있어 재시도할 수 없습니다.",
+          code: "MATCH_REQUEST_NOT_EXPIRED",
+          data: null,
+        },
+        { status: 409 }
+      );
+    }
+
+    mockCurrentMatchRequest = {
+      ...mockCurrentMatchRequest,
+      status: "WAITING",
+      updatedAt: new Date().toISOString(),
+    };
+    mockIsWaitingForMatch = true;
+
+    return HttpResponse.json(
+      {
+        success: true,
+        message: "재시도에 성공했습니다.",
+        code: "MATCH_REQUEST_RETRIED",
+        data: {
+          ...mockCurrentMatchRequest,
+          nearbyWaitingCount: 3,
+        },
+      },
+      { status: 200 }
+    );
+  }),
+
+  http.get("/api/sse", ({ request }) => {
+    const url = new URL(request.url);
+    const scenario = url.searchParams.get("scenario");
+
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        const encoder = new TextEncoder();
+
+        const pushEvent = (eventName: string, data: unknown) => {
+          controller.enqueue(encoder.encode(`event: ${eventName}\n`));
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+        };
+
+        controller.enqueue(encoder.encode(": connected\n\n"));
+        if (mockIsWaitingForMatch) {
+          pushEvent("match.request.waiting-count", { nearbyWaitingCount: 12 });
+        }
+
+        const waitingCountTimer = globalThis.setInterval(() => {
+          if (!mockIsWaitingForMatch) return;
+          const nearbyWaitingCount = Math.max(1, Math.floor(8 + Math.random() * 6));
+          pushEvent("match.request.waiting-count", { nearbyWaitingCount });
+        }, 4000);
+
+        const eventTimer = globalThis.setTimeout(() => {
+          if (!mockIsWaitingForMatch) return;
+
+          if (scenario === "expired") {
+            if (mockCurrentMatchRequest) {
+              mockCurrentMatchRequest = {
+                ...mockCurrentMatchRequest,
+                status: "EXPIRED",
+                updatedAt: new Date().toISOString(),
+              };
+            }
+            pushEvent("match.request.expired", {
+              userId: 1,
+              matchRequestId: mockCurrentMatchRequest?.matchRequestId ?? mockMatchRequestId,
+              expiresAt: new Date(Date.now() + 60 * 1000).toISOString(),
+            });
+            mockIsWaitingForMatch = false;
+            return;
+          }
+
+          if (mockCurrentMatchRequest) {
+            mockCurrentMatchRequest = {
+              ...mockCurrentMatchRequest,
+              status: "MATCHED",
+              updatedAt: new Date().toISOString(),
+            };
+          }
+
+          pushEvent("match.proposal", {
+            id: 12,
+            userAId: 3,
+            userBId: 4,
+            status: "ACCEPTED",
+            userADecision: "ACCEPTED",
+            userBDecision: "ACCEPTED",
+          });
+          mockIsWaitingForMatch = false;
+        }, 20000);
+
+        const keepAliveTimer = globalThis.setInterval(() => {
+          controller.enqueue(encoder.encode(": keep-alive\n\n"));
+        }, 15000);
+
+        return () => {
+          globalThis.clearInterval(waitingCountTimer);
+          globalThis.clearTimeout(eventTimer);
+          globalThis.clearInterval(keepAliveTimer);
+        };
+      },
+    });
+
+    return new HttpResponse(stream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    });
+  }),
+];

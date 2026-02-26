@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useEffect, useState } from "react";
 
 import { ChevronUp, MapPin, X } from "lucide-react";
 import { Map, MapMarker } from "react-kakao-maps-sdk";
@@ -13,6 +13,7 @@ import ManualLocationSearchOverlay from "@/components/main-map/ManualLocationSea
 import { BottomSheet } from "@/components/shared/bottom-sheet";
 import { Button } from "@/components/shared/button";
 import { ChipButton } from "@/components/shared/chip-button";
+import { Popup } from "@/components/shared/popup";
 import { TextArea } from "@/components/shared/textarea";
 
 interface MainMapViewProps {
@@ -51,6 +52,36 @@ interface MainMapViewProps {
     changeMessage: (message: string) => void;
     submit: () => void;
   };
+  matchingWaitSheet: {
+    isOpen: boolean;
+    isCancelling: boolean;
+    nearbyWaitingCount: number | null;
+    cancel: () => void;
+  };
+  matchFoundSheet: {
+    isOpen: boolean;
+    accept: () => void;
+    reject: () => void;
+    cancelAndBackToIdle: () => void;
+    close: () => void;
+  };
+  acceptedMatchDetailSheet: {
+    isOpen: boolean;
+    close: () => void;
+  };
+  matchExpiredModal: {
+    isOpen: boolean;
+    expiresAt: string | null;
+    retry: () => void;
+    pause: () => void;
+    close: () => void;
+  };
+  matchRetryLimitModal: {
+    isOpen: boolean;
+    reserve: () => void;
+    nextTime: () => void;
+    close: () => void;
+  };
   onBottomSheetSnapChange: (snapState: "collapsed" | "full") => void;
 }
 
@@ -68,15 +99,59 @@ export default function MainMapView({
   manualActions,
   currentLocationActions,
   companionRequestSheet,
+  matchingWaitSheet,
+  matchFoundSheet,
+  acceptedMatchDetailSheet,
+  matchExpiredModal,
+  matchRetryLimitModal,
   onBottomSheetSnapChange,
 }: MainMapViewProps) {
   const [companionRequestSnapState, setCompanionRequestSnapState] = useState<"collapsed" | "full">(
     "full"
   );
+  const [isRejectConfirmModalOpen, setIsRejectConfirmModalOpen] = useState(false);
+  const [matchingHintIndex, setMatchingHintIndex] = useState(-1);
+  const firstMatchingHint =
+    matchingWaitSheet.nearbyWaitingCount != null
+      ? `지금 ${matchingWaitSheet.nearbyWaitingCount}명의 사용자가 보고 있어요`
+      : "지금 주변 사용자를 확인하고 있어요";
+  const matchingHints = [
+    firstMatchingHint,
+    "가장 가까운 순서대로 연결 중이에요",
+    "좋은 구도가 나올 분을 찾는 중이에요",
+  ] as const;
 
   const isCenterPinMode = isManualLocationMode || isSheetOpen;
   const shouldDisableRequestButton =
     !addressInfo?.roadAddress && !addressInfo?.jibunAddress && !addressInfo?.buildingName;
+
+  useEffect(() => {
+    const resetTimerId = window.setTimeout(() => {
+      setMatchingHintIndex(-1);
+    }, 0);
+
+    if (!matchingWaitSheet.isOpen) {
+      return () => {
+        window.clearTimeout(resetTimerId);
+      };
+    }
+
+    let intervalId: number | null = null;
+    const firstHintTimeoutId = window.setTimeout(() => {
+      setMatchingHintIndex(0);
+      intervalId = window.setInterval(() => {
+        setMatchingHintIndex((prev) => (prev + 1) % matchingHints.length);
+      }, 3000);
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(resetTimerId);
+      window.clearTimeout(firstHintTimeoutId);
+      if (intervalId !== null) {
+        window.clearInterval(intervalId);
+      }
+    };
+  }, [matchingHints.length, matchingWaitSheet.isOpen]);
 
   return (
     <div className="relative h-full">
@@ -289,6 +364,130 @@ export default function MainMapView({
           </Button.Primary>
         }
       />
+
+      <BottomSheet
+        isOpen={matchingWaitSheet.isOpen}
+        onClose={() => {}}
+        showBackdrop
+        backdropClick="none"
+        draggable={false}
+        dragToClose={false}
+        initialSnap="full"
+        renderContent={
+          <div className="space-y-1 pt-4">
+            <p className="text-gray-500 text-body-2">500m 이내</p>
+            <p className="text-heading-2 font-bold mb-3">오늘의 사진 메이트를 찾고 있어요</p>
+            <p className="text-body-1 text-gray-500">
+              {matchingHintIndex >= 0 ? matchingHints[matchingHintIndex] : ""}
+            </p>
+          </div>
+        }
+        footer={
+          <Button.Secondary
+            fullWidth
+            disabled={matchingWaitSheet.isCancelling}
+            onClick={matchingWaitSheet.cancel}
+          >
+            {matchingWaitSheet.isCancelling ? "요청 취소 중..." : "요청 취소"}
+          </Button.Secondary>
+        }
+      />
+
+      <BottomSheet
+        isOpen={matchFoundSheet.isOpen}
+        onClose={matchFoundSheet.close}
+        showBackdrop
+        backdropClick="none"
+        draggable={false}
+        dragToClose={false}
+        initialSnap="full"
+        header={() => (
+          <div className="flex items-center gap-2 px-4 pb-4 pt-4">
+            <div className="flex flex-row items-center gap-2">
+              <MapPin />
+              <div className="text-heading-2 font-bold text-gray-900">사진 메이트를 찾았어요</div>
+            </div>
+          </div>
+        )}
+        renderContent={
+          <div className="text-gray-500 text-body-2">
+            매칭 후 15분 이내에 이동을 시작해주세요.
+            <br />
+            늦을 경우 매칭이 자동 취소될 수 있어요.
+          </div>
+        }
+        footer={
+          <div className="flex items-center gap-3">
+            <Button.Secondary
+              fullWidth
+              onClick={() => {
+                matchFoundSheet.close();
+                setIsRejectConfirmModalOpen(true);
+              }}
+            >
+              매칭 거절
+            </Button.Secondary>
+            <Button.Primary fullWidth onClick={matchFoundSheet.accept}>
+              매칭 수락
+            </Button.Primary>
+          </div>
+        }
+      />
+
+      <Popup
+        isOpen={isRejectConfirmModalOpen}
+        title="다른 메이트를 찾아볼까요?"
+        content={"현재 매칭을 취소하고\n다른 메이트를 찾을 수 있어요."}
+        confirmMessage="새로운 동행 찾기"
+        cancelMessage="다음에 다시 찾기"
+        onClose={() => setIsRejectConfirmModalOpen(false)}
+        onConfirm={() => {
+          setIsRejectConfirmModalOpen(false);
+          matchFoundSheet.reject();
+        }}
+        onCancel={() => {
+          setIsRejectConfirmModalOpen(false);
+          matchFoundSheet.cancelAndBackToIdle();
+        }}
+      />
+
+      <Popup
+        isOpen={matchExpiredModal.isOpen}
+        title="아직 연결되지 않았어요"
+        content={"지금 근처에 수락 가능한 사용자가 없어요.\n다시 시도해볼까요?"}
+        confirmMessage="재시도"
+        cancelMessage="잠시 멈출게요"
+        onClose={matchExpiredModal.close}
+        onConfirm={matchExpiredModal.retry}
+        onCancel={matchExpiredModal.pause}
+      />
+
+      <Popup
+        isOpen={acceptedMatchDetailSheet.isOpen}
+        title="수락을 기다리는 중이에요"
+        content={`사진 메이트가 수락하면\n상세 정보를 볼 수 있어요`}
+        showConfirm={false}
+        closeOnBackdrop={false}
+        cancelMessage="매칭 중단하기"
+        onCancel={() => {
+          acceptedMatchDetailSheet.close();
+          setIsRejectConfirmModalOpen(true);
+        }}
+        onClose={acceptedMatchDetailSheet.close}
+      />
+
+      <Popup
+        isOpen={matchRetryLimitModal.isOpen}
+        title="지금은 매칭이 어려운 시간이에요"
+        content={"현재 매칭을 취소하고\n다른 메이트를 찾을 수 있어요"}
+        confirmMessage="사전 예약하기"
+        cancelMessage="다음에 다시 찾기"
+        onClose={matchRetryLimitModal.close}
+        onConfirm={matchRetryLimitModal.reserve}
+        onCancel={matchRetryLimitModal.nextTime}
+      />
     </div>
   );
 }
+
+

@@ -8,6 +8,87 @@ export const apiClient = axios.create({
   baseURL: isMockMode ? "" : import.meta.env.VITE_API_BASE_URL,
 });
 
+type TokenPair = {
+  accessToken: string;
+  refreshToken: string;
+};
+
+function getStringCandidate(value: unknown): string | null {
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function extractTokenPair(source: unknown): TokenPair | null {
+  if (!source || typeof source !== "object") {
+    return null;
+  }
+
+  const payload = source as Record<string, unknown>;
+  const data = (payload.data as Record<string, unknown> | undefined) ?? payload;
+  const token = (data.token as Record<string, unknown> | undefined) ?? undefined;
+  const tokens = (data.tokens as Record<string, unknown> | undefined) ?? undefined;
+
+  const accessToken =
+    getStringCandidate(data.accessToken) ??
+    getStringCandidate(data.access_token) ??
+    getStringCandidate(token?.accessToken) ??
+    getStringCandidate(token?.access_token) ??
+    getStringCandidate(tokens?.accessToken) ??
+    getStringCandidate(tokens?.access_token);
+
+  const refreshToken =
+    getStringCandidate(data.refreshToken) ??
+    getStringCandidate(data.refresh_token) ??
+    getStringCandidate(token?.refreshToken) ??
+    getStringCandidate(token?.refresh_token) ??
+    getStringCandidate(tokens?.refreshToken) ??
+    getStringCandidate(tokens?.refresh_token);
+
+  if (!accessToken || !refreshToken) {
+    return null;
+  }
+
+  return { accessToken, refreshToken };
+}
+
+export function getAccessToken(): string | null {
+  return (
+    useAuthStore.getState().accessToken ??
+    (typeof window !== "undefined" ? localStorage.getItem("access_token") : null)
+  );
+}
+
+function getRefreshToken(): string | null {
+  return (
+    useAuthStore.getState().refreshToken ??
+    (typeof window !== "undefined" ? localStorage.getItem("refresh_token") : null)
+  );
+}
+
+export async function refreshAccessToken(): Promise<string> {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) {
+    throw new Error("Missing refresh token.");
+  }
+
+  const response = await axios.post(
+    `${isMockMode ? "" : import.meta.env.VITE_API_BASE_URL}/api/v1/auth/refresh`,
+    null,
+    {
+      headers: {
+        Authorization: `Bearer ${refreshToken}`,
+      },
+    }
+  );
+
+  const tokenPair = extractTokenPair(response.data);
+  if (!tokenPair) {
+    throw new Error("Invalid refresh response.");
+  }
+
+  useAuthStore.getState().setAuthTokens(tokenPair);
+  return tokenPair.accessToken;
+}
+
 let isUnauthorizedHandling = false;
 
 apiClient.interceptors.request.use((config) => {
