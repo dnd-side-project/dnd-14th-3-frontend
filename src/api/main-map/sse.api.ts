@@ -22,6 +22,10 @@ export type MatchRequestExpiredEventData = {
   expiresAt: string;
 };
 
+export type MatchRequestWaitingCountEventData = {
+  nearbyWaitingCount: number;
+};
+
 export type SseConnection = {
   close: () => void;
 };
@@ -32,6 +36,7 @@ type ConnectMatchSseOptions = {
   onMatchProposal?: (data: MatchProposalEventData) => void;
   onMatchSession?: (data: MatchSessionEventData) => void;
   onMatchRequestExpired?: (data: MatchRequestExpiredEventData) => void;
+  onMatchRequestWaitingCount?: (data: MatchRequestWaitingCountEventData) => void;
 };
 
 function toSseUrl(): string {
@@ -57,7 +62,7 @@ function parseSseChunk(
   chunk: string,
   handlers: Pick<
     ConnectMatchSseOptions,
-    "onMatchProposal" | "onMatchSession" | "onMatchRequestExpired"
+    "onMatchProposal" | "onMatchSession" | "onMatchRequestExpired" | "onMatchRequestWaitingCount"
   >
 ) {
   const blocks = chunk.split("\n\n");
@@ -94,6 +99,8 @@ function parseSseChunk(
         handlers.onMatchSession?.(parsed as MatchSessionEventData);
       } else if (eventName === "match.request.expired") {
         handlers.onMatchRequestExpired?.(parsed as MatchRequestExpiredEventData);
+      } else if (eventName === "match.request.waiting-count") {
+        handlers.onMatchRequestWaitingCount?.(parsed as MatchRequestWaitingCountEventData);
       }
     } catch {
       // Ignore malformed event payload.
@@ -197,6 +204,7 @@ export function connectMatchSseApi(options: ConnectMatchSseOptions): SseConnecti
           onMatchProposal: options.onMatchProposal,
           onMatchSession: options.onMatchSession,
           onMatchRequestExpired: options.onMatchRequestExpired,
+          onMatchRequestWaitingCount: options.onMatchRequestWaitingCount,
         });
       }
       logger.warn("[match-sse] stream ended by server");

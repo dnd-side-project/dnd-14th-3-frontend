@@ -4,6 +4,7 @@ export { connectMatchSseApi } from "./sse.api";
 export type {
   MatchProposalEventData,
   MatchRequestExpiredEventData,
+  MatchRequestWaitingCountEventData,
   MatchSessionEventData,
   SseConnection,
 } from "./sse.api";

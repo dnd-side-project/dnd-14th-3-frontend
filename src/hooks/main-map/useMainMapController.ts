@@ -17,6 +17,7 @@ import {
   connectMatchSseApi,
   type MatchProposalEventData,
   type MatchRequestExpiredEventData,
+  type MatchRequestWaitingCountEventData,
   type MatchSessionEventData,
   type SseConnection,
 } from "@/api/main-map";
@@ -96,6 +97,7 @@ export function useMainMapController() {
   const [isMatchExpiredModalOpen, setIsMatchExpiredModalOpen] = useState(
     persistedMatchFlow?.isMatchExpiredModalOpen ?? false
   );
+  const [nearbyWaitingCount, setNearbyWaitingCount] = useState<number | null>(null);
   const persistedLocation = useMainMapLocationStore((state) => state.selectedLocation);
   const setPersistedLocation = useMainMapLocationStore((state) => state.setSelectedLocation);
   const setLayoutOptions = usePageLayoutStore((state) => state.setLayoutOptions);
@@ -192,6 +194,10 @@ export function useMainMapController() {
         sseConnectionRef.current?.close();
         sseConnectionRef.current = null;
         transitionPhase("match-failed");
+      },
+      onMatchRequestWaitingCount: (payload: MatchRequestWaitingCountEventData) => {
+        logger.info("[match-sse] match.request.waiting-count received", payload);
+        setNearbyWaitingCount(payload.nearbyWaitingCount);
       },
       onError: (error) => {
         logger.error(error, { tag: "match-sse" });
@@ -445,6 +451,7 @@ export function useMainMapController() {
       sseConnectionRef.current = null;
       setMatchProposal(null);
       setMatchSession(null);
+      setNearbyWaitingCount(null);
       setExpiredMatchRequest(null);
       setIsMatchExpiredModalOpen(false);
       transitionPhase("idle");
@@ -537,6 +544,7 @@ export function useMainMapController() {
 
         setMatchProposal(null);
         setMatchSession(null);
+        setNearbyWaitingCount(null);
         setExpiredMatchRequest(null);
         setIsMatchExpiredModalOpen(false);
         openMatchSseConnection();
@@ -565,6 +573,7 @@ export function useMainMapController() {
         sseConnectionRef.current = null;
         setMatchProposal(null);
         setMatchSession(null);
+        setNearbyWaitingCount(null);
         setExpiredMatchRequest(null);
         setIsMatchExpiredModalOpen(false);
 
@@ -667,6 +676,7 @@ export function useMainMapController() {
     matchingWaitSheet: {
       isOpen: isMatchingWaitSheetOpen,
       isCancelling: isCancellingMatchRequest,
+      nearbyWaitingCount,
       cancel: () => {
         void handleCancelMatchingRequest();
       },

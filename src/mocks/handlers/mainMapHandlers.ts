@@ -154,6 +154,15 @@ export const mainMapHandlers: RequestHandler[] = [
         };
 
         controller.enqueue(encoder.encode(": connected\n\n"));
+        if (mockIsWaitingForMatch) {
+          pushEvent("match.request.waiting-count", { nearbyWaitingCount: 12 });
+        }
+
+        const waitingCountTimer = globalThis.setInterval(() => {
+          if (!mockIsWaitingForMatch) return;
+          const nearbyWaitingCount = Math.max(1, Math.floor(8 + Math.random() * 6));
+          pushEvent("match.request.waiting-count", { nearbyWaitingCount });
+        }, 4000);
 
         const eventTimer = globalThis.setTimeout(() => {
           if (!mockIsWaitingForMatch) return;
@@ -192,6 +201,7 @@ export const mainMapHandlers: RequestHandler[] = [
         }, 15000);
 
         return () => {
+          globalThis.clearInterval(waitingCountTimer);
           globalThis.clearTimeout(eventTimer);
           globalThis.clearInterval(keepAliveTimer);
         };

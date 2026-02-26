@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 
 import { ChevronUp, MapPin, X } from "lucide-react";
 import { Map, MapMarker } from "react-kakao-maps-sdk";
@@ -15,12 +15,6 @@ import { Button } from "@/components/shared/button";
 import { ChipButton } from "@/components/shared/chip-button";
 import { Popup } from "@/components/shared/popup";
 import { TextArea } from "@/components/shared/textarea";
-
-const MATCHING_HINTS = [
-  "지금 3명의 사용자가 보고 있어요",
-  "가장 가까운 순서대로 연결 중이에요",
-  "좋은 구도가 나올 분을 찾는 중이에요",
-] as const;
 
 interface MainMapViewProps {
   mapCenter: LatLng;
@@ -61,6 +55,7 @@ interface MainMapViewProps {
   matchingWaitSheet: {
     isOpen: boolean;
     isCancelling: boolean;
+    nearbyWaitingCount: number | null;
     cancel: () => void;
   };
   matchFoundSheet: {
@@ -109,6 +104,15 @@ export default function MainMapView({
   );
   const [isRejectConfirmModalOpen, setIsRejectConfirmModalOpen] = useState(false);
   const [matchingHintIndex, setMatchingHintIndex] = useState(-1);
+  const firstMatchingHint =
+    matchingWaitSheet.nearbyWaitingCount != null
+      ? `지금 ${matchingWaitSheet.nearbyWaitingCount}명의 사용자가 보고 있어요`
+      : "지금 주변 사용자를 확인하고 있어요";
+  const matchingHints = [
+    firstMatchingHint,
+    "가장 가까운 순서대로 연결 중이에요",
+    "좋은 구도가 나올 분을 찾는 중이에요",
+  ] as const;
 
   const isCenterPinMode = isManualLocationMode || isSheetOpen;
   const shouldDisableRequestButton =
@@ -123,7 +127,7 @@ export default function MainMapView({
     const firstHintTimeoutId = window.setTimeout(() => {
       setMatchingHintIndex(0);
       intervalId = window.setInterval(() => {
-        setMatchingHintIndex((prev) => (prev + 1) % MATCHING_HINTS.length);
+        setMatchingHintIndex((prev) => (prev + 1) % matchingHints.length);
       }, 3000);
     }, 3000);
 
@@ -133,7 +137,7 @@ export default function MainMapView({
         window.clearInterval(intervalId);
       }
     };
-  }, [matchingWaitSheet.isOpen]);
+  }, [matchingHints.length, matchingWaitSheet.isOpen]);
 
   return (
     <div className="relative h-full">
@@ -360,7 +364,7 @@ export default function MainMapView({
             <p className="text-gray-500 text-body-2">500m 이내</p>
             <p className="text-heading-2 font-bold mb-3">오늘의 사진 메이트를 찾고 있어요</p>
             <p className="text-body-1 text-gray-500">
-              {matchingHintIndex >= 0 ? MATCHING_HINTS[matchingHintIndex] : ""}
+              {matchingHintIndex >= 0 ? matchingHints[matchingHintIndex] : ""}
             </p>
           </div>
         }
