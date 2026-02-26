@@ -44,7 +44,7 @@ const routeLayoutMeta: RouteLayoutMeta[] = [
   },
   {
     pattern: "/companion/:reservationId",
-    title: "예약 상세",
+    title: "",
     showHeader: true,
     showBottomNav: false,
     leftAction: "back",
@@ -107,4 +107,3 @@ export function getRouteLayoutMeta(pathname: string) {
 
   return matchedMeta ?? defaultRouteLayoutMeta;
 }
-

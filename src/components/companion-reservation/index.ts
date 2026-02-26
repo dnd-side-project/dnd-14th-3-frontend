@@ -2,6 +2,9 @@
 export type { ReservationCardProps } from "./card";
 export { ReservationCard, ReservationCardFooter } from "./card";
 
+// Detail sub-feature
+export { DetailActionSection, DetailCommentSection, DetailInfoSection } from "./detail";
+
 // Layout sub-feature
 export type { SegmentedControlProps } from "./layout";
 export type { SearchBarProps } from "./layout";
