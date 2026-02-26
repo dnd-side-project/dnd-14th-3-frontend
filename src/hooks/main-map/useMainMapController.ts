@@ -55,7 +55,12 @@ type PersistedMatchFlow = {
   matchSession: MatchSessionEventData | null;
   expiredMatchRequest: MatchRequestExpiredEventData | null;
   isMatchExpiredModalOpen: boolean;
+  wasManualLocationMode: boolean;
   updatedAt: number;
+};
+
+type UseMainMapControllerOptions = {
+  isKakaoReady: boolean;
 };
 
 function loadPersistedMatchFlow(): PersistedMatchFlow | null {
@@ -65,13 +70,22 @@ function loadPersistedMatchFlow(): PersistedMatchFlow | null {
     const raw = window.localStorage.getItem(MATCH_FLOW_STORAGE_KEY);
     if (!raw) return null;
 
-    const parsed = JSON.parse(raw) as PersistedMatchFlow;
+    const parsed = JSON.parse(raw) as Partial<PersistedMatchFlow>;
     if (!parsed || typeof parsed.updatedAt !== "number") return null;
     if (Date.now() - parsed.updatedAt > MATCH_FLOW_TTL_MS) {
       window.localStorage.removeItem(MATCH_FLOW_STORAGE_KEY);
       return null;
     }
-    return parsed;
+
+    return {
+      phase: parsed.phase as MapPhase,
+      matchProposal: parsed.matchProposal ?? null,
+      matchSession: parsed.matchSession ?? null,
+      expiredMatchRequest: parsed.expiredMatchRequest ?? null,
+      isMatchExpiredModalOpen: parsed.isMatchExpiredModalOpen ?? false,
+      wasManualLocationMode: Boolean(parsed.wasManualLocationMode),
+      updatedAt: parsed.updatedAt,
+    };
   } catch {
     return null;
   }
@@ -82,11 +96,19 @@ function savePersistedMatchFlow(flow: PersistedMatchFlow) {
   window.localStorage.setItem(MATCH_FLOW_STORAGE_KEY, JSON.stringify(flow));
 }
 
-export function useMainMapController() {
+export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptions) {
   const persistedMatchFlowRef = useRef<PersistedMatchFlow | null>(loadPersistedMatchFlow());
   const persistedMatchFlow = persistedMatchFlowRef.current;
+  const persistedFlowPhase = persistedMatchFlow?.phase ?? null;
+  const persistedFlowWasManualMode = persistedMatchFlow?.wasManualLocationMode ?? false;
+  const initialPhase =
+    persistedFlowPhase === "requesting-companion"
+      ? persistedFlowWasManualMode
+        ? "manual-location-setting"
+        : "location-setting"
+      : persistedFlowPhase ?? "idle";
   const [searchParams, setSearchParams] = useSearchParams();
-  const [phase, setPhase] = useState<MapPhase>(persistedMatchFlow?.phase ?? "idle");
+  const [phase, setPhase] = useState<MapPhase>(initialPhase);
   const [isCancellingMatchRequest, setIsCancellingMatchRequest] = useState(false);
   const [matchProposal, setMatchProposal] = useState<MatchProposalEventData | null>(
     persistedMatchFlow?.matchProposal ?? null
@@ -105,6 +127,7 @@ export function useMainMapController() {
   const [isRetryingMatchRequest, setIsRetryingMatchRequest] = useState(false);
   const [nearbyWaitingCount, setNearbyWaitingCount] = useState<number | null>(null);
   const persistedLocation = useMainMapLocationStore((state) => state.selectedLocation);
+  const [requestingManualMode, setRequestingManualMode] = useState(false);
   const setPersistedLocation = useMainMapLocationStore((state) => state.setSelectedLocation);
   const setLayoutOptions = usePageLayoutStore((state) => state.setLayoutOptions);
   const resetLayoutOptions = usePageLayoutStore((state) => state.resetLayoutOptions);
@@ -113,6 +136,7 @@ export function useMainMapController() {
   const sseConnectionRef = useRef<SseConnection | null>(null);
   const isManualSearchPage = searchParams.get("manualSearch") === "1";
   const wasManualLocationModeRef = useRef(false);
+  const manualModeOverrideRef = useRef(false);
   const isManualLocationPhase = phase === "manual-location-setting";
   const isCurrentLocationSheetOpen = phase === "location-setting";
   const isCompanionRequestSheetOpen = phase === "requesting-companion";
@@ -229,8 +253,28 @@ export function useMainMapController() {
   }, [transitionPhase]);
 
   useEffect(() => {
-    setIsManualLocationMode(isManualLocationPhase);
+    if (isManualLocationPhase) {
+      manualModeOverrideRef.current = false;
+      setIsManualLocationMode(true);
+      return;
+    }
+    if (manualModeOverrideRef.current) return;
+    setIsManualLocationMode(false);
   }, [isManualLocationPhase, setIsManualLocationMode]);
+
+  useEffect(() => {
+    if (phase !== "requesting-companion" && manualModeOverrideRef.current) {
+      manualModeOverrideRef.current = false;
+      setIsManualLocationMode(false);
+    }
+  }, [phase, setIsManualLocationMode]);
+
+  useEffect(() => {
+    if (persistedFlowPhase === "requesting-companion" && persistedFlowWasManualMode) {
+      manualModeOverrideRef.current = true;
+      setIsManualLocationMode(true);
+    }
+  }, [persistedFlowPhase, persistedFlowWasManualMode, setIsManualLocationMode]);
 
   const confirmManualLocation = useCallback(
     (location: LatLng) => {
@@ -418,17 +462,51 @@ export function useMainMapController() {
 
   useEffect(() => {
     if (!isCurrentLocationSheetOpen || isManualLocationMode) return;
+    if (currentLocation) {
+      lookupAddress(currentLocation);
+      return;
+    }
     const center = mapRef.current?.getCenter();
     if (!center) return;
     const nextLocation = { lat: center.getLat(), lng: center.getLng() };
     setCurrentLocation(nextLocation);
     lookupAddress(nextLocation);
-  }, [isCurrentLocationSheetOpen, isManualLocationMode, lookupAddress, mapRef, setCurrentLocation]);
+  }, [
+    currentLocation,
+    isCurrentLocationSheetOpen,
+    isManualLocationMode,
+    lookupAddress,
+    mapRef,
+    setCurrentLocation,
+  ]);
 
   useEffect(() => {
     if (!isCurrentLocationSheetOpen || !currentLocation) return;
     panMapToLocation(currentLocation);
   }, [isCurrentLocationSheetOpen, currentLocation, panMapToLocation]);
+
+  useEffect(() => {
+    if (
+      !isCurrentLocationSheetOpen ||
+      isManualLocationMode ||
+      !currentLocation ||
+      !isKakaoReady ||
+      isResolvingAddress ||
+      addressInfo
+    ) {
+      return;
+    }
+
+    lookupAddress(currentLocation);
+  }, [
+    addressInfo,
+    currentLocation,
+    isCurrentLocationSheetOpen,
+    isKakaoReady,
+    isManualLocationMode,
+    isResolvingAddress,
+    lookupAddress,
+  ]);
 
   useEffect(() => {
     savePersistedMatchFlow({
@@ -437,9 +515,17 @@ export function useMainMapController() {
       matchSession,
       expiredMatchRequest,
       isMatchExpiredModalOpen,
+      wasManualLocationMode: requestingManualMode,
       updatedAt: Date.now(),
     });
-  }, [expiredMatchRequest, isMatchExpiredModalOpen, matchProposal, matchSession, phase]);
+  }, [
+    expiredMatchRequest,
+    isMatchExpiredModalOpen,
+    matchProposal,
+    matchSession,
+    phase,
+    requestingManualMode,
+  ]);
 
   useEffect(() => {
     const shouldReconnect = phase === "matching-in-progress" || phase === "match-success";
@@ -521,6 +607,7 @@ export function useMainMapController() {
   }, [centerMapOnLocation, currentLocation, lookupAddress]);
 
   const handleRequestCompanion = useCallback(() => {
+    setRequestingManualMode(isManualLocationMode);
     companionRequestForm.reset({
       expectedDuration: null,
       requestMessage: "",
@@ -528,7 +615,13 @@ export function useMainMapController() {
     currentLocationSheet.close();
     companionRequestSheet.open();
     transitionPhase("requesting-companion");
-  }, [companionRequestForm, companionRequestSheet, currentLocationSheet, transitionPhase]);
+  }, [
+    companionRequestForm,
+    companionRequestSheet,
+    currentLocationSheet,
+    transitionPhase,
+    isManualLocationMode,
+  ]);
 
   const handleCloseCompanionRequestSheet = useCallback(() => {
     companionRequestSheet.close();

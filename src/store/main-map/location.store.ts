@@ -2,7 +2,7 @@ import { create } from "zustand";
 
 import { createJSONStorage, persist } from "zustand/middleware";
 
-type LocationSource = "manual" | "shared";
+export type LocationSource = "manual" | "shared";
 
 export interface StoredLocation {
   lat: number;
@@ -13,8 +13,10 @@ type LocationState = {
   selectedLocation: StoredLocation | null;
   source: LocationSource | null;
   updatedAt: number | null;
+  hasHydrated: boolean;
   setSelectedLocation: (location: StoredLocation, source: LocationSource) => void;
   clearSelectedLocation: () => void;
+  setHasHydrated: (hasHydrated: boolean) => void;
 };
 
 export const useMainMapLocationStore = create<LocationState>()(
@@ -23,6 +25,7 @@ export const useMainMapLocationStore = create<LocationState>()(
       selectedLocation: null,
       source: null,
       updatedAt: null,
+      hasHydrated: false,
       setSelectedLocation: (location, source) =>
         set({
           selectedLocation: location,
@@ -35,6 +38,7 @@ export const useMainMapLocationStore = create<LocationState>()(
           source: null,
           updatedAt: null,
         }),
+      setHasHydrated: (hasHydrated) => set({ hasHydrated }),
     }),
     {
       name: "main-map-location",
@@ -44,6 +48,9 @@ export const useMainMapLocationStore = create<LocationState>()(
         source: state.source,
         updatedAt: state.updatedAt,
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );

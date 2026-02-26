@@ -8,12 +8,13 @@ import { LoadingIndicator } from "@/components/shared/loading";
 
 export default function MainMapPage() {
   const appKey = import.meta.env.VITE_KAKAO_MAP_APP_KEY;
-  const controller = useMainMapController();
 
   const [loading, error] = useKakaoLoader({
     appkey: appKey ?? "",
     libraries: ["services"],
   });
+
+  const controller = useMainMapController({ isKakaoReady: !loading && !error });
 
   if (!appKey) {
     return (
