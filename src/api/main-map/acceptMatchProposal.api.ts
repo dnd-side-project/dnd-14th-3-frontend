@@ -4,23 +4,23 @@ import { logger } from "@/lib/shared/logger";
 
 import { apiClient } from "@/api/client";
 
-type RejectMatchProposalResponse = {
+type AcceptMatchProposalResponse = {
   success: boolean;
   message: string;
   code: string;
   data: MatchProposalEventData;
 };
 
-export async function rejectMatchProposalApi(
+export async function acceptMatchProposalApi(
   proposalId: number
-): Promise<RejectMatchProposalResponse> {
-  logger.info("[match-proposal] reject request start", { proposalId });
+): Promise<AcceptMatchProposalResponse> {
+  logger.info("[match-proposal] accept request start", { proposalId });
 
   try {
-    const response = await apiClient.post<RejectMatchProposalResponse>(
-      `/api/v1/match-proposals/${proposalId}/reject`
+    const response = await apiClient.post<AcceptMatchProposalResponse>(
+      `/api/v1/match-proposals/${proposalId}/accept`
     );
-    logger.info("[match-proposal] reject request success", {
+    logger.info("[match-proposal] accept request success", {
       proposalId,
       status: response.status,
       code: response.data?.code,
@@ -29,7 +29,7 @@ export async function rejectMatchProposalApi(
     });
     return response.data;
   } catch (error) {
-    logger.error(error, { tag: "match-proposal-reject-api", proposalId });
+    logger.error(error, { tag: "match-proposal-accept-api", proposalId });
     throw error;
   }
 }

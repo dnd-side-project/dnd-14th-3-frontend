@@ -15,6 +15,7 @@ import { type MatchExpectedDuration } from "@/types/main-map/match-request.type"
 import { logger } from "@/lib/shared/logger";
 
 import {
+  acceptMatchProposalApi,
   cancelMatchRequestApi,
   connectMatchSseApi,
   type MatchProposalEventData,
@@ -717,8 +718,25 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   });
 
   const handleAcceptMatchFound = useCallback(() => {
+    const proposalId = matchProposal?.id;
+    if (proposalId) {
+      void acceptMatchProposalApi(proposalId).catch((error: unknown) => {
+        const apiMessage = axios.isAxiosError<{ message?: string }>(error)
+          ? error.response?.data?.message
+          : undefined;
+        logger.error(error, { tag: "match-proposal-accept", proposalId });
+        Toast.show({
+          type: "error",
+          message: apiMessage || "매칭 수락 처리에 실패했어요.",
+          duration: 3000,
+        });
+      });
+    } else {
+      logger.warn("[match-request] missing proposal id for accept");
+    }
+
     transitionPhase("match-accepted");
-  }, [transitionPhase]);
+  }, [matchProposal?.id, transitionPhase]);
 
   const handleRejectProposal = useCallback(() => {
     const proposalId = matchProposal?.id;

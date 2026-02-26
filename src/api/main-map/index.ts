@@ -1,3 +1,4 @@
+export { acceptMatchProposalApi } from "./acceptMatchProposal.api";
 export { cancelMatchRequestApi } from "./cancelMatchRequest.api";
 export { createMatchRequestApi } from "./createMatchRequest.api";
 export { rejectMatchProposalApi } from "./rejectMatchProposal.api";

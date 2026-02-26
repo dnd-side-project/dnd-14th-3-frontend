@@ -200,6 +200,7 @@ export const mainMapHandlers: RequestHandler[] = [
   }),
 
   http.post("/api/v1/match-proposals/:proposalId/reject", ({ params }) => {
+    console.log("[MSW] POST /api/v1/match-proposals/:proposalId/reject", params);
     const proposalId = Number(params.proposalId);
     if (!Number.isFinite(proposalId) || proposalId <= 0) {
       return HttpResponse.json(
@@ -224,6 +225,39 @@ export const mainMapHandlers: RequestHandler[] = [
           userBId: 4,
           status: "REJECTED",
           userADecision: "REJECTED",
+          userBDecision: "PENDING",
+        },
+      },
+      { status: 200 }
+    );
+  }),
+
+  http.post("/api/v1/match-proposals/:proposalId/accept", ({ params }) => {
+    console.log("[MSW] POST /api/v1/match-proposals/:proposalId/accept", params);
+    const proposalId = Number(params.proposalId);
+    if (!Number.isFinite(proposalId) || proposalId <= 0) {
+      return HttpResponse.json(
+        {
+          success: false,
+          message: "매칭 제안을 찾을 수 없습니다.",
+          code: "MATCH_PROPOSAL_NOT_FOUND",
+          data: null,
+        },
+        { status: 404 }
+      );
+    }
+
+    return HttpResponse.json(
+      {
+        success: true,
+        message: "매칭 제안을 수락했습니다.",
+        code: "MATCH_PROPOSAL_ACCEPTED",
+        data: {
+          id: proposalId,
+          userAId: 3,
+          userBId: 4,
+          status: "PENDING",
+          userADecision: "ACCEPTED",
           userBDecision: "PENDING",
         },
       },
