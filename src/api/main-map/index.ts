@@ -1,5 +1,6 @@
 export { cancelMatchRequestApi } from "./cancelMatchRequest.api";
 export { createMatchRequestApi } from "./createMatchRequest.api";
+export { rejectMatchProposalApi } from "./rejectMatchProposal.api";
 export { retryMatchRequestApi } from "./retryMatchRequest.api";
 export type {
   MatchProposalEventData,

@@ -199,6 +199,38 @@ export const mainMapHandlers: RequestHandler[] = [
     );
   }),
 
+  http.post("/api/v1/match-proposals/:proposalId/reject", ({ params }) => {
+    const proposalId = Number(params.proposalId);
+    if (!Number.isFinite(proposalId) || proposalId <= 0) {
+      return HttpResponse.json(
+        {
+          success: false,
+          message: "매칭 제안을 찾을 수 없습니다.",
+          code: "MATCH_PROPOSAL_NOT_FOUND",
+          data: null,
+        },
+        { status: 404 }
+      );
+    }
+
+    return HttpResponse.json(
+      {
+        success: true,
+        message: "매칭 제안을 거절했습니다.",
+        code: "MATCH_PROPOSAL_REJECTED",
+        data: {
+          id: proposalId,
+          userAId: 3,
+          userBId: 4,
+          status: "REJECTED",
+          userADecision: "REJECTED",
+          userBDecision: "PENDING",
+        },
+      },
+      { status: 200 }
+    );
+  }),
+
   http.get("/api/sse", ({ request }) => {
     const url = new URL(request.url);
     const scenario = url.searchParams.get("scenario");

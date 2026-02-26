@@ -61,6 +61,7 @@ interface MainMapViewProps {
   matchFoundSheet: {
     isOpen: boolean;
     accept: () => void;
+    rejectProposal: () => void;
     reject: () => void;
     cancelAndBackToIdle: () => void;
     close: () => void;
@@ -421,6 +422,7 @@ export default function MainMapView({
             <Button.Secondary
               fullWidth
               onClick={() => {
+                matchFoundSheet.rejectProposal();
                 matchFoundSheet.close();
                 setIsRejectConfirmModalOpen(true);
               }}
@@ -470,6 +472,7 @@ export default function MainMapView({
         closeOnBackdrop={false}
         cancelMessage="매칭 중단하기"
         onCancel={() => {
+          matchFoundSheet.rejectProposal();
           acceptedMatchDetailSheet.close();
           setIsRejectConfirmModalOpen(true);
         }}

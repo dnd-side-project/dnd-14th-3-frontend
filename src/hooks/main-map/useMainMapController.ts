@@ -21,6 +21,7 @@ import {
   type MatchRequestExpiredEventData,
   type MatchRequestWaitingCountEventData,
   type MatchSessionEventData,
+  rejectMatchProposalApi,
   retryMatchRequestApi,
   type SseConnection,
 } from "@/api/main-map";
@@ -719,9 +720,35 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     transitionPhase("match-accepted");
   }, [transitionPhase]);
 
+  const handleRejectProposal = useCallback(() => {
+    const proposalId = matchProposal?.id;
+    if (proposalId) {
+      void rejectMatchProposalApi(proposalId)
+        .then((response) => {
+          logger.info("[match-request] proposal rejected", {
+            proposalId,
+            code: response.code,
+            message: response.message,
+          });
+        })
+        .catch((error: unknown) => {
+          const apiMessage = axios.isAxiosError<{ message?: string }>(error)
+            ? error.response?.data?.message
+            : undefined;
+          logger.error(error, { tag: "match-proposal-reject", proposalId });
+          Toast.show({
+            type: "error",
+            message: apiMessage || "매칭 거절 처리에 실패했어요.",
+            duration: 3000,
+          });
+        });
+    } else {
+      logger.warn("[match-request] missing proposal id for reject");
+    }
+  }, [matchProposal?.id]);
+
   const handleRejectMatchFound = useCallback(() => {
-    // TODO: call proposal reject API when backend endpoint is finalized.
-    logger.info("[match-request] reject proposal and continue waiting");
+    logger.info("[match-request] continue waiting after reject confirmation");
     setMatchProposal(null);
     setMatchSession(null);
     transitionPhase("matching-in-progress");
@@ -881,6 +908,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     matchFoundSheet: {
       isOpen: phase === "match-success",
       accept: handleAcceptMatchFound,
+      rejectProposal: handleRejectProposal,
       reject: handleRejectMatchFound,
       cancelAndBackToIdle: handleCancelMatchFoundAndBackToIdle,
       close: () => transitionPhase("idle"),
