@@ -1,6 +1,7 @@
 import { useEffect } from "react";
-import { jwtDecode } from "jwt-decode";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+
+import { jwtDecode } from "jwt-decode";
 
 import { logger } from "@/lib/shared/logger";
 

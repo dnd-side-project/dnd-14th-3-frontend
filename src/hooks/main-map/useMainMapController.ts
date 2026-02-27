@@ -24,12 +24,12 @@ import {
   type SseConnection,
 } from "@/api/main-map";
 
+import { getUserIdFromToken } from "@/services/auth/getUserIdFromToken.service";
+
 import { usePageLayoutStore } from "@/store/layout/pageLayout.store";
 import { useMainMapLocationStore } from "@/store/main-map/location.store";
 import { useMainMapSessionLocationStore } from "@/store/main-map/session-location.store";
 import { Toast } from "@/store/shared/toast/toast.store";
-
-import { getUserIdFromToken } from "@/services/auth/getUserIdFromToken.service";
 
 import { useMainMapFabActions } from "@/hooks/main-map/useMainMapFabActions";
 import { useMainMapState } from "@/hooks/main-map/useMainMapState";
@@ -138,7 +138,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   const [matchProposal, setMatchProposal] = useState<MatchProposalEventData | null>(
     persistedMatchFlow?.matchProposal ?? null
   );
-  const [matchSession, setMatchSession] = useState<MatchSessionEventData | null>(null);
+  const [, setMatchSession] = useState<MatchSessionEventData | null>(null);
   const [sessionId, setSessionId] = useState<number | null>(persistedMatchFlow?.sessionId ?? null);
   const persistedSessionLocationId = useMainMapSessionLocationStore((state) => state.sessionId);
   const persistedDestination = useMainMapSessionLocationStore((state) => state.destination);

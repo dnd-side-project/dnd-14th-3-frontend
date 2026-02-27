@@ -1,4 +1,4 @@
-import type { MatchProposalEventData } from "./sse.api";
+import type { MatchProposalEventData } from "@/types/main-map";
 
 import { logger } from "@/lib/shared/logger";
 

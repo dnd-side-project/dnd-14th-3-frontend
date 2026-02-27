@@ -1,4 +1,6 @@
-﻿import { Camera, ChevronUp, MapPin, X } from "lucide-react";
+﻿import { useEffect, useState } from "react";
+
+import { Camera, ChevronUp, MapPin, X } from "lucide-react";
 import { Map, MapMarker } from "react-kakao-maps-sdk";
 
 import { type LatLng, type LocationAddressInfo } from "@/types/main-map/location.type";
@@ -13,7 +15,6 @@ import { Button } from "@/components/shared/button";
 import { ChipButton } from "@/components/shared/chip-button";
 import { Popup } from "@/components/shared/popup";
 import { TextArea } from "@/components/shared/textarea";
-import { useEffect, useRef, useState } from "react";
 
 interface MainMapViewProps {
   mapCenter: LatLng;
@@ -123,10 +124,12 @@ export default function MainMapView({
   const [movingSheetSnapState, setMovingSheetSnapState] = useState<"collapsed" | "full">(
     "collapsed"
   );
-  const [isRejectConfirmModalOpen, setIsRejectConfirmModalOpen] = useState(false);
-  const [isPeerRejectedFlow, setIsPeerRejectedFlow] = useState(false);
+  const [manualRejectConfirmModalOpen, setManualRejectConfirmModalOpen] = useState(false);
+  const [dismissedRejectedSignal, setDismissedRejectedSignal] = useState(0);
   const [matchingHintIndex, setMatchingHintIndex] = useState(-1);
-  const handledRejectedSignalRef = useRef(0);
+  const isPeerRejectedFlow =
+    acceptedMatchDetailSheet.proposalRejectedSignal > dismissedRejectedSignal;
+  const isRejectConfirmModalOpen = manualRejectConfirmModalOpen || isPeerRejectedFlow;
   const firstMatchingHint =
     matchingWaitSheet.nearbyWaitingCount != null
       ? `지금 ${matchingWaitSheet.nearbyWaitingCount}명의 사용자가 보고 있어요`
@@ -168,27 +171,6 @@ export default function MainMapView({
       }
     };
   }, [matchingHints.length, matchingWaitSheet.isOpen]);
-
-  useEffect(() => {
-    const rejectedSignal = acceptedMatchDetailSheet.proposalRejectedSignal;
-    if (rejectedSignal < 1) return;
-    if (rejectedSignal <= handledRejectedSignalRef.current) return;
-    handledRejectedSignalRef.current = rejectedSignal;
-
-    if (matchFoundSheet.isOpen) {
-      matchFoundSheet.close();
-    }
-    if (acceptedMatchDetailSheet.isOpen) {
-      acceptedMatchDetailSheet.close();
-    }
-    setIsPeerRejectedFlow(true);
-    setIsRejectConfirmModalOpen(true);
-  }, [
-    acceptedMatchDetailSheet.isOpen,
-    acceptedMatchDetailSheet.proposalRejectedSignal,
-    matchFoundSheet,
-    matchFoundSheet.isOpen,
-  ]);
 
   return (
     <div className="relative h-full">
@@ -435,7 +417,7 @@ export default function MainMapView({
       />
 
       <BottomSheet
-        isOpen={matchFoundSheet.isOpen}
+        isOpen={matchFoundSheet.isOpen && !isPeerRejectedFlow}
         onClose={matchFoundSheet.close}
         showBackdrop
         backdropClick="none"
@@ -464,8 +446,7 @@ export default function MainMapView({
               onClick={() => {
                 matchFoundSheet.rejectProposal();
                 matchFoundSheet.close();
-                setIsPeerRejectedFlow(false);
-                setIsRejectConfirmModalOpen(true);
+                setManualRejectConfirmModalOpen(true);
               }}
             >
               매칭 거절
@@ -488,17 +469,23 @@ export default function MainMapView({
         confirmMessage="새로운 동행 찾기"
         cancelMessage="다음에 다시 찾기"
         onClose={() => {
-          setIsRejectConfirmModalOpen(false);
-          setIsPeerRejectedFlow(false);
+          if (isPeerRejectedFlow) {
+            setDismissedRejectedSignal(acceptedMatchDetailSheet.proposalRejectedSignal);
+          }
+          setManualRejectConfirmModalOpen(false);
         }}
         onConfirm={() => {
-          setIsRejectConfirmModalOpen(false);
-          setIsPeerRejectedFlow(false);
+          if (isPeerRejectedFlow) {
+            setDismissedRejectedSignal(acceptedMatchDetailSheet.proposalRejectedSignal);
+          }
+          setManualRejectConfirmModalOpen(false);
           matchFoundSheet.reject();
         }}
         onCancel={() => {
-          setIsRejectConfirmModalOpen(false);
-          setIsPeerRejectedFlow(false);
+          if (isPeerRejectedFlow) {
+            setDismissedRejectedSignal(acceptedMatchDetailSheet.proposalRejectedSignal);
+          }
+          setManualRejectConfirmModalOpen(false);
           matchFoundSheet.cancelAndBackToIdle();
         }}
       />
@@ -515,7 +502,11 @@ export default function MainMapView({
       />
 
       <Popup
-        isOpen={acceptedMatchDetailSheet.isOpen && !acceptedMatchDetailSheet.hasMatchSession}
+        isOpen={
+          acceptedMatchDetailSheet.isOpen &&
+          !acceptedMatchDetailSheet.hasMatchSession &&
+          !isPeerRejectedFlow
+        }
         title="수락을 기다리는 중이에요"
         content={`사진 메이트가 수락하면\n상세 정보를 볼 수 있어요`}
         showConfirm={false}
@@ -524,8 +515,7 @@ export default function MainMapView({
         onCancel={() => {
           matchFoundSheet.rejectProposal();
           acceptedMatchDetailSheet.close();
-          setIsPeerRejectedFlow(false);
-          setIsRejectConfirmModalOpen(true);
+          setManualRejectConfirmModalOpen(true);
         }}
         onClose={acceptedMatchDetailSheet.close}
       />
@@ -534,7 +524,8 @@ export default function MainMapView({
         isOpen={
           acceptedMatchDetailSheet.isOpen &&
           acceptedMatchDetailSheet.hasMatchSession &&
-          !acceptedMatchDetailSheet.isMoving
+          !acceptedMatchDetailSheet.isMoving &&
+          !isPeerRejectedFlow
         }
         onClose={acceptedMatchDetailSheet.close}
         showBackdrop
@@ -589,7 +580,8 @@ export default function MainMapView({
         isOpen={
           acceptedMatchDetailSheet.isOpen &&
           acceptedMatchDetailSheet.hasMatchSession &&
-          acceptedMatchDetailSheet.isMoving
+          acceptedMatchDetailSheet.isMoving &&
+          !isPeerRejectedFlow
         }
         onClose={acceptedMatchDetailSheet.close}
         showBackdrop={false}
@@ -654,3 +646,4 @@ export default function MainMapView({
     </div>
   );
 }
+
