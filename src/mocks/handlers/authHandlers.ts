@@ -82,6 +82,29 @@ export const authHandlers: RequestHandler[] = [
       { status: 200 }
     );
   }),
+  http.get("/api/v1/auth/verify", ({ request }) => {
+    if (!isAuthorized(request)) {
+      return HttpResponse.json(
+        {
+          success: false,
+          message: "인증이 필요합니다.",
+          code: "UNAUTHORIZED",
+          data: null,
+        },
+        { status: 401 }
+      );
+    }
+
+    return HttpResponse.json(
+      {
+        success: true,
+        message: "세션이 유효합니다.",
+        code: "",
+        data: "VALID",
+      },
+      { status: 200 }
+    );
+  }),
   http.get("/users/me", ({ request }) => {
     if (!isAuthorized(request)) {
       return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });

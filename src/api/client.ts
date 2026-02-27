@@ -91,12 +91,20 @@ export async function refreshAccessToken(): Promise<string> {
 
 let isUnauthorizedHandling = false;
 
+function shouldAttachAuthorization(url?: string) {
+  if (!url) {
+    return true;
+  }
+
+  return !url.includes("/api/v1/auth/login/kakao");
+}
+
 apiClient.interceptors.request.use((config) => {
   const accessToken =
     useAuthStore.getState().accessToken ??
     (typeof window !== "undefined" ? localStorage.getItem("access_token") : null);
 
-  if (!accessToken) {
+  if (!accessToken || !shouldAttachAuthorization(config.url)) {
     return config;
   }
 
