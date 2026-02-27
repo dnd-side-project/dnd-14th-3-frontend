@@ -1,5 +1,3 @@
-﻿import { useEffect, useState } from "react";
-
 import { Camera, ChevronUp, MapPin, X } from "lucide-react";
 import { Map, MapMarker } from "react-kakao-maps-sdk";
 
@@ -15,6 +13,7 @@ import { Button } from "@/components/shared/button";
 import { ChipButton } from "@/components/shared/chip-button";
 import { Popup } from "@/components/shared/popup";
 import { TextArea } from "@/components/shared/textarea";
+import { useEffect, useRef, useState } from "react";
 
 interface MainMapViewProps {
   mapCenter: LatLng;
@@ -69,6 +68,7 @@ interface MainMapViewProps {
   acceptedMatchDetailSheet: {
     isOpen: boolean;
     hasMatchSession: boolean;
+    proposalRejectedSignal: number;
     close: () => void;
   };
   matchExpiredModal: {
@@ -112,7 +112,9 @@ export default function MainMapView({
     "full"
   );
   const [isRejectConfirmModalOpen, setIsRejectConfirmModalOpen] = useState(false);
+  const [isPeerRejectedFlow, setIsPeerRejectedFlow] = useState(false);
   const [matchingHintIndex, setMatchingHintIndex] = useState(-1);
+  const handledRejectedSignalRef = useRef(0);
   const firstMatchingHint =
     matchingWaitSheet.nearbyWaitingCount != null
       ? `지금 ${matchingWaitSheet.nearbyWaitingCount}명의 사용자가 보고 있어요`
@@ -154,6 +156,27 @@ export default function MainMapView({
       }
     };
   }, [matchingHints.length, matchingWaitSheet.isOpen]);
+
+  useEffect(() => {
+    const rejectedSignal = acceptedMatchDetailSheet.proposalRejectedSignal;
+    if (rejectedSignal < 1) return;
+    if (rejectedSignal <= handledRejectedSignalRef.current) return;
+    handledRejectedSignalRef.current = rejectedSignal;
+
+    if (matchFoundSheet.isOpen) {
+      matchFoundSheet.close();
+    }
+    if (acceptedMatchDetailSheet.isOpen) {
+      acceptedMatchDetailSheet.close();
+    }
+    setIsPeerRejectedFlow(true);
+    setIsRejectConfirmModalOpen(true);
+  }, [
+    acceptedMatchDetailSheet.isOpen,
+    acceptedMatchDetailSheet.proposalRejectedSignal,
+    matchFoundSheet,
+    matchFoundSheet.isOpen,
+  ]);
 
   return (
     <div className="relative h-full">
@@ -425,6 +448,7 @@ export default function MainMapView({
               onClick={() => {
                 matchFoundSheet.rejectProposal();
                 matchFoundSheet.close();
+                setIsPeerRejectedFlow(false);
                 setIsRejectConfirmModalOpen(true);
               }}
             >
@@ -440,16 +464,25 @@ export default function MainMapView({
       <Popup
         isOpen={isRejectConfirmModalOpen}
         title="다른 메이트를 찾아볼까요?"
-        content={"현재 매칭을 취소하고\n다른 메이트를 찾을 수 있어요."}
+        content={
+          isPeerRejectedFlow
+            ? "상대방이 매칭을 거절했어요\n다른 메이트를 찾아볼까요?"
+            : "현재 매칭을 취소하고\n다른 메이트를 찾을 수 있어요."
+        }
         confirmMessage="새로운 동행 찾기"
         cancelMessage="다음에 다시 찾기"
-        onClose={() => setIsRejectConfirmModalOpen(false)}
+        onClose={() => {
+          setIsRejectConfirmModalOpen(false);
+          setIsPeerRejectedFlow(false);
+        }}
         onConfirm={() => {
           setIsRejectConfirmModalOpen(false);
+          setIsPeerRejectedFlow(false);
           matchFoundSheet.reject();
         }}
         onCancel={() => {
           setIsRejectConfirmModalOpen(false);
+          setIsPeerRejectedFlow(false);
           matchFoundSheet.cancelAndBackToIdle();
         }}
       />
@@ -475,6 +508,7 @@ export default function MainMapView({
         onCancel={() => {
           matchFoundSheet.rejectProposal();
           acceptedMatchDetailSheet.close();
+          setIsPeerRejectedFlow(false);
           setIsRejectConfirmModalOpen(true);
         }}
         onClose={acceptedMatchDetailSheet.close}

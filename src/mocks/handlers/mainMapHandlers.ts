@@ -1,4 +1,4 @@
-﻿import { http, HttpResponse, type RequestHandler } from "msw";
+import { http, HttpResponse, type RequestHandler } from "msw";
 
 import {
   type CreateMatchRequestData,
@@ -25,6 +25,7 @@ let mockMatchRequestId = 100;
 let mockIsWaitingForMatch = false;
 let mockCurrentMatchRequest: CreateMatchRequestData | null = null;
 let mockPendingMatchSession: { id: number; userAId: number; userBId: number } | null = null;
+let mockActiveSseScenario: string | null = null;
 
 export const mainMapHandlers: RequestHandler[] = [
   http.post("/api/v1/match-requests", async ({ request }) => {
@@ -251,11 +252,15 @@ export const mainMapHandlers: RequestHandler[] = [
       );
     }
 
-    mockPendingMatchSession = {
-      id: 3,
-      userAId: 3,
-      userBId: 4,
-    };
+    if (mockActiveSseScenario === "proposal-rejected") {
+      mockPendingMatchSession = null;
+    } else {
+      mockPendingMatchSession = {
+        id: 3,
+        userAId: 3,
+        userBId: 4,
+      };
+    }
 
     return HttpResponse.json(
       {
@@ -278,6 +283,7 @@ export const mainMapHandlers: RequestHandler[] = [
   http.get("/api/sse", ({ request }) => {
     const url = new URL(request.url);
     const scenario = url.searchParams.get("scenario");
+    mockActiveSseScenario = scenario;
 
     const stream = new ReadableStream<Uint8Array>({
       start(controller) {
@@ -298,6 +304,7 @@ export const mainMapHandlers: RequestHandler[] = [
           const nearbyWaitingCount = Math.max(1, Math.floor(8 + Math.random() * 6));
           pushEvent("match.request.waiting-count", { nearbyWaitingCount });
         }, 4000);
+        let proposalRejectedTimeout: ReturnType<typeof globalThis.setTimeout> | null = null;
 
         const eventTimer = globalThis.setTimeout(() => {
           if (!mockIsWaitingForMatch) return;
@@ -335,6 +342,18 @@ export const mainMapHandlers: RequestHandler[] = [
             userADecision: "ACCEPTED",
             userBDecision: "ACCEPTED",
           });
+          if (scenario === "proposal-rejected") {
+            proposalRejectedTimeout = globalThis.setTimeout(() => {
+              pushEvent("match.proposal.rejected", {
+                id: 12,
+                userAId: 3,
+                userBId: 4,
+                status: "REJECTED",
+                userADecision: "ACCEPTED",
+                userBDecision: "REJECTED",
+              });
+            }, 10000);
+          }
           mockIsWaitingForMatch = false;
         }, 20000);
 
@@ -352,7 +371,11 @@ export const mainMapHandlers: RequestHandler[] = [
           globalThis.clearInterval(waitingCountTimer);
           globalThis.clearTimeout(eventTimer);
           globalThis.clearInterval(matchSessionTimer);
+          if (proposalRejectedTimeout !== null) {
+            globalThis.clearTimeout(proposalRejectedTimeout);
+          }
           globalThis.clearInterval(keepAliveTimer);
+          mockActiveSseScenario = null;
         };
       },
     });

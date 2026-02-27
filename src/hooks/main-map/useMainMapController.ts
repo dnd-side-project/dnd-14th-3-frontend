@@ -130,6 +130,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   const matchRetryCountRef = useRef(0);
   const [isRetryingMatchRequest, setIsRetryingMatchRequest] = useState(false);
   const [nearbyWaitingCount, setNearbyWaitingCount] = useState<number | null>(null);
+  const [proposalRejectedSignal, setProposalRejectedSignal] = useState(0);
   const persistedLocation = useMainMapLocationStore((state) => state.selectedLocation);
   const [requestingManualMode, setRequestingManualMode] = useState(false);
   const setPersistedLocation = useMainMapLocationStore((state) => state.setSelectedLocation);
@@ -199,6 +200,19 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   const transitionPhase = useCallback((nextPhase: MapPhase) => {
     setPhase(nextPhase);
   }, []);
+  const phaseRef = useRef<MapPhase>(phase);
+  const pendingProposalRejectedRef = useRef(false);
+
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase !== "match-success" && phase !== "match-accepted") return;
+    if (!pendingProposalRejectedRef.current) return;
+    pendingProposalRejectedRef.current = false;
+    setProposalRejectedSignal((prev) => prev + 1);
+  }, [phase]);
 
   const openMatchSseConnection = useCallback(() => {
     sseConnectionRef.current?.close();
@@ -211,12 +225,23 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
         setMatchProposal(proposal);
         transitionPhase("match-success");
       },
+      onMatchProposalRejected: (proposal) => {
+        logger.info("[match-sse] match.proposal.rejected received", proposal);
+        setMatchProposal(proposal);
+        if (phaseRef.current === "match-success" || phaseRef.current === "match-accepted") {
+          setProposalRejectedSignal((prev) => prev + 1);
+          return;
+        }
+        pendingProposalRejectedRef.current = true;
+      },
       onMatchSession: (session) => {
         logger.info("[match-sse] match.session received", session);
         setMatchSession(session);
-        sseConnectionRef.current?.close();
-        sseConnectionRef.current = null;
         transitionPhase("match-accepted");
+        if (pendingProposalRejectedRef.current) {
+          pendingProposalRejectedRef.current = false;
+          setProposalRejectedSignal((prev) => prev + 1);
+        }
       },
       onMatchRequestExpired: (expired) => {
         logger.info("[match-sse] match.request.expired received", expired);
@@ -564,6 +589,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     try {
       await cancelMatchRequest();
       logger.info("[match-request] cancelled");
+      pendingProposalRejectedRef.current = false;
       sseConnectionRef.current?.close();
       sseConnectionRef.current = null;
       setMatchProposal(null);
@@ -671,6 +697,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
 
         setMatchProposal(null);
         setMatchSession(null);
+        pendingProposalRejectedRef.current = false;
         setNearbyWaitingCount(null);
         setExpiredMatchRequest(null);
         setIsMatchExpiredModalOpen(false);
@@ -703,6 +730,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
         sseConnectionRef.current = null;
         setMatchProposal(null);
         setMatchSession(null);
+        pendingProposalRejectedRef.current = false;
         setNearbyWaitingCount(null);
         setExpiredMatchRequest(null);
         setIsMatchExpiredModalOpen(false);
@@ -936,6 +964,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     acceptedMatchDetailSheet: {
       isOpen: phase === "match-accepted",
       hasMatchSession: Boolean(matchSession),
+      proposalRejectedSignal,
       close: () => transitionPhase("idle"),
     },
     matchExpiredModal: {

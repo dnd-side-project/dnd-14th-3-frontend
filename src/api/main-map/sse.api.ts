@@ -35,6 +35,7 @@ type ConnectMatchSseOptions = {
   onOpen?: () => void;
   onError?: (error: unknown) => void;
   onMatchProposal?: (data: MatchProposalEventData) => void;
+  onMatchProposalRejected?: (data: MatchProposalEventData) => void;
   onMatchSession?: (data: MatchSessionEventData) => void;
   onMatchRequestExpired?: (data: MatchRequestExpiredEventData) => void;
   onMatchRequestWaitingCount?: (data: MatchRequestWaitingCountEventData) => void;
@@ -63,7 +64,11 @@ function parseSseChunk(
   chunk: string,
   handlers: Pick<
     ConnectMatchSseOptions,
-    "onMatchProposal" | "onMatchSession" | "onMatchRequestExpired" | "onMatchRequestWaitingCount"
+    | "onMatchProposal"
+    | "onMatchProposalRejected"
+    | "onMatchSession"
+    | "onMatchRequestExpired"
+    | "onMatchRequestWaitingCount"
   >
 ) {
   const blocks = chunk.split("\n\n");
@@ -96,6 +101,8 @@ function parseSseChunk(
       const parsed = JSON.parse(dataText) as unknown;
       if (eventName === "match.proposal") {
         handlers.onMatchProposal?.(parsed as MatchProposalEventData);
+      } else if (eventName === "match.proposal.rejected") {
+        handlers.onMatchProposalRejected?.(parsed as MatchProposalEventData);
       } else if (eventName === "match.session") {
         handlers.onMatchSession?.(parsed as MatchSessionEventData);
       } else if (eventName === "match.request.expired") {
@@ -203,6 +210,7 @@ export function connectMatchSseApi(options: ConnectMatchSseOptions): SseConnecti
         logger.debug("[match-sse] chunk parsed");
         parseSseChunk(ready, {
           onMatchProposal: options.onMatchProposal,
+          onMatchProposalRejected: options.onMatchProposalRejected,
           onMatchSession: options.onMatchSession,
           onMatchRequestExpired: options.onMatchRequestExpired,
           onMatchRequestWaitingCount: options.onMatchRequestWaitingCount,
