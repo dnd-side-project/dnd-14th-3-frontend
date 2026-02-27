@@ -232,6 +232,23 @@ export const mainMapHandlers: RequestHandler[] = [
     return new HttpResponse(null, { status: 204 });
   }),
 
+  http.patch("/api/v1/match-sessions/:sessionId/start-meeting", ({ params }) => {
+    const sessionId = Number(params.sessionId);
+    if (!Number.isFinite(sessionId)) {
+      return HttpResponse.json(
+        {
+          success: false,
+          message: "매칭 세션을 찾을 수 없습니다.",
+          code: "MATCH_SESSION_NOT_FOUND",
+          data: null,
+        },
+        { status: 404 }
+      );
+    }
+
+    return new HttpResponse(null, { status: 204 });
+  }),
+
   http.patch("/api/v1/match-requests/:matchRequestId/retry", ({ params }) => {
     const requestId = Number(params.matchRequestId);
     if (!mockCurrentMatchRequest || !Number.isFinite(requestId)) {

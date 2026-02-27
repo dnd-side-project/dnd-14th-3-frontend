@@ -70,6 +70,7 @@ interface MainMapViewProps {
     hasMatchSession: boolean;
     isMoving: boolean;
     isCompletingArrival: boolean;
+    movingSheetTitle: string;
     proposalRejectedSignal: number;
     partnerProfileText: string;
     partnerExpectedDurationLabel: string;
@@ -83,6 +84,10 @@ interface MainMapViewProps {
       title: string;
       content: string;
       close: () => void;
+      confirm: () => void;
+    };
+    meetingStartedModal: {
+      isOpen: boolean;
     };
     close: () => void;
   };
@@ -142,11 +147,13 @@ export default function MainMapView({
         {currentLocation && !isCenterPinMode ? (
           <MapMarker position={currentLocation} image={PIN_ME} />
         ) : null}
-        {partnerLocation ? <MapMarker position={partnerLocation} image={PIN_OTHER} /> : null}
+        {partnerLocation && acceptedMatchDetailSheet.isOpen ? (
+          <MapMarker position={partnerLocation} image={PIN_OTHER} />
+        ) : null}
         {acceptedMatchDetailSheet.isOpen && meetingLocation ? (
           <>
             <MapMarker position={meetingLocation} image={PIN_MATCHED} />
-            {phase === "moving" ? (
+            {phase === "moving" || phase === "arrival-pending" || phase === "meeting-started" ? (
               <CustomOverlayMap position={meetingLocation} yAnchor={2.9}>
                 <div className="rounded-md bg-[#FF6B6B] px-2 py-1 text-caption-1 text-white shadow-sm">
                   {"\uC57D\uC18D \uC7A5\uC18C"}

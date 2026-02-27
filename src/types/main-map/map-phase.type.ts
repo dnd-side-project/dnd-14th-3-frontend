@@ -7,4 +7,6 @@ export type MapPhase =
   | "match-success"
   | "match-accepted"
   | "moving"
+  | "arrival-pending"
+  | "meeting-started"
   | "match-failed";

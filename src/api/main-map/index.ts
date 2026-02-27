@@ -7,3 +7,4 @@ export { getMatchSessionApi } from "./getMatchSession.api";
 export { rejectMatchProposalApi } from "./rejectMatchProposal.api";
 export { retryMatchRequestApi } from "./retryMatchRequest.api";
 export { connectMatchSseApi } from "./sse.api";
+export { startMeetingMatchSessionApi } from "./startMeetingMatchSession.api";

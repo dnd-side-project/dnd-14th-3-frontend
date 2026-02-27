@@ -56,6 +56,7 @@ type MainMapPhaseOverlaysProps = {
     hasMatchSession: boolean;
     isMoving: boolean;
     isCompletingArrival: boolean;
+    movingSheetTitle: string;
     proposalRejectedSignal: number;
     partnerProfileText: string;
     partnerExpectedDurationLabel: string;
@@ -69,6 +70,10 @@ type MainMapPhaseOverlaysProps = {
       title: string;
       content: string;
       close: () => void;
+      confirm: () => void;
+    };
+    meetingStartedModal: {
+      isOpen: boolean;
     };
     close: () => void;
   };
@@ -188,7 +193,9 @@ export default function MainMapPhaseOverlays({
 
       <SessionPhasePanels
         showAcceptedPhase={phase === "match-accepted"}
-        showMovingPhase={phase === "moving"}
+        showMovingPhase={
+          phase === "moving" || phase === "arrival-pending" || phase === "meeting-started"
+        }
         showFailedPhase={phase === "match-failed"}
         isPeerRejectedFlow={isPeerRejectedFlow}
         acceptedMatchDetailSheet={acceptedMatchDetailSheet}

@@ -9,6 +9,7 @@ type AcceptedMatchDetailSheet = {
   hasMatchSession: boolean;
   isMoving: boolean;
   isCompletingArrival: boolean;
+  movingSheetTitle: string;
   proposalRejectedSignal: number;
   partnerProfileText: string;
   partnerExpectedDurationLabel: string;
@@ -22,6 +23,10 @@ type AcceptedMatchDetailSheet = {
     title: string;
     content: string;
     close: () => void;
+    confirm: () => void;
+  };
+  meetingStartedModal: {
+    isOpen: boolean;
   };
   close: () => void;
 };
@@ -66,6 +71,10 @@ export default function SessionPhasePanels({
   onMovingSheetSnapChange,
   onManualRejectRequested,
 }: SessionPhasePanelsProps) {
+  const shouldCollapseMovingSheet =
+    acceptedMatchDetailSheet.arrivalStatusModal.isOpen ||
+    acceptedMatchDetailSheet.meetingStartedModal.isOpen;
+
   return (
     <>
       <Popup
@@ -137,20 +146,23 @@ export default function SessionPhasePanels({
       />
 
       <BottomSheet
+        key={shouldCollapseMovingSheet ? "moving-sheet-collapsed" : "moving-sheet-full"}
         isOpen={showMovingPhase && acceptedMatchDetailSheet.hasMatchSession && !isPeerRejectedFlow}
         onClose={acceptedMatchDetailSheet.close}
         showBackdrop={false}
         backdropClick="none"
         draggable
         dragToClose={false}
-        initialSnap="full"
+        initialSnap={shouldCollapseMovingSheet ? "collapsed" : "full"}
         onSnapChange={onMovingSheetSnapChange}
         header={(actions) => (
           <div className="flex items-center justify-between gap-2 px-4 pb-4 pt-2">
             <div className="flex items-center gap-2">
               <div className="flex flex-row items-center gap-2">
                 <MapPin />
-                <div className="text-heading-2 font-bold text-gray-900">이동 중</div>
+                <div className="text-heading-2 font-bold text-gray-900">
+                  {acceptedMatchDetailSheet.movingSheetTitle}
+                </div>
               </div>
             </div>
             <button
@@ -227,7 +239,16 @@ export default function SessionPhasePanels({
         showCancel={false}
         confirmMessage="만남 시작하기"
         onClose={acceptedMatchDetailSheet.arrivalStatusModal.close}
-        onConfirm={acceptedMatchDetailSheet.arrivalStatusModal.close}
+        onConfirm={acceptedMatchDetailSheet.arrivalStatusModal.confirm}
+      />
+
+      <Popup
+        isOpen={acceptedMatchDetailSheet.meetingStartedModal.isOpen}
+        title="만남이 시작되었어요"
+        content={`촬영을 즐겨보세요 📷\n촬영 시작 후에는 취소가 어려워요`}
+        showConfirm={false}
+        showCancel={false}
+        closeOnBackdrop={false}
       />
     </>
   );
