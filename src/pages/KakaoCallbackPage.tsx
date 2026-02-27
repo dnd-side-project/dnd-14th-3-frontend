@@ -72,10 +72,7 @@ export default function KakaoCallbackPage() {
           tokenLength: data.accessToken.length,
           redirectPath,
         });
-        setAuthTokens({
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
-        });
+        setAuthTokens({ accessToken: data.accessToken });
         navigate(redirectPath, { replace: true });
       })
       .catch(async (error) => {

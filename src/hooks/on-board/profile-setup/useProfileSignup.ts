@@ -60,10 +60,10 @@ export function useProfileSignup(onComplete: () => void) {
 
     try {
       const response = await requestSignup({ token, data: mapSignUpRequestDto(validation.data) });
-      const { accessToken, refreshToken } = response.data ?? {};
+      const { accessToken } = response.data ?? {};
 
-      if (!accessToken || !refreshToken) {
-        logger.error(new Error("Missing auth token(s) in signup response."), {
+      if (!accessToken) {
+        logger.error(new Error("Missing access token in signup response."), {
           scope: "signup",
           responseData: response.data,
         });
@@ -75,7 +75,7 @@ export function useProfileSignup(onComplete: () => void) {
         return;
       }
 
-      setAuthTokens({ accessToken, refreshToken });
+      setAuthTokens({ accessToken });
       Toast.show({
         type: "success",
         message: "프로필이 정상적으로 완성되었어요!",
