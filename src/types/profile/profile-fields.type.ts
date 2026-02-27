@@ -9,18 +9,11 @@ export const nicknameSchema = z
   .string()
   .min(2, "닉네임은 2자 이상이어야 합니다")
   .max(15, "닉네임은 15자 이하여야 합니다")
-  .regex(
-    /^[가-힣a-zA-Z0-9]+$/,
-    "한글, 영문, 숫자만 사용 가능합니다"
-  );
+  .regex(/^[가-힣a-zA-Z0-9]+$/, "한글, 영문, 숫자만 사용 가능합니다");
 
-export const genderSchema = z.enum(
-  Object.values(GENDER_ENUM) as [string, ...string[]]
-);
+export const genderSchema = z.enum(Object.values(GENDER_ENUM) as [string, ...string[]]);
 
-export const ageRangeSchema = z.enum(
-  Object.values(AGE_RANGE_ENUM) as [string, ...string[]]
-);
+export const ageRangeSchema = z.enum(Object.values(AGE_RANGE_ENUM) as [string, ...string[]]);
 
 export const preferredStylesSchema = z
   .array(z.string())
@@ -47,7 +40,7 @@ export type PhotoStyleId = string;
 export interface NicknameValidation {
   isValid: boolean;
   error?: string;
-  type?: "format" | "duplicate" | "forbidden";
+  type?: string;
 }
 
 export interface PhotoStylesResponse {

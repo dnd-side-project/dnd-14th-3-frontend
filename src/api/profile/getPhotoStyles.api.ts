@@ -28,7 +28,7 @@ export type GetPhotoStylesApiResponse = z.infer<typeof getPhotoStylesResponseSch
  * API
  * ===================== */
 export async function getPhotoStylesApi(): Promise<PhotoStyle[]> {
-  const response = await apiClient.get<unknown>("/api/v1/photo-style");
+  const response = await apiClient.get("/api/v1/photo-style");
 
   const parsed = getPhotoStylesResponseSchema.safeParse(response.data);
 
