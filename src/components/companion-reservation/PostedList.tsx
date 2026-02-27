@@ -3,12 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import type { CreatedReservationListDto } from "@/types/companion-reservation";
 
-import {
-  mapCreatedReservationLabel,
-  mapCreatedReservationStatus,
-} from "@/lib/companion-reservation/mapReservationStatus";
-
-import { createPostedCardViewModel } from "@/services/companion-reservation";
+import { toPostedCardProps } from "@/services/companion-reservation";
 
 import { useInfiniteScroll } from "@/hooks/shared/useInfiniteScroll";
 
@@ -63,20 +58,17 @@ export default function PostedList() {
   return (
     <section className="flex flex-col gap-4 p-4 grow">
       {reservations.map((reservation: CreatedReservationListDto) => {
-        const status = mapCreatedReservationStatus(reservation.status);
-        const labelText = mapCreatedReservationLabel(reservation.status);
-        const viewModel = createPostedCardViewModel(reservation, status, labelText);
-        const { requesterInfo: _req, ctaLabel, ctaDisabled, ctaVariant, ...cardProps } = viewModel;
+        const props = toPostedCardProps(reservation, reservation.status);
+        const { requesterInfo: _req, ctaLabel, ctaVariant, ...cardProps } = props;
 
         const footer = ctaLabel ? (
           <div onClick={(e) => e.stopPropagation()}>
             <ReservationCardFooter.CTA
               label={ctaLabel}
               status={cardProps.status}
-              disabled={ctaDisabled}
               variant={ctaVariant}
               onClick={() =>
-                status === "recruiting"
+                cardProps.status === "recruiting"
                   ? navigate(`/companion/${reservation.reservationId}/applicants`)
                   : navigate(`/companion/${reservation.reservationId}`)
               }

@@ -3,12 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import type { AppliedReservationListDto } from "@/types/companion-reservation";
 
-import {
-  mapAppliedReservationLabel,
-  mapAppliedReservationStatus,
-} from "@/lib/companion-reservation/mapReservationStatus";
-
-import { createAppliedCardViewModel } from "@/services/companion-reservation";
+import { toAppliedCardProps } from "@/services/companion-reservation";
 
 import { useInfiniteScroll } from "@/hooks/shared/useInfiniteScroll";
 
@@ -65,17 +60,14 @@ export default function AppliedList() {
   return (
     <section className="flex flex-col gap-4 p-4 grow">
       {reservations.map((reservation: AppliedReservationListDto) => {
-        const status = mapAppliedReservationStatus(reservation.status);
-        const labelText = mapAppliedReservationLabel(reservation.status);
-        const viewModel = createAppliedCardViewModel(reservation, status, labelText);
-        const { requesterInfo: _req, ctaLabel, ctaDisabled, ctaVariant, ...cardProps } = viewModel;
+        const props = toAppliedCardProps(reservation, reservation.status);
+        const { requesterInfo: _req, ctaLabel, ctaVariant, ...cardProps } = props;
 
         const footer = ctaLabel ? (
           <div onClick={(e) => e.stopPropagation()}>
             <ReservationCardFooter.CTA
               label={ctaLabel}
               status={cardProps.status}
-              disabled={ctaDisabled}
               variant={ctaVariant}
               onClick={() => navigate(`/companion/${reservation.reservationId}`)}
             />

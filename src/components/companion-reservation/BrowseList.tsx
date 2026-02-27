@@ -5,7 +5,7 @@ import type { ReservationSummaryDto } from "@/types/companion-reservation";
 
 import { mapFilterToCondition } from "@/lib/companion-reservation/mapFilterToCondition";
 
-import { createBrowseCardViewModel } from "@/services/companion-reservation";
+import { toBrowseCardProps } from "@/services/companion-reservation";
 
 import { useFilterStore } from "@/store/companion-reservation";
 
@@ -65,14 +65,8 @@ export default function BrowseList() {
   return (
     <section className="flex flex-col gap-4 p-4 grow">
       {reservations.map((reservation: ReservationSummaryDto) => {
-        const viewModel = createBrowseCardViewModel(reservation);
-        const {
-          requesterInfo,
-          ctaLabel: _cta,
-          ctaDisabled: _dis,
-          ctaVariant: _var,
-          ...cardProps
-        } = viewModel;
+        const props = toBrowseCardProps(reservation);
+        const { requesterInfo, ...cardProps } = props;
 
         const footer = requesterInfo ? (
           <ReservationCardFooter.RequesterInfo

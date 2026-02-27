@@ -4,7 +4,6 @@ export interface ReservationCardConfig {
   status: ReservationStatus;
   labelText: string;
   ctaLabel?: string;
-  ctaDisabled: boolean;
   ctaVariant?: "primary" | "secondary";
 }
 
@@ -20,7 +19,7 @@ export interface ReservationCardRequesterInfo {
   description: string;
 }
 
-export interface ReservationCardViewModel {
+export interface ReservationCardProps {
   status: ReservationStatus;
   labelText: string;
   title: string;
@@ -31,7 +30,6 @@ export interface ReservationCardViewModel {
   applicantMessage?: ReservationCardApplicantMessage;
   requesterInfo?: ReservationCardRequesterInfo;
   ctaLabel?: string;
-  ctaDisabled?: boolean;
   ctaVariant?: "primary" | "secondary";
   className?: string;
 }

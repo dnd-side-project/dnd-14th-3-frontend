@@ -41,7 +41,7 @@ export {
 export type {
   ReservationCardApplicantMessage,
   ReservationCardConfig,
+  ReservationCardProps,
   ReservationCardRequesterInfo,
-  ReservationCardViewModel,
 } from "./reservation-card.type";
 export type { ReservationSearchFilter } from "./reservation-search-filter.type";
