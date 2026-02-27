@@ -26,11 +26,11 @@ export default function PhotoStyleStep() {
   }, [isError, apiStyles]);
   const styleLength = FALLBACK_PHOTO_STYLES.length;
 
-  const toggleStyleTag = useCallback((styleId: string, currentValue: string[]) => {
-    if (currentValue.includes(styleId)) {
-      return currentValue.filter((id) => id !== styleId);
+  const toggleStyleTag = useCallback((styleName: string, currentValue: string[]) => {
+    if (currentValue.includes(styleName)) {
+      return currentValue.filter((name) => name !== styleName);
     }
-    return [...currentValue, styleId];
+    return [...currentValue, styleName];
   }, []);
 
   return (
@@ -73,13 +73,13 @@ export default function PhotoStyleStep() {
                 )}
                 <div className="flex flex-wrap gap-3">
                   {styles.map((style) => {
-                    const isSelected = field.value.includes(style.id);
+                    const isSelected = field.value.includes(style.name);
                     const displayLabel = style.label;
                     return (
                       <ChipButton
-                        key={style.id}
+                        key={style.name}
                         selected={isSelected}
-                        onClick={() => field.onChange(toggleStyleTag(style.id, field.value))}
+                        onClick={() => field.onChange(toggleStyleTag(style.name, field.value))}
                       >
                         {displayLabel}
                       </ChipButton>
