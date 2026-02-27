@@ -11,6 +11,9 @@ const __dirname = dirname(__filename);
 const isStorybook = process.env.STORYBOOK === "true";
 // https://vite.dev/config/
 export default defineConfig({
+  define: {
+    global: "globalThis",
+  },
   plugins: !isStorybook
     ? [
         react(),

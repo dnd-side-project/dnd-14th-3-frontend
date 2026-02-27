@@ -51,6 +51,7 @@ export function createMockSessionSocket(sessionId: number): StompCompatibleSocke
   let tick = 0;
   let subscribedDestination: string | null = null;
   let isConnected = false;
+  let myLocation: { latitude: number; longitude: number } | null = null;
 
   const socket: StompCompatibleSocket = {
     onopen: null,
@@ -69,7 +70,7 @@ export function createMockSessionSocket(sessionId: number): StompCompatibleSocke
     send(data: string) {
       if (socket.readyState !== SOCKET_OPEN) return;
 
-      const { command, headers } = parseClientFrame(data);
+      const { command, headers, body } = parseClientFrame(data);
       if (!command) return;
 
       if (command === "CONNECT") {
@@ -105,8 +106,8 @@ export function createMockSessionSocket(sessionId: number): StompCompatibleSocke
             senderId: MOCK_PARTNER_ID,
             timestamp: new Date().toISOString(),
             data: {
-              latitude: 37.56655 + wobble,
-              longitude: 126.97765 - wobble,
+              latitude: (myLocation?.latitude ?? 37.56655) + 0.00035 + wobble,
+              longitude: (myLocation?.longitude ?? 126.97765) - 0.00035 - wobble,
             },
           });
 
@@ -141,6 +142,24 @@ export function createMockSessionSocket(sessionId: number): StompCompatibleSocke
             socket.close();
           }
         }, 3000);
+        return;
+      }
+
+      if (command === "SEND") {
+        try {
+          const payload = JSON.parse(body || "{}") as {
+            latitude?: number;
+            longitude?: number;
+            data?: { latitude?: number; longitude?: number };
+          };
+          const latitude = Number(payload.data?.latitude ?? payload.latitude);
+          const longitude = Number(payload.data?.longitude ?? payload.longitude);
+          if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+            myLocation = { latitude, longitude };
+          }
+        } catch {
+          // Ignore malformed payload.
+        }
       }
     },
   };
