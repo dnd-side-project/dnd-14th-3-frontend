@@ -135,6 +135,7 @@ export type SignupRequest = {
 export type SignupResponse = ApiSuccess<TokenPair>;
 
 export type RefreshResponse = ApiSuccess<TokenPair>;
+export type VerifySessionResponse = ApiSuccess<string>;
 
 export async function loginWithKakaoCodeApi(code: string) {
   const response = await apiClient.get<KakaoLoginResponse>("/api/v1/auth/login/kakao", {
@@ -162,4 +163,9 @@ export async function refreshTokenApi(refreshToken: string) {
   });
 
   return tokenPairResponseSchema.parse(response.data);
+}
+
+export async function verifySessionApi() {
+  const response = await apiClient.get<VerifySessionResponse>("/api/v1/auth/verify");
+  return response.data;
 }

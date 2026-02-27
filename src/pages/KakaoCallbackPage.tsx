@@ -5,7 +5,7 @@ import { type AxiosError } from "axios";
 
 import { logger } from "@/lib/shared/logger";
 
-import { loginWithKakaoCodeApi } from "@/api/auth.api";
+import { loginWithKakaoCodeApi, verifySessionApi } from "@/api/auth.api";
 
 import { useAuthStore } from "@/store/auth/auth.store";
 
@@ -78,14 +78,27 @@ export default function KakaoCallbackPage() {
         });
         navigate(redirectPath, { replace: true });
       })
-      .catch((error) => {
+      .catch(async (error) => {
         logger.error(error, {
           scope: "kakao-login-callback",
           ...toErrorLogPayload(error),
           codePreview: code.slice(0, 8),
           redirectPath,
         });
-        navigate("/login", { replace: true });
+
+        try {
+          await verifySessionApi();
+          logger.info("[Auth] Session verification succeeded after kakao code exchange failure.", {
+            redirectPath,
+          });
+          navigate(redirectPath, { replace: true });
+        } catch (verifyError) {
+          logger.warn("[Auth] Session verification failed after kakao code exchange failure.", {
+            ...toErrorLogPayload(verifyError),
+            redirectPath,
+          });
+          navigate("/login", { replace: true });
+        }
       })
       .finally(() => {
         processingKakaoCodes.delete(code);
