@@ -487,7 +487,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     stopSessionLocationSharing();
     transitionPhase("moving");
 
-    const wsUrl = import.meta.env.VITE_WS_BASE_URL || "wss://api.snapforyou.cloud/ws";
+    const wsUrl = import.meta.env.VITE_WS_BASE_URL;
     const socket = new WebSocket(wsUrl);
     sessionWsRef.current = socket;
 
@@ -612,13 +612,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     socket.onclose = () => {
       isSessionStompConnectedRef.current = false;
     };
-  }, [
-    currentLocation,
-    sessionId,
-    setCurrentLocation,
-    stopSessionLocationSharing,
-    transitionPhase,
-  ]);
+  }, [currentLocation, sessionId, setCurrentLocation, stopSessionLocationSharing, transitionPhase]);
 
   useEffect(() => {
     if (phase !== "moving") return;

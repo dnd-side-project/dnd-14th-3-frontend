@@ -49,6 +49,7 @@ export default function MainMapPage() {
   return (
     <>
       <MainMapView
+        phase={controller.phase}
         mapCenter={controller.mapCenter}
         currentLocation={controller.currentLocation}
         partnerLocation={controller.partnerLocation}
