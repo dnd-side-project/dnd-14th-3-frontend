@@ -28,6 +28,7 @@ export default function ExpandableFab({
     handleLocationShareClick,
     handleFindCompanionButtonClick,
     handleConfirmLocationShare,
+    isConfirmingLocationShare,
     handleConfirmFindCompanion,
     handlePauseFromFindCompanion,
   } = useExpandableFabFlow({
@@ -62,6 +63,7 @@ export default function ExpandableFab({
       />
 
       <FabActionPopups
+        isConfirmingLocationShare={isConfirmingLocationShare}
         actions={{
           closeAll: closeAllModals,
           confirmLocationShare: handleConfirmLocationShare,
