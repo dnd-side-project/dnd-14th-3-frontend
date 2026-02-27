@@ -110,9 +110,7 @@ export default function MainMapPhaseOverlays({
   const [companionRequestSnapState, setCompanionRequestSnapState] = useState<"collapsed" | "full">(
     "full"
   );
-  const [movingSheetSnapState, setMovingSheetSnapState] = useState<"collapsed" | "full">(
-    "collapsed"
-  );
+  const [movingSheetSnapState, setMovingSheetSnapState] = useState<"collapsed" | "full">("full");
   const [manualRejectConfirmModalOpen, setManualRejectConfirmModalOpen] = useState(false);
   const [dismissedRejectedSignal, setDismissedRejectedSignal] = useState(0);
 

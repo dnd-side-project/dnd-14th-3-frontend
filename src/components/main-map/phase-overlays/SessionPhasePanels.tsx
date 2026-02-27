@@ -142,7 +142,7 @@ export default function SessionPhasePanels({
         backdropClick="none"
         draggable
         dragToClose={false}
-        initialSnap="collapsed"
+        initialSnap="full"
         onSnapChange={onMovingSheetSnapChange}
         header={(actions) => (
           <div className="flex items-center justify-between gap-2 px-4 pb-4 pt-2">
@@ -219,6 +219,7 @@ export default function SessionPhasePanels({
         isOpen={acceptedMatchDetailSheet.arrivalStatusModal.isOpen}
         title={acceptedMatchDetailSheet.arrivalStatusModal.title}
         content={acceptedMatchDetailSheet.arrivalStatusModal.content}
+        closeOnBackdrop={false}
         showConfirm={acceptedMatchDetailSheet.arrivalStatusModal.type === "partner-arrived"}
         showCancel={false}
         confirmMessage="만남 시작하기"
