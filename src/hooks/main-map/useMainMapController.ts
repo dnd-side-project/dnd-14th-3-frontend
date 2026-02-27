@@ -1,5 +1,5 @@
 ﻿import { useCallback, useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { z } from "zod";
 
@@ -308,6 +308,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
         ? "manual-location-setting"
         : "location-setting"
       : (restorablePhase ?? "idle");
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [phase, setPhase] = useState<MapPhase>(initialPhase);
   const [isCancellingMatchRequest, setIsCancellingMatchRequest] = useState(false);
@@ -1584,7 +1585,9 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
 
   const handleReserveMatchRetry = useCallback(() => {
     logger.info("[match-request] reserve flow requested from retry-limit modal");
-  }, []);
+    handleCloseMatchRetryLimitModal();
+    navigate("/companion");
+  }, [handleCloseMatchRetryLimitModal, navigate]);
 
   const handleMapCreate = useCallback(
     (map: kakao.maps.Map) => {
