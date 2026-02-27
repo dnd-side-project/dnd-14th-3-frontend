@@ -8,7 +8,7 @@ export { createPostedCardViewModel } from "./postedCardViewModel.service";
 export { createAppliedCardViewModel } from "./appliedCardViewModel.service";
 
 // ─── 카드 config 매퍼 ──────────────────────────────────────────────
-export { getCreatedCardConfig, getAppliedCardConfig } from "./reservationCardConfig.service";
+export { getAppliedCardConfig,getCreatedCardConfig } from "./reservationCardConfig.service";
 
 // ─── deprecated ────────────────────────────────────────────────────
 export type { ReservationCardViewMode } from "./reservationCardViewModel.service";

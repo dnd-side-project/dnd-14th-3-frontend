@@ -1,7 +1,8 @@
 import { z } from "zod";
-import { Gender } from "../profile";
-import { GENDER_ENUM } from "@/constants/user";
+
 import { REGION_1DEPTH } from "@/constants/companion-reservation/region-1depth";
+
+import { Gender } from "../profile";
 
 export type ShootingDuration =
   | "TEN_MINUTES"
@@ -25,8 +26,8 @@ const shootingDurationSchema = z.enum([
   "ONE_HOUR",
 ]);
 
-const region1DepthSchema = z.enum(Object.values(REGION_1DEPTH) as [string, ...string[]]);
-export type Region1Depth = z.infer<typeof region1DepthSchema>;
+const _region1DepthSchema = z.enum(Object.values(REGION_1DEPTH) as [string, ...string[]]);
+export type Region1Depth = z.infer<typeof _region1DepthSchema>;
 
 // ─── 피드 (GET /api/v1/reservations) ────────────────────────────
 

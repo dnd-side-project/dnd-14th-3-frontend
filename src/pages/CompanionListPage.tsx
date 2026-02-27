@@ -3,9 +3,9 @@ import { useSearchParams } from "react-router-dom";
 
 import type { MineSubTab } from "@/types/companion-reservation";
 
-import { FilterStoreProvider } from "@/store/companion-reservation";
-
 import { getViewSegment } from "@/lib/companion-reservation/getViewSegment";
+
+import { FilterStoreProvider , useFilterStore } from "@/store/companion-reservation";
 
 import { useScrollHideHeader } from "@/hooks/companion-reservation/useScrollHideHeader";
 
@@ -18,8 +18,6 @@ import {
   SearchBar,
   SegmentedControl,
 } from "@/components/companion-reservation";
-
-import { useFilterStore } from "@/store/companion-reservation";
 
 // ─── 페이지 내부 ───────────────────────────────────────────────────
 function CompanionListPageInner() {
