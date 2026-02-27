@@ -123,6 +123,13 @@ const tokenPairResponseSchema = z
     data: tokenPairSchema.parse(normalizeTokenPair(response.data)),
   }));
 
+const verifySessionResponseSchema = z.object({
+  success: z.literal(true),
+  message: z.string(),
+  code: z.string().nullable(),
+  data: z.string(),
+});
+
 export type KakaoLoginResponse = z.infer<typeof kakaoLoginResponseSchema>;
 
 export type SignupRequest = {
@@ -167,5 +174,5 @@ export async function refreshTokenApi(refreshToken: string) {
 
 export async function verifySessionApi() {
   const response = await apiClient.get<VerifySessionResponse>("/api/v1/auth/verify");
-  return response.data;
+  return verifySessionResponseSchema.parse(response.data);
 }
