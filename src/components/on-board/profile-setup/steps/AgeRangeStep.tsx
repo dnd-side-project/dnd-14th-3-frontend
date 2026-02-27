@@ -9,13 +9,11 @@ import { ChipButton } from "@/components/shared/chip-button";
 import ProfileStepLayout from "../ProfileStepLayout";
 
 const AGE_RANGE_OPTIONS: { value: AgeRange; label: string }[] = [
-  { value: "10s", label: "10대" },
-  { value: "20s", label: "20대" },
-  { value: "30s", label: "30대" },
-  { value: "40s", label: "40대" },
-  { value: "50s", label: "50대" },
-  { value: "60s", label: "60대" },
-  { value: "over-70s", label: "70대 이상" },
+  { value: "TEENS", label: "10대" },
+  { value: "TWENTIES", label: "20대" },
+  { value: "THIRTIES", label: "30대" },
+  { value: "FORTIES", label: "40대" },
+  { value: "FIFTIES_AND_ABOVE", label: "50대 이상" },
 ];
 
 export default function AgeRangeStep() {
