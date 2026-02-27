@@ -1,7 +1,7 @@
 export type ReservationStatus = "recruiting" | "confirmed" | "pending" | "closed";
 export type ViewSegment = "browse" | "mine";
 export type MineSubTab = "posted" | "applied";
-export type { DateRange, FilterTab, FilterValues } from "./filter.type";
+export type { FilterTab, FilterValues } from "./filter.type";
 export type { ShootingDuration } from "./reservation.type";
 export type {
   ApplicantDto,

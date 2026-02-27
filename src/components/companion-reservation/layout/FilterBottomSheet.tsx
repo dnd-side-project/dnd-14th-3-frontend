@@ -3,6 +3,9 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 
 import type { FilterTab, FilterValues } from "@/types/companion-reservation";
+import { Gender } from "@/types/profile";
+
+import { useBottomSheet } from "@/hooks/shared/bottom-sheet";
 
 import { BottomSheet } from "@/components/shared/bottom-sheet";
 import { Button } from "@/components/shared/button";
@@ -10,8 +13,6 @@ import { Button } from "@/components/shared/button";
 import FilterAgeGenderTab from "./FilterAgeGenderTab";
 import FilterDateTab from "./FilterDateTab";
 import FilterRegionTab from "./FilterRegionTab";
-import { Gender } from "@/types/profile";
-import { useBottomSheet } from "@/hooks/shared/bottom-sheet";
 
 /* =====================
  * Re-exports (for existing consumers)
@@ -44,20 +45,22 @@ const TABS: FilterTab[] = ["date", "region", "age-gender"];
 function getFilterCount(tab: FilterTab, values: FilterValues): number {
   switch (tab) {
     case "date":
-      return values.dateRange.start ? (values.dateRange.end ? 2 : 1) : 0;
+      return values.date ? 1 : 0;
     case "age-gender":
-      return values.ageGroups.length + (values.gender ? 1 : 0);
+      return (values.ageGroup ? 1 : 0) + (values.gender ? 1 : 0);
     case "region":
-      return values.regions?.length ?? 0;
+      return values.region ? 1 : 0;
+    default:
+      return 0;
   }
 }
 
 function hasAnyFilter(values: FilterValues): boolean {
   return (
-    values.dateRange.start !== null ||
-    values.ageGroups.length > 0 ||
+    values.date !== null ||
+    values.ageGroup !== null ||
     values.gender !== null ||
-    values.regions !== null
+    values.region !== null
   );
 }
 
@@ -74,10 +77,10 @@ export default function FilterBottomSheet({
 }: FilterModalProps) {
   const [values, setValues] = useState<FilterValues>(
     initialValues ?? {
-      dateRange: { start: null, end: null },
-      ageGroups: [],
+      date: null,
+      ageGroup: null,
       gender: null,
-      regions: null,
+      region: null,
       keyword: "",
     }
   );
@@ -87,50 +90,36 @@ export default function FilterBottomSheet({
   useEffect(() => {
     if (isOpen) {
       openBottomSheet();
-      setValues(
-        initialValues ?? {
-          dateRange: { start: null, end: null },
-          ageGroups: [],
-          gender: null,
-          regions: null,
-          keyword: "",
-        }
-      );
     }
-  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isOpen, openBottomSheet]);
 
-  const handleToggleAge = (age: string) => {
+  const handleSelectAge = (age: string) => {
     setValues((prev) => ({
       ...prev,
-      ageGroups: prev.ageGroups.includes(age)
-        ? prev.ageGroups.filter((a) => a !== age)
-        : [...prev.ageGroups, age],
+      ageGroup: prev.ageGroup === age ? null : age,
     }));
   };
 
-  const handleToggleGender = (gender: Gender) => {
+  const handleSelectGender = (gender: Gender) => {
     setValues((prev) => ({
       ...prev,
       gender: prev.gender === gender ? null : gender,
     }));
   };
 
-  const handleToggleRegion = (region: string) => {
+  const handleSelectRegion = (region: string) => {
     setValues((prev) => ({
       ...prev,
-      regions:
-        prev.regions && prev.regions.includes(region)
-          ? prev.regions.filter((r) => r !== region)
-          : [...(prev.regions || []), region],
+      region: prev.region === region ? null : region,
     }));
   };
 
   const handleReset = () => {
     setValues({
-      dateRange: { start: null, end: null },
-      ageGroups: [],
+      date: null,
+      ageGroup: null,
       gender: null,
-      regions: null,
+      region: null,
       keyword: "",
     });
     closeBottomSheet();
@@ -197,23 +186,23 @@ export default function FilterBottomSheet({
           <div className="py-6 min-h-80">
             {activeTab === "date" && (
               <FilterDateTab
-                dateRange={values.dateRange}
-                onChange={(dateRange) => setValues((prev) => ({ ...prev, dateRange }))}
+                date={values.date}
+                onChange={(date) => setValues((prev) => ({ ...prev, date }))}
               />
             )}
             {activeTab === "age-gender" && (
               <div className="px-5">
                 <FilterAgeGenderTab
-                  ageGroups={values.ageGroups}
+                  ageGroup={values.ageGroup}
                   gender={values.gender}
-                  onToggleAge={handleToggleAge}
-                  onToggleGender={handleToggleGender}
+                  onSelectAge={handleSelectAge}
+                  onSelectGender={handleSelectGender}
                 />
               </div>
             )}
             {activeTab === "region" && (
               <div className="px-5">
-                <FilterRegionTab regions={values.regions} onToggle={handleToggleRegion} />
+                <FilterRegionTab region={values.region} onSelect={handleSelectRegion} />
               </div>
             )}
           </div>

@@ -46,7 +46,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-	render: (args) => {
+	render: () => {
 		const [activeTab, setActiveTab] = useState<"browse" | "mine">("browse");
 		return (
 			<SegmentedControl activeTab={activeTab} onTabChange={setActiveTab} />

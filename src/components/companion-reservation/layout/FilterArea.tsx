@@ -10,8 +10,8 @@ import {
 
 import { useFilterStore } from "@/store/companion-reservation";
 
-import FilterChipGroup from "./FilterChipGroup";
 import FilterBottomSheet from "./FilterBottomSheet";
+import FilterChipGroup from "./FilterChipGroup";
 
 export default function FilterArea() {
   const { values, setValues } = useFilterStore();
@@ -29,18 +29,18 @@ export default function FilterArea() {
         <FilterChipGroup
           filters={[
             {
-              label: formatDateChipLabel(values.dateRange.start, values.dateRange.end),
-              active: !!values.dateRange.start,
+              label: formatDateChipLabel(values.date),
+              active: !!values.date,
               onClick: () => openFilter("date"),
             },
             {
-              label: formatRegionChipLabel(values.regions),
-              active: !!values.regions && values.regions.length > 0,
+              label: formatRegionChipLabel(values.region),
+              active: !!values.region,
               onClick: () => openFilter("region"),
             },
             {
-              label: formatAgeGenderChipLabel(values.ageGroups, values.gender),
-              active: values.ageGroups.length > 0 || !!values.gender,
+              label: formatAgeGenderChipLabel(values.ageGroup, values.gender),
+              active: !!values.ageGroup || !!values.gender,
               onClick: () => openFilter("age-gender"),
             },
           ]}

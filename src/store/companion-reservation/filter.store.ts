@@ -9,10 +9,10 @@ export interface FilterState {
 }
 
 const getInitialValues = (): FilterValues => ({
-  dateRange: { start: null, end: null },
-  ageGroups: [],
+  date: null,
+  ageGroup: null,
   gender: null,
-  regions: [],
+  region: null,
   keyword: "",
 });
 

@@ -1,8 +1,8 @@
 export { default as FilterArea } from "./FilterArea";
-export type { FilterChipGroupProps, FilterChipProps } from "./FilterChipGroup";
-export { default as FilterChipGroup } from "./FilterChipGroup";
 export type { FilterModalProps, FilterTab,FilterValues } from "./FilterBottomSheet";
 export { default as FilterModal } from "./FilterBottomSheet";
+export type { FilterChipGroupProps, FilterChipProps } from "./FilterChipGroup";
+export { default as FilterChipGroup } from "./FilterChipGroup";
 export type { MineTabGroupProps } from "./MineTabGroup";
 export { default as MineTabGroup } from "./MineTabGroup";
 export type { SearchBarProps } from "./SearchBar";

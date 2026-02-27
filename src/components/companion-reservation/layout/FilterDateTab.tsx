@@ -1,18 +1,14 @@
-import type { DateRange } from "@/types/companion-reservation";
-
 import { Calendar } from "@/components/shared/calendar";
 
 interface FilterDateTabProps {
-  dateRange: DateRange;
-  onChange: (range: DateRange) => void;
+  date: Date | null;
+  onChange: (date: Date | null) => void;
 }
 
-export default function FilterDateTab({ dateRange, onChange }: FilterDateTabProps) {
+export default function FilterDateTab({ date, onChange }: FilterDateTabProps) {
   return (
-    <Calendar
-      startDate={dateRange.start}
-      endDate={dateRange.end}
-      onChange={onChange}
-    />
+    <div className="flex flex-col h-80 gap-3">
+      <Calendar selectedDate={date} onChange={onChange} />
+    </div>
   );
 }

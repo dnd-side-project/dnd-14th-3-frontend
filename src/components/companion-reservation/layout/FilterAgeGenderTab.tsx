@@ -1,20 +1,21 @@
-import { ChipButton } from "@/components/shared/chip-button";
 import type { Gender } from "@/types/profile";
+
+import { ChipButton } from "@/components/shared/chip-button";
 
 const AGE_GROUPS = ["10대", "20대", "30대", "40대", "50대+"];
 
 interface FilterAgeGenderTabProps {
-  ageGroups: string[];
+  ageGroup: string | null;
   gender: Gender | null;
-  onToggleAge: (age: string) => void;
-  onToggleGender: (gender: Gender) => void;
+  onSelectAge: (age: string) => void;
+  onSelectGender: (gender: Gender) => void;
 }
 
 export default function FilterAgeGenderTab({
-  ageGroups,
+  ageGroup,
   gender,
-  onToggleAge,
-  onToggleGender,
+  onSelectAge,
+  onSelectGender,
 }: FilterAgeGenderTabProps) {
   return (
     <div className="flex flex-col gap-6">
@@ -25,8 +26,8 @@ export default function FilterAgeGenderTab({
           {AGE_GROUPS.map((age) => (
             <ChipButton
               key={age}
-              selected={ageGroups.includes(age)}
-              onClick={() => onToggleAge(age)}
+              selected={ageGroup === age}
+              onClick={() => onSelectAge(age)}
             >
               {age}
             </ChipButton>
@@ -40,7 +41,7 @@ export default function FilterAgeGenderTab({
         <div className="flex gap-3">
           <button
             type="button"
-            onClick={() => onToggleGender("MALE")}
+            onClick={() => onSelectGender("MALE")}
             className={`flex-1 h-13 rounded-xl text-body-1 font-bold transition-colors ${
               gender === "MALE" ? "bg-mint-500 text-black" : "bg-gray-100 text-gray-700"
             }`}
@@ -49,7 +50,7 @@ export default function FilterAgeGenderTab({
           </button>
           <button
             type="button"
-            onClick={() => onToggleGender("FEMALE")}
+            onClick={() => onSelectGender("FEMALE")}
             className={`flex-1 h-13 rounded-xl text-body-1 font-bold transition-colors ${
               gender === "FEMALE" ? "bg-mint-500 text-black" : "bg-gray-100 text-gray-700"
             }`}

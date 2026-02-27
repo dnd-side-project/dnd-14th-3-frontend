@@ -32,8 +32,17 @@ export interface GetReservationsParams {
 }
 
 export async function getReservationsApi(params: GetReservationsParams) {
+  const { condition, cursor, limit } = params;
+
+  // flat query string: keyword=s&region1Depth=SEOUL&cursor=10&limit=10
+  const flatParams = {
+    ...condition,
+    cursor,
+    limit,
+  };
+
   const response = await apiClient.get<ReservationListResponse>("/api/v1/reservations", {
-    params,
+    params: flatParams,
   });
 
   const parsed = pageResponseReservationSummaryDtoSchema.safeParse(response.data.data);

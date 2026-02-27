@@ -10,8 +10,8 @@ function toISODate(date: Date): string {
 export function mapFilterToCondition(values: FilterValues): ReservationSearchCondition {
   const condition: ReservationSearchCondition = {};
 
-  if (values.regions) condition.region1Depth = values.regions;
-  if (values.dateRange.start) condition.date = toISODate(values.dateRange.start);
+  if (values.region) condition.region1Depth = values.region;
+  if (values.date) condition.date = toISODate(values.date);
   if (values.gender) condition.gender = values.gender;
   condition.keyword = values.keyword.trim();
 

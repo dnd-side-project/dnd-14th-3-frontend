@@ -2,6 +2,7 @@ import { authHandlers } from "./authHandlers";
 import { exampleHandlers } from "./exampleHandlers";
 import { mainMapHandlers } from "./mainMapHandlers";
 import { profileHandlers } from "./profileHandlers";
+import { reservationHandlers } from "./reservationHandlers";
 import { userHandlers } from "./userHandlers";
 
 /**
@@ -14,5 +15,6 @@ export const handlers = [
   ...authHandlers,
   ...mainMapHandlers,
   ...profileHandlers,
+  ...reservationHandlers,
   ...userHandlers,
 ];
