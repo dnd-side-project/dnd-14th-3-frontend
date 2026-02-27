@@ -1,21 +1,47 @@
 export const queryKeys = {
   auth: {
-    validate: (accessToken: string) => ["auth", "validate", accessToken] as const,
+    validate: (accessToken: string) =>
+      ["auth", "validate", accessToken] as const,
   },
+
+  match: {
+    all: ["match"] as const,
+    request: (matchRequestId: number) =>
+      ["match", "request", matchRequestId] as const,
+    requestStatus: (matchRequestId: number) =>
+      ["match", "request-status", matchRequestId] as const,
+    session: (sessionId: number) =>
+      ["match", "session", sessionId] as const,
+    proposals: ["match", "proposals"] as const,
+  },
+
   user: {
     all: ["user"] as const,
-    consents: (userId?: string | null) => ["user", "consents", userId ?? "none"] as const,
-    detail: (id: number) => ["user", id] as const,
-    list: (filters?: object) => ["user", "list", filters] as const,
-    profile: (userId?: string | null) => ["user", "profile", userId ?? "none"] as const,
+    consents: (userId?: string | null) =>
+      ["user", "consents", userId ?? "none"] as const,
+    detail: (id: number) =>
+      ["user", id] as const,
+    list: (filters?: object) =>
+      ["user", "list", filters] as const,
+    profile: (userId?: string | null) =>
+      ["user", "profile", userId ?? "none"] as const,
     photoStyles: ["user", "photo-styles"] as const,
   },
+
   reservation: {
-    list: (condition?: object, limit?: number) => ["reservation", "list", condition, limit] as const,
-    detail: (reservationId: number) => ["reservation", "detail", reservationId] as const,
-    applicants: (reservationId: number) => ["reservation", "applicants", reservationId] as const,
-    comments: (reservationId: number, cursor?: number, limit?: number) =>
+    list: (condition?: object, limit?: number) =>
+      ["reservation", "list", condition, limit] as const,
+    detail: (reservationId: number) =>
+      ["reservation", "detail", reservationId] as const,
+    applicants: (reservationId: number) =>
+      ["reservation", "applicants", reservationId] as const,
+    comments: (
+      reservationId: number,
+      cursor?: number,
+      limit?: number
+    ) =>
       ["reservation", "comments", reservationId, cursor, limit] as const,
+
     mine: {
       posted: (cursor?: number, limit?: number) =>
         ["reservation", "mine", "posted", cursor, limit] as const,
@@ -23,9 +49,12 @@ export const queryKeys = {
         ["reservation", "mine", "applied", cursor, limit] as const,
     },
   },
+
   onboard: {
     shootingStyles: ["on-board", "shooting-styles"] as const,
-    validateNickname: (nickname: string) => ["on-board", "validate-nickname", nickname] as const,
-    submitProfile: () => ["on-board", "submit-profile"] as const,
+    validateNickname: (nickname: string) =>
+      ["on-board", "validate-nickname", nickname] as const,
+    submitProfile: () =>
+      ["on-board", "submit-profile"] as const,
   },
 } as const;
