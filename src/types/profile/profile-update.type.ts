@@ -1,16 +1,20 @@
 import { z } from "zod";
 
 import {
+  ageRangeSchema,
   genderSchema,
   nicknameSchema,
   preferredStylesSchema,
 } from "./profile-fields.type";
 
-// Profile Update Schemas (DTO: newUsername, gender, preferredStyles)
+// Profile Update Schemas (DTO: nickname, gender, ageGroup, introduction, photoStyles)
 export const profileUpdateSchema = z.object({
-  newUsername: nicknameSchema,
+  nickname: nicknameSchema,
   gender: genderSchema,
-  preferredStyles: preferredStylesSchema,
+  ageGroup: ageRangeSchema,
+  introduction: z.string(),
+  profileImageUrl: z.string().optional(),
+  photoStyles: preferredStylesSchema,
 });
 
 // Type Inference
