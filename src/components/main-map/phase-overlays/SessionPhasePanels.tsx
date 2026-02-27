@@ -14,6 +14,7 @@ type AcceptedMatchDetailSheet = {
   partnerExpectedDurationLabel: string;
   partnerRequestMessage: string;
   startMoving: () => void;
+  openDirections: () => void;
   completeArrival: () => void;
   arrivalStatusModal: {
     isOpen: boolean;
@@ -181,7 +182,9 @@ export default function SessionPhasePanels({
         }
         footer={
           <div className="flex items-center gap-4">
-            <Button.Secondary fullWidth>길찾기</Button.Secondary>
+            <Button.Secondary fullWidth onClick={acceptedMatchDetailSheet.openDirections}>
+              길찾기
+            </Button.Secondary>
             <Button.Primary
               fullWidth
               onClick={acceptedMatchDetailSheet.completeArrival}

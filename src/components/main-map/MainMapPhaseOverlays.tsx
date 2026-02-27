@@ -61,6 +61,7 @@ type MainMapPhaseOverlaysProps = {
     partnerExpectedDurationLabel: string;
     partnerRequestMessage: string;
     startMoving: () => void;
+    openDirections: () => void;
     completeArrival: () => void;
     arrivalStatusModal: {
       isOpen: boolean;

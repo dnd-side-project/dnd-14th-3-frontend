@@ -1248,6 +1248,22 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     }
   }, [arriveMatchSession, isPartnerArrived, sessionId]);
 
+  const handleOpenKakaoDirections = useCallback(() => {
+    if (!currentLocation || !meetingLocation) {
+      Toast.show({
+        type: "error",
+        message: "길찾기 정보를 준비하지 못했어요.",
+        duration: 2500,
+      });
+      return;
+    }
+
+    const fromName = encodeURIComponent("현재 위치");
+    const toName = encodeURIComponent("약속 장소");
+    const directionsUrl = `https://map.kakao.com/link/from/${fromName},${currentLocation.lat},${currentLocation.lng}/to/${toName},${meetingLocation.lat},${meetingLocation.lng}`;
+    window.open(directionsUrl, "_blank", "noopener,noreferrer");
+  }, [currentLocation, meetingLocation]);
+
   const handleSubmitCompanionRequest = companionRequestForm.handleSubmit((values) => {
     if (!values.expectedDuration || !currentLocation) return;
 
@@ -1563,6 +1579,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
       partnerExpectedDurationLabel,
       partnerRequestMessage,
       startMoving: startSessionLocationSharing,
+      openDirections: handleOpenKakaoDirections,
       completeArrival: () => {
         void handleCompleteArrival();
       },
