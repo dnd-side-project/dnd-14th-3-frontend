@@ -48,10 +48,12 @@ export default function MainMapPage() {
 
   return (
     <>
-      <MainMapView
-        mapCenter={controller.mapCenter}
-        currentLocation={controller.currentLocation}
-        isManualLocationMode={controller.isManualLocationMode}
+        <MainMapView
+          mapCenter={controller.mapCenter}
+          currentLocation={controller.currentLocation}
+          partnerLocation={controller.partnerLocation}
+          meetingLocation={controller.meetingLocation}
+          isManualLocationMode={controller.isManualLocationMode}
         isManualSearchPage={controller.isManualSearchPage}
         isSheetOpen={controller.isSheetOpen}
         sheetKey={controller.sheetKey}

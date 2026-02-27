@@ -14,6 +14,7 @@ import { type MatchExpectedDuration } from "@/types/main-map/match-request.type"
 
 import { logger } from "@/lib/shared/logger";
 
+import { getAccessToken } from "@/api/client";
 import {
   connectMatchSseApi,
   type MatchProposalEventData,
@@ -26,6 +27,8 @@ import {
 import { usePageLayoutStore } from "@/store/layout/pageLayout.store";
 import { useMainMapLocationStore } from "@/store/main-map/location.store";
 import { Toast } from "@/store/shared/toast/toast.store";
+
+import { getUserIdFromToken } from "@/services/auth/getUserIdFromToken.service";
 
 import { useMainMapFabActions } from "@/hooks/main-map/useMainMapFabActions";
 import { useMainMapState } from "@/hooks/main-map/useMainMapState";
@@ -131,6 +134,9 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   const [isRetryingMatchRequest, setIsRetryingMatchRequest] = useState(false);
   const [nearbyWaitingCount, setNearbyWaitingCount] = useState<number | null>(null);
   const [proposalRejectedSignal, setProposalRejectedSignal] = useState(0);
+  const [partnerLocation, setPartnerLocation] = useState<LatLng | null>(null);
+  const [meetingLocation, setMeetingLocation] = useState<LatLng | null>(null);
+  const [isMoving, setIsMoving] = useState(false);
   const persistedLocation = useMainMapLocationStore((state) => state.selectedLocation);
   const [requestingManualMode, setRequestingManualMode] = useState(false);
   const setPersistedLocation = useMainMapLocationStore((state) => state.setSelectedLocation);
@@ -139,6 +145,11 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   const currentLocationSheet = useBottomSheet();
   const companionRequestSheet = useBottomSheet();
   const sseConnectionRef = useRef<SseConnection | null>(null);
+  const sessionWsRef = useRef<WebSocket | null>(null);
+  const sessionWatchIdRef = useRef<number | null>(null);
+  const mockPartnerTimerRef = useRef<number | null>(null);
+  const isSessionStompConnectedRef = useRef(false);
+  const sessionWsBufferRef = useRef("");
   const isManualSearchPage = searchParams.get("manualSearch") === "1";
   const wasManualLocationModeRef = useRef(false);
   const manualModeOverrideRef = useRef(false);
@@ -279,6 +290,199 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
       },
     });
   }, [transitionPhase]);
+
+  const stopSessionLocationSharing = useCallback(() => {
+    if (mockPartnerTimerRef.current != null) {
+      window.clearInterval(mockPartnerTimerRef.current);
+      mockPartnerTimerRef.current = null;
+    }
+    if (sessionWatchIdRef.current != null && typeof navigator !== "undefined" && navigator.geolocation) {
+      navigator.geolocation.clearWatch(sessionWatchIdRef.current);
+      sessionWatchIdRef.current = null;
+    }
+    if (sessionWsRef.current) {
+      try {
+        sessionWsRef.current.close();
+      } catch {
+        // no-op
+      }
+      sessionWsRef.current = null;
+    }
+    isSessionStompConnectedRef.current = false;
+    sessionWsBufferRef.current = "";
+  }, []);
+
+  const startSessionLocationSharing = useCallback(() => {
+    if (isMoving) return;
+
+    const sessionId = matchSession?.id;
+    if (!sessionId) return;
+
+    const isMockMode = import.meta.env.VITE_MSW_ENABLED === "true";
+    if (isMockMode) {
+      stopSessionLocationSharing();
+      setMeetingLocation(currentLocation);
+      setIsMoving(true);
+      const base = currentLocation ?? { lat: 37.5665, lng: 126.978 };
+      let tick = 0;
+      setPartnerLocation({
+        lat: base.lat + 0.00035,
+        lng: base.lng - 0.00035,
+      });
+      mockPartnerTimerRef.current = window.setInterval(() => {
+        tick += 1;
+        const wobble = (tick % 2 === 0 ? 1 : -1) * 0.00007;
+        setPartnerLocation({
+          lat: base.lat + 0.00035 + wobble,
+          lng: base.lng - 0.00035 - wobble,
+        });
+      }, 3000);
+      return;
+    }
+
+    const token = getAccessToken();
+    const myUserIdRaw = getUserIdFromToken();
+    const myUserId = myUserIdRaw ? Number(myUserIdRaw) : NaN;
+
+    if (!token || !Number.isFinite(myUserId)) {
+      Toast.show({
+        type: "error",
+        message: "위치 공유를 시작할 수 없어요. 다시 시도해주세요.",
+        duration: 3000,
+      });
+      return;
+    }
+
+    stopSessionLocationSharing();
+    setMeetingLocation(currentLocation);
+    setIsMoving(true);
+
+    const wsUrl = import.meta.env.VITE_WS_BASE_URL || "wss://api.snapforyou.cloud/ws";
+    const socket = new WebSocket(wsUrl);
+    sessionWsRef.current = socket;
+
+    const sendStompFrame = (command: string, headers: Record<string, string>, body = "") => {
+      const headerLines = Object.entries(headers).map(([key, value]) => `${key}:${value}`);
+      socket.send(`${command}\n${headerLines.join("\n")}\n\n${body}\0`);
+    };
+
+    const sendLocation = (location: LatLng) => {
+      if (!isSessionStompConnectedRef.current || socket.readyState !== WebSocket.OPEN) return;
+      sendStompFrame(
+        "SEND",
+        {
+          destination: `/pub/sessions/${sessionId}/location`,
+          "content-type": "application/json",
+        },
+        JSON.stringify({
+          latitude: location.lat,
+          longitude: location.lng,
+        })
+      );
+    };
+
+    socket.onopen = () => {
+      sendStompFrame("CONNECT", {
+        Authorization: `Bearer ${token}`,
+        "accept-version": "1.2,1.1,1.0",
+        "heart-beat": "10000,10000",
+      });
+    };
+
+    socket.onmessage = (event) => {
+      if (typeof event.data !== "string") return;
+      sessionWsBufferRef.current += event.data;
+
+      let frameEnd = sessionWsBufferRef.current.indexOf("\0");
+      while (frameEnd !== -1) {
+        const rawFrame = sessionWsBufferRef.current.slice(0, frameEnd);
+        sessionWsBufferRef.current = sessionWsBufferRef.current.slice(frameEnd + 1);
+        frameEnd = sessionWsBufferRef.current.indexOf("\0");
+
+        if (!rawFrame.trim()) continue;
+        const [headerPart, body = ""] = rawFrame.split("\n\n");
+        const headerLines = headerPart.split("\n");
+        const command = headerLines[0]?.trim();
+        const headers = new Map<string, string>();
+
+        for (const line of headerLines.slice(1)) {
+          const separatorIndex = line.indexOf(":");
+          if (separatorIndex === -1) continue;
+          const key = line.slice(0, separatorIndex).trim();
+          const value = line.slice(separatorIndex + 1).trim();
+          headers.set(key, value);
+        }
+
+        if (command === "CONNECTED") {
+          isSessionStompConnectedRef.current = true;
+          sendStompFrame("SUBSCRIBE", {
+            id: `session-location-${sessionId}`,
+            destination: `/sub/sessions/${sessionId}/location`,
+          });
+
+          if (typeof navigator !== "undefined" && navigator.geolocation) {
+            sessionWatchIdRef.current = navigator.geolocation.watchPosition(
+              (position) => {
+                const location = {
+                  lat: position.coords.latitude,
+                  lng: position.coords.longitude,
+                };
+                setCurrentLocation(location);
+                sendLocation(location);
+              },
+              () => {
+                Toast.show({
+                  type: "error",
+                  message: "위치 정보를 가져오지 못했어요.",
+                  duration: 2500,
+                });
+              },
+              {
+                enableHighAccuracy: true,
+                maximumAge: 3000,
+                timeout: 10000,
+              }
+            );
+          }
+          continue;
+        }
+
+        if (command !== "MESSAGE") continue;
+        const destination = headers.get("destination");
+        if (destination !== `/sub/sessions/${sessionId}/location`) continue;
+
+        try {
+          const parsed = JSON.parse(body) as {
+            userId: number;
+            latitude: number;
+            longitude: number;
+          };
+
+          if (parsed.userId === myUserId) continue;
+          if (!Number.isFinite(parsed.latitude) || !Number.isFinite(parsed.longitude)) continue;
+
+          setPartnerLocation({
+            lat: parsed.latitude,
+            lng: parsed.longitude,
+          });
+        } catch {
+          // Ignore malformed payload.
+        }
+      }
+    };
+
+    socket.onerror = () => {
+      Toast.show({
+        type: "error",
+        message: "위치 공유 연결에 실패했어요.",
+        duration: 3000,
+      });
+    };
+
+    socket.onclose = () => {
+      isSessionStompConnectedRef.current = false;
+    };
+  }, [currentLocation, isMoving, matchSession?.id, setCurrentLocation, stopSessionLocationSharing]);
 
   useEffect(() => {
     if (isManualLocationPhase) {
@@ -576,11 +780,21 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   }, [isMatchExpiredModalOpen, isMatchRetryLimitModalOpen, phase, transitionPhase]);
 
   useEffect(() => {
+    if (phase !== "idle") return;
+    if (!isMoving && !partnerLocation && !meetingLocation) return;
+    stopSessionLocationSharing();
+    setPartnerLocation(null);
+    setMeetingLocation(null);
+    setIsMoving(false);
+  }, [isMoving, meetingLocation, partnerLocation, phase, stopSessionLocationSharing]);
+
+  useEffect(() => {
     return () => {
       sseConnectionRef.current?.close();
       sseConnectionRef.current = null;
+      stopSessionLocationSharing();
     };
-  }, []);
+  }, [stopSessionLocationSharing]);
 
   const handleCancelMatchingRequest = useCallback(async () => {
     if (isCancellingMatchRequest) return;
@@ -592,8 +806,12 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
       pendingProposalRejectedRef.current = false;
       sseConnectionRef.current?.close();
       sseConnectionRef.current = null;
+      stopSessionLocationSharing();
       setMatchProposal(null);
       setMatchSession(null);
+      setPartnerLocation(null);
+      setMeetingLocation(null);
+      setIsMoving(false);
       setNearbyWaitingCount(null);
       setExpiredMatchRequest(null);
       setIsMatchExpiredModalOpen(false);
@@ -619,7 +837,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     } finally {
       setIsCancellingMatchRequest(false);
     }
-  }, [cancelMatchRequest, isCancellingMatchRequest, transitionPhase]);
+  }, [cancelMatchRequest, isCancellingMatchRequest, stopSessionLocationSharing, transitionPhase]);
 
   const handleBottomSheetSnapChange = useCallback(
     (snapState: "collapsed" | "full") => {
@@ -697,6 +915,10 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
 
         setMatchProposal(null);
         setMatchSession(null);
+        stopSessionLocationSharing();
+        setPartnerLocation(null);
+        setMeetingLocation(null);
+        setIsMoving(false);
         pendingProposalRejectedRef.current = false;
         setNearbyWaitingCount(null);
         setExpiredMatchRequest(null);
@@ -730,6 +952,10 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
         sseConnectionRef.current = null;
         setMatchProposal(null);
         setMatchSession(null);
+        stopSessionLocationSharing();
+        setPartnerLocation(null);
+        setMeetingLocation(null);
+        setIsMoving(false);
         pendingProposalRejectedRef.current = false;
         setNearbyWaitingCount(null);
         setExpiredMatchRequest(null);
@@ -907,6 +1133,8 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     isFabVisible,
     mapCenter,
     currentLocation,
+    partnerLocation,
+    meetingLocation,
     isManualLocationMode,
     isManualSearchPage,
     isSheetOpen: isCurrentLocationSheetOpen,
@@ -964,7 +1192,9 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     acceptedMatchDetailSheet: {
       isOpen: phase === "match-accepted",
       hasMatchSession: Boolean(matchSession),
+      isMoving,
       proposalRejectedSignal,
+      startMoving: startSessionLocationSharing,
       close: () => transitionPhase("idle"),
     },
     matchExpiredModal: {

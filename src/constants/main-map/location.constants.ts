@@ -7,3 +7,15 @@ export const PIN_ME = {
   size: { width: 60, height: 60 },
   options: { offset: { x: 30, y: 40 } },
 };
+
+export const PIN_OTHER = {
+  src: "/main-map/pin_other.png",
+  size: { width: 60, height: 60 },
+  options: { offset: { x: 30, y: 40 } },
+};
+
+export const PIN_MATCHED = {
+  src: "/main-map/pin_matched.png",
+  size: { width: 60, height: 60 },
+  options: { offset: { x: 30, y: 40 } },
+};

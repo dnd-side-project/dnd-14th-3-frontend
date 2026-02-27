@@ -1,10 +1,10 @@
-import { Camera, ChevronUp, MapPin, X } from "lucide-react";
+﻿import { Camera, ChevronUp, MapPin, X } from "lucide-react";
 import { Map, MapMarker } from "react-kakao-maps-sdk";
 
 import { type LatLng, type LocationAddressInfo } from "@/types/main-map/location.type";
 import { type MatchExpectedDuration } from "@/types/main-map/match-request.type";
 
-import { PIN_ME } from "@/constants/main-map/location.constants";
+import { PIN_ME, PIN_OTHER } from "@/constants/main-map/location.constants";
 
 import ManualLocationSearchButton from "@/components/main-map/ManualLocationSearchButton";
 import ManualLocationSearchOverlay from "@/components/main-map/ManualLocationSearchOverlay";
@@ -18,6 +18,8 @@ import { useEffect, useRef, useState } from "react";
 interface MainMapViewProps {
   mapCenter: LatLng;
   currentLocation: LatLng | null;
+  partnerLocation: LatLng | null;
+  meetingLocation: LatLng | null;
   isManualLocationMode: boolean;
   isManualSearchPage: boolean;
   isSheetOpen: boolean;
@@ -68,7 +70,9 @@ interface MainMapViewProps {
   acceptedMatchDetailSheet: {
     isOpen: boolean;
     hasMatchSession: boolean;
+    isMoving: boolean;
     proposalRejectedSignal: number;
+    startMoving: () => void;
     close: () => void;
   };
   matchExpiredModal: {
@@ -90,6 +94,8 @@ interface MainMapViewProps {
 export default function MainMapView({
   mapCenter,
   currentLocation,
+  partnerLocation,
+  meetingLocation,
   isManualLocationMode,
   isManualSearchPage,
   isSheetOpen,
@@ -110,6 +116,9 @@ export default function MainMapView({
 }: MainMapViewProps) {
   const [companionRequestSnapState, setCompanionRequestSnapState] = useState<"collapsed" | "full">(
     "full"
+  );
+  const [movingSheetSnapState, setMovingSheetSnapState] = useState<"collapsed" | "full">(
+    "collapsed"
   );
   const [isRejectConfirmModalOpen, setIsRejectConfirmModalOpen] = useState(false);
   const [isPeerRejectedFlow, setIsPeerRejectedFlow] = useState(false);
@@ -192,6 +201,7 @@ export default function MainMapView({
         {currentLocation && !isCenterPinMode ? (
           <MapMarker position={currentLocation} image={PIN_ME} />
         ) : null}
+        {partnerLocation ? <MapMarker position={partnerLocation} image={PIN_OTHER} /> : null}
       </Map>
 
       {isCenterPinMode ? (
@@ -515,7 +525,11 @@ export default function MainMapView({
       />
 
       <BottomSheet
-        isOpen={acceptedMatchDetailSheet.isOpen && acceptedMatchDetailSheet.hasMatchSession}
+        isOpen={
+          acceptedMatchDetailSheet.isOpen &&
+          acceptedMatchDetailSheet.hasMatchSession &&
+          !acceptedMatchDetailSheet.isMoving
+        }
         onClose={acceptedMatchDetailSheet.close}
         showBackdrop
         backdropClick="none"
@@ -558,9 +572,65 @@ export default function MainMapView({
           </div>
         }
         footer={
-          <Button.Primary fullWidth onClick={() => {}}>
+          <Button.Primary fullWidth onClick={acceptedMatchDetailSheet.startMoving}>
             이동하기
           </Button.Primary>
+        }
+      />
+
+      <BottomSheet
+        isOpen={
+          acceptedMatchDetailSheet.isOpen &&
+          acceptedMatchDetailSheet.hasMatchSession &&
+          acceptedMatchDetailSheet.isMoving
+        }
+        onClose={acceptedMatchDetailSheet.close}
+        showBackdrop={false}
+        backdropClick="none"
+        draggable
+        dragToClose={false}
+        initialSnap="collapsed"
+        onSnapChange={setMovingSheetSnapState}
+        header={(actions) => (
+          <div className="flex items-center justify-between gap-2 pt-2 px-4 pb-4">
+            <div className="flex items-center gap-2">
+              <div className="flex flex-row items-center gap-2">
+                <MapPin />
+                <div className="text-heading-2 font-bold text-gray-900">이동 중</div>
+              </div>
+            </div>
+            <button
+              type="button"
+              aria-label={
+                movingSheetSnapState === "collapsed" ? "바텀시트 펼치기" : "바텀시트 접기"
+              }
+              className="inline-flex size-7 items-center justify-center rounded-md text-gray-700 hover:bg-gray-100"
+              onClick={() => {
+                if (movingSheetSnapState === "collapsed") {
+                  actions.expand();
+                  return;
+                }
+                actions.collapse();
+              }}
+            >
+              {movingSheetSnapState === "collapsed" ? (
+                <ChevronUp className="size-5" />
+              ) : (
+                <X className="size-5" />
+              )}
+            </button>
+          </div>
+        )}
+        renderContent={
+          <div className="text-body-2 text-gray-500">
+            도착 완료 시 버튼을 누르면 상대방에게 알림이 가요.
+          </div>
+        }
+        footer={
+          <div className="flex items-center gap-4">
+            <Button.Secondary fullWidth>길찾기</Button.Secondary>
+            <Button.Primary fullWidth>도착 완료</Button.Primary>
+          </div>
         }
       />
 
