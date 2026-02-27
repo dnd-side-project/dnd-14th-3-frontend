@@ -7,12 +7,14 @@ import axios from "axios";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
+import SockJS from "sockjs-client";
 
 import { type LatLng } from "@/types/main-map/location.type";
 import { type MapPhase } from "@/types/main-map/map-phase.type";
 import { type MatchExpectedDuration } from "@/types/main-map/match-request.type";
 
 import { logger } from "@/lib/shared/logger";
+import { createMockSessionSocket } from "@/mocks/ws/sessionSocket.mock";
 
 import { getAccessToken } from "@/api/client";
 import {
@@ -57,6 +59,170 @@ type CompanionRequestFormValues = z.infer<typeof companionRequestSchema>;
 const MATCH_FLOW_STORAGE_KEY = "main-map-match-flow-v1";
 const MATCH_FLOW_TTL_MS = 30 * 60 * 1000;
 const MAX_MATCH_RETRY_COUNT = 2;
+const SOCKET_OPEN_STATE = 1;
+
+type SessionSocketMessageType = "LOCATION" | "USER_ARRIVED" | "SESSION_READY" | "SESSION_END";
+
+type LocationSessionSocketMessage = {
+  type: "LOCATION";
+  sessionId: number;
+  senderId: number;
+  timestamp: string;
+  data: {
+    latitude: number;
+    longitude: number;
+  };
+};
+
+type UserArrivedSessionSocketMessage = {
+  type: "USER_ARRIVED";
+  sessionId: number;
+  senderId: number;
+  timestamp: string;
+  data: {
+    isArrived: boolean;
+  };
+};
+
+type SessionReadySocketMessage = {
+  type: "SESSION_READY";
+  sessionId: number;
+  senderId: null;
+  timestamp: string;
+  data: {
+    status: string;
+  };
+};
+
+type SessionEndSocketMessage = {
+  type: "SESSION_END";
+  sessionId: number;
+  senderId: number | null;
+  timestamp: string;
+  data: {
+    status: string;
+  };
+};
+
+type SessionSocketMessage =
+  | LocationSessionSocketMessage
+  | UserArrivedSessionSocketMessage
+  | SessionReadySocketMessage
+  | SessionEndSocketMessage;
+
+type LegacyLocationSocketMessage = {
+  userId: number;
+  latitude: number;
+  longitude: number;
+  timestamp?: string;
+};
+
+type StompCompatibleSocket = {
+  close: () => void;
+  send: (data: string) => void;
+  onopen: ((event: Event) => void) | null;
+  onmessage: ((event: MessageEvent) => void) | null;
+  onerror: ((event: Event) => void) | null;
+  onclose: ((event: CloseEvent) => void) | null;
+  readyState: number;
+};
+
+function toSockJsUrl(wsUrl: string): string {
+  if (wsUrl.startsWith("wss://")) return `https://${wsUrl.slice("wss://".length)}`;
+  if (wsUrl.startsWith("ws://")) return `http://${wsUrl.slice("ws://".length)}`;
+  return wsUrl;
+}
+
+function normalizeIncomingSessionMessage(
+  raw: unknown,
+  expectedSessionId: number
+): SessionSocketMessage | null {
+  if (!raw || typeof raw !== "object") return null;
+
+  const candidate = raw as Record<string, unknown>;
+  if (typeof candidate.type === "string") {
+    const type = candidate.type as SessionSocketMessageType;
+    const sessionId = Number(candidate.sessionId);
+    const senderIdRaw = candidate.senderId;
+    const senderId =
+      senderIdRaw == null
+        ? null
+        : Number.isFinite(Number(senderIdRaw))
+          ? Number(senderIdRaw)
+          : null;
+    const timestamp = typeof candidate.timestamp === "string" ? candidate.timestamp : "";
+    const data = candidate.data as Record<string, unknown> | undefined;
+
+    if (!Number.isFinite(sessionId) || sessionId !== expectedSessionId || !data) return null;
+
+    if (type === "LOCATION") {
+      const latitude = Number(data.latitude);
+      const longitude = Number(data.longitude);
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || senderId == null)
+        return null;
+      return {
+        type,
+        sessionId,
+        senderId,
+        timestamp,
+        data: { latitude, longitude },
+      };
+    }
+
+    if (type === "USER_ARRIVED") {
+      if (typeof data.isArrived !== "boolean" || senderId == null) return null;
+      return {
+        type,
+        sessionId,
+        senderId,
+        timestamp,
+        data: { isArrived: data.isArrived },
+      };
+    }
+
+    if (type === "SESSION_READY") {
+      if (typeof data.status !== "string") return null;
+      return {
+        type,
+        sessionId,
+        senderId: null,
+        timestamp,
+        data: { status: data.status },
+      };
+    }
+
+    if (type === "SESSION_END") {
+      if (typeof data.status !== "string") return null;
+      return {
+        type,
+        sessionId,
+        senderId,
+        timestamp,
+        data: { status: data.status },
+      };
+    }
+  }
+
+  const legacy = raw as LegacyLocationSocketMessage;
+  if (
+    Number.isFinite(legacy.userId) &&
+    Number.isFinite(legacy.latitude) &&
+    Number.isFinite(legacy.longitude)
+  ) {
+    return {
+      type: "LOCATION",
+      sessionId: expectedSessionId,
+      senderId: legacy.userId,
+      timestamp: typeof legacy.timestamp === "string" ? legacy.timestamp : "",
+      data: {
+        latitude: legacy.latitude,
+        longitude: legacy.longitude,
+      },
+    };
+  }
+
+  return null;
+}
 
 function toDurationLabel(duration: string | null | undefined) {
   if (duration === "TEN_MINUTES") return "10분";
@@ -177,9 +343,8 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   const currentLocationSheet = useBottomSheet();
   const companionRequestSheet = useBottomSheet();
   const sseConnectionRef = useRef<SseConnection | null>(null);
-  const sessionWsRef = useRef<WebSocket | null>(null);
+  const sessionWsRef = useRef<StompCompatibleSocket | null>(null);
   const sessionWatchIdRef = useRef<number | null>(null);
-  const mockPartnerTimerRef = useRef<number | null>(null);
   const isSessionStompConnectedRef = useRef(false);
   const sessionWsBufferRef = useRef("");
   const isManualSearchPage = searchParams.get("manualSearch") === "1";
@@ -401,10 +566,6 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   }, [transitionPhase]);
 
   const stopSessionLocationSharing = useCallback(() => {
-    if (mockPartnerTimerRef.current != null) {
-      window.clearInterval(mockPartnerTimerRef.current);
-      mockPartnerTimerRef.current = null;
-    }
     if (
       sessionWatchIdRef.current != null &&
       typeof navigator !== "undefined" &&
@@ -450,32 +611,44 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     const currentSessionId = sessionId;
     if (!currentSessionId) return;
 
-    const isMockMode = import.meta.env.VITE_MSW_ENABLED === "true";
-    if (isMockMode) {
-      stopSessionLocationSharing();
-      transitionPhase("moving");
-      const base = currentLocation ?? { lat: 37.5662, lng: 126.978 };
-      let tick = 0;
-      setPartnerLocation({
-        lat: base.lat + 0.00035,
-        lng: base.lng - 0.00035,
-      });
-      mockPartnerTimerRef.current = window.setInterval(() => {
-        tick += 1;
-        const wobble = (tick % 2 === 0 ? 1 : -1) * 0.00007;
+    const handleSessionEventMessage = (eventMessage: SessionSocketMessage, myUserId?: number) => {
+      if (eventMessage.type === "LOCATION") {
+        if (myUserId != null && eventMessage.senderId === myUserId) return;
         setPartnerLocation({
-          lat: base.lat + 0.00035 + wobble,
-          lng: base.lng - 0.00035 - wobble,
+          lat: eventMessage.data.latitude,
+          lng: eventMessage.data.longitude,
         });
-      }, 3000);
-      return;
-    }
+        return;
+      }
 
+      if (eventMessage.type === "USER_ARRIVED") {
+        logger.info("[session-ws] user arrived", eventMessage);
+        return;
+      }
+
+      if (eventMessage.type === "SESSION_READY") {
+        logger.info("[session-ws] session ready", eventMessage);
+        Toast.show({
+          type: "success",
+          message: "모든 참여자가 도착했어요.",
+          duration: 2500,
+        });
+        return;
+      }
+
+      if (eventMessage.type === "SESSION_END") {
+        logger.info("[session-ws] session end", eventMessage);
+        stopSessionLocationSharing();
+        transitionPhase("idle");
+      }
+    };
+
+    const isMockMode = import.meta.env.VITE_MSW_ENABLED === "true";
     const token = getAccessToken();
     const myUserIdRaw = getUserIdFromToken();
-    const myUserId = myUserIdRaw ? Number(myUserIdRaw) : NaN;
+    const myUserId = isMockMode ? 3 : myUserIdRaw ? Number(myUserIdRaw) : NaN;
 
-    if (!token || !Number.isFinite(myUserId)) {
+    if ((!token && !isMockMode) || !Number.isFinite(myUserId)) {
       Toast.show({
         type: "error",
         message: "위치 공유를 시작할 수 없어요. 다시 시도해주세요.",
@@ -488,7 +661,9 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     transitionPhase("moving");
 
     const wsUrl = import.meta.env.VITE_WS_BASE_URL;
-    const socket = new WebSocket(wsUrl);
+    const socket = isMockMode
+      ? createMockSessionSocket(currentSessionId)
+      : (new SockJS(toSockJsUrl(wsUrl)) as unknown as StompCompatibleSocket);
     sessionWsRef.current = socket;
 
     const sendStompFrame = (command: string, headers: Record<string, string>, body = "") => {
@@ -497,7 +672,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     };
 
     const sendLocation = (location: LatLng) => {
-      if (!isSessionStompConnectedRef.current || socket.readyState !== WebSocket.OPEN) return;
+      if (!isSessionStompConnectedRef.current || socket.readyState !== SOCKET_OPEN_STATE) return;
       sendStompFrame(
         "SEND",
         {
@@ -505,6 +680,13 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
           "content-type": "application/json",
         },
         JSON.stringify({
+          type: "LOCATION",
+          sessionId: currentSessionId,
+          timestamp: new Date().toISOString(),
+          data: {
+            latitude: location.lat,
+            longitude: location.lng,
+          },
           latitude: location.lat,
           longitude: location.lng,
         })
@@ -513,7 +695,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
 
     socket.onopen = () => {
       sendStompFrame("CONNECT", {
-        Authorization: `Bearer ${token}`,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         "accept-version": "1.2,1.1,1.0",
         "heart-beat": "10000,10000",
       });
@@ -582,19 +764,10 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
         if (destination !== `/sub/sessions/${currentSessionId}/location`) continue;
 
         try {
-          const parsed = JSON.parse(body) as {
-            userId: number;
-            latitude: number;
-            longitude: number;
-          };
-
-          if (parsed.userId === myUserId) continue;
-          if (!Number.isFinite(parsed.latitude) || !Number.isFinite(parsed.longitude)) continue;
-
-          setPartnerLocation({
-            lat: parsed.latitude,
-            lng: parsed.longitude,
-          });
+          const parsed = JSON.parse(body) as unknown;
+          const eventMessage = normalizeIncomingSessionMessage(parsed, currentSessionId);
+          if (!eventMessage) continue;
+          handleSessionEventMessage(eventMessage, myUserId);
         } catch {
           // Ignore malformed payload.
         }
