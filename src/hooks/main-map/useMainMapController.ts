@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+﻿import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import { z } from "zod";
@@ -26,6 +26,7 @@ import {
 
 import { usePageLayoutStore } from "@/store/layout/pageLayout.store";
 import { useMainMapLocationStore } from "@/store/main-map/location.store";
+import { useMainMapSessionLocationStore } from "@/store/main-map/session-location.store";
 import { Toast } from "@/store/shared/toast/toast.store";
 
 import { getUserIdFromToken } from "@/services/auth/getUserIdFromToken.service";
@@ -41,6 +42,7 @@ import {
   useAcceptMatchProposal,
   useCancelMatchRequest,
   useCreateMatchRequest,
+  useGetMatchSession,
   useRejectMatchProposal,
   useRetryMatchRequest,
 } from "@/queries/match";
@@ -56,10 +58,23 @@ const MATCH_FLOW_STORAGE_KEY = "main-map-match-flow-v1";
 const MATCH_FLOW_TTL_MS = 30 * 60 * 1000;
 const MAX_MATCH_RETRY_COUNT = 2;
 
+function toDurationLabel(duration: string | null | undefined) {
+  if (duration === "TEN_MINUTES") return "10분";
+  if (duration === "TWENTY_MINUTES") return "20분";
+  if (duration === "OVER_THIRTY_MINUTES") return "30분 이상";
+  return "미정";
+}
+
+function toGenderLabel(gender: string | null | undefined) {
+  if (gender === "MALE") return "남";
+  if (gender === "FEMALE") return "여";
+  return "미정";
+}
+
 type PersistedMatchFlow = {
   phase: MapPhase;
   matchProposal: MatchProposalEventData | null;
-  matchSession: MatchSessionEventData | null;
+  sessionId: number | null;
   expiredMatchRequest: MatchRequestExpiredEventData | null;
   isMatchExpiredModalOpen: boolean;
   wasManualLocationMode: boolean;
@@ -87,7 +102,10 @@ function loadPersistedMatchFlow(): PersistedMatchFlow | null {
     return {
       phase: parsed.phase as MapPhase,
       matchProposal: parsed.matchProposal ?? null,
-      matchSession: parsed.matchSession ?? null,
+      sessionId:
+        typeof parsed.sessionId === "number"
+          ? parsed.sessionId
+          : ((parsed as { matchSession?: { id?: number } }).matchSession?.id ?? null),
       expiredMatchRequest: parsed.expiredMatchRequest ?? null,
       isMatchExpiredModalOpen: parsed.isMatchExpiredModalOpen ?? false,
       wasManualLocationMode: Boolean(parsed.wasManualLocationMode),
@@ -120,9 +138,20 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   const [matchProposal, setMatchProposal] = useState<MatchProposalEventData | null>(
     persistedMatchFlow?.matchProposal ?? null
   );
-  const [matchSession, setMatchSession] = useState<MatchSessionEventData | null>(
-    persistedMatchFlow?.matchSession ?? null
+  const [matchSession, setMatchSession] = useState<MatchSessionEventData | null>(null);
+  const [sessionId, setSessionId] = useState<number | null>(persistedMatchFlow?.sessionId ?? null);
+  const persistedSessionLocationId = useMainMapSessionLocationStore((state) => state.sessionId);
+  const persistedDestination = useMainMapSessionLocationStore((state) => state.destination);
+  const persistedPartnerLocation = useMainMapSessionLocationStore((state) => state.partnerLocation);
+  const setSessionLocationSessionId = useMainMapSessionLocationStore((state) => state.setSessionId);
+  const setPersistedDestination = useMainMapSessionLocationStore((state) => state.setDestination);
+  const setPersistedPartnerLocation = useMainMapSessionLocationStore(
+    (state) => state.setPartnerLocation
   );
+  const clearPersistedSessionLocations = useMainMapSessionLocationStore((state) => state.clear);
+  const shouldRestorePersistedSessionLocations =
+    persistedMatchFlow?.sessionId != null &&
+    persistedSessionLocationId === persistedMatchFlow.sessionId;
   const [expiredMatchRequest, setExpiredMatchRequest] =
     useState<MatchRequestExpiredEventData | null>(persistedMatchFlow?.expiredMatchRequest ?? null);
   const [isMatchExpiredModalOpen, setIsMatchExpiredModalOpen] = useState(
@@ -134,9 +163,12 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   const [isRetryingMatchRequest, setIsRetryingMatchRequest] = useState(false);
   const [nearbyWaitingCount, setNearbyWaitingCount] = useState<number | null>(null);
   const [proposalRejectedSignal, setProposalRejectedSignal] = useState(0);
-  const [partnerLocation, setPartnerLocation] = useState<LatLng | null>(null);
-  const [meetingLocation, setMeetingLocation] = useState<LatLng | null>(null);
-  const [isMoving, setIsMoving] = useState(false);
+  const [partnerLocation, setPartnerLocation] = useState<LatLng | null>(
+    shouldRestorePersistedSessionLocations ? persistedPartnerLocation : null
+  );
+  const [meetingLocation, setMeetingLocation] = useState<LatLng | null>(
+    shouldRestorePersistedSessionLocations ? persistedDestination : null
+  );
   const persistedLocation = useMainMapLocationStore((state) => state.selectedLocation);
   const [requestingManualMode, setRequestingManualMode] = useState(false);
   const setPersistedLocation = useMainMapLocationStore((state) => state.setSelectedLocation);
@@ -207,6 +239,76 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   const { mutateAsync: retryMatchRequest } = useRetryMatchRequest();
   const { mutateAsync: acceptMatchProposal } = useAcceptMatchProposal();
   const { mutateAsync: rejectMatchProposal } = useRejectMatchProposal();
+  const { data: matchSessionDetail, error: matchSessionError } = useGetMatchSession(sessionId);
+  const sessionDestination = matchSessionDetail?.data?.destination;
+
+  const partner = matchSessionDetail?.data?.partner;
+  const partnerProfileText = partner
+    ? `${partner.nickname} | ${toGenderLabel(partner.gender)}`
+    : "상대 정보를 불러오는 중이에요.";
+  const partnerExpectedDurationLabel = toDurationLabel(partner?.request?.expectedDuration);
+  const partnerRequestMessage =
+    partner?.request?.requestMessage?.trim() || "상대방 요청 메시지가 없어요.";
+
+  useEffect(() => {
+    if (!sessionDestination) return;
+    if (
+      !Number.isFinite(sessionDestination.latitude) ||
+      !Number.isFinite(sessionDestination.longitude)
+    ) {
+      return;
+    }
+
+    setMeetingLocation({
+      lat: sessionDestination.latitude,
+      lng: sessionDestination.longitude,
+    });
+  }, [sessionDestination]);
+
+  useEffect(() => {
+    if (!sessionId) {
+      clearPersistedSessionLocations();
+      return;
+    }
+
+    if (persistedSessionLocationId != null && persistedSessionLocationId !== sessionId) {
+      clearPersistedSessionLocations();
+    }
+    setSessionLocationSessionId(sessionId);
+  }, [
+    clearPersistedSessionLocations,
+    persistedSessionLocationId,
+    sessionId,
+    setSessionLocationSessionId,
+  ]);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    if (persistedSessionLocationId !== sessionId) return;
+    if (!meetingLocation && persistedDestination) {
+      setMeetingLocation(persistedDestination);
+    }
+    if (!partnerLocation && persistedPartnerLocation) {
+      setPartnerLocation(persistedPartnerLocation);
+    }
+  }, [
+    meetingLocation,
+    partnerLocation,
+    persistedDestination,
+    persistedPartnerLocation,
+    persistedSessionLocationId,
+    sessionId,
+  ]);
+
+  useEffect(() => {
+    if (!sessionId || persistedSessionLocationId !== sessionId) return;
+    setPersistedDestination(meetingLocation);
+  }, [meetingLocation, persistedSessionLocationId, sessionId, setPersistedDestination]);
+
+  useEffect(() => {
+    if (!sessionId || persistedSessionLocationId !== sessionId) return;
+    setPersistedPartnerLocation(partnerLocation);
+  }, [partnerLocation, persistedSessionLocationId, sessionId, setPersistedPartnerLocation]);
 
   const transitionPhase = useCallback((nextPhase: MapPhase) => {
     setPhase(nextPhase);
@@ -219,7 +321,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   }, [phase]);
 
   useEffect(() => {
-    if (phase !== "match-success" && phase !== "match-accepted") return;
+    if (phase !== "match-success" && phase !== "match-accepted" && phase !== "moving") return;
     if (!pendingProposalRejectedRef.current) return;
     pendingProposalRejectedRef.current = false;
     setProposalRejectedSignal((prev) => prev + 1);
@@ -239,7 +341,11 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
       onMatchProposalRejected: (proposal) => {
         logger.info("[match-sse] match.proposal.rejected received", proposal);
         setMatchProposal(proposal);
-        if (phaseRef.current === "match-success" || phaseRef.current === "match-accepted") {
+        if (
+          phaseRef.current === "match-success" ||
+          phaseRef.current === "match-accepted" ||
+          phaseRef.current === "moving"
+        ) {
           setProposalRejectedSignal((prev) => prev + 1);
           return;
         }
@@ -248,6 +354,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
       onMatchSession: (session) => {
         logger.info("[match-sse] match.session received", session);
         setMatchSession(session);
+        setSessionId(session.id);
         transitionPhase("match-accepted");
         if (pendingProposalRejectedRef.current) {
           pendingProposalRejectedRef.current = false;
@@ -262,6 +369,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
           setExpiredMatchRequest(expired);
           setMatchProposal(null);
           setMatchSession(null);
+          setSessionId(null);
           sseConnectionRef.current?.close();
           sseConnectionRef.current = null;
           transitionPhase("match-failed");
@@ -270,6 +378,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
         setExpiredMatchRequest(expired);
         setMatchProposal(null);
         setMatchSession(null);
+        setSessionId(null);
         setIsMatchExpiredModalOpen(true);
         sseConnectionRef.current?.close();
         sseConnectionRef.current = null;
@@ -296,7 +405,11 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
       window.clearInterval(mockPartnerTimerRef.current);
       mockPartnerTimerRef.current = null;
     }
-    if (sessionWatchIdRef.current != null && typeof navigator !== "undefined" && navigator.geolocation) {
+    if (
+      sessionWatchIdRef.current != null &&
+      typeof navigator !== "undefined" &&
+      navigator.geolocation
+    ) {
       navigator.geolocation.clearWatch(sessionWatchIdRef.current);
       sessionWatchIdRef.current = null;
     }
@@ -312,18 +425,36 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     sessionWsBufferRef.current = "";
   }, []);
 
-  const startSessionLocationSharing = useCallback(() => {
-    if (isMoving) return;
+  useEffect(() => {
+    const shouldValidateSession = phase === "match-accepted" || phase === "moving";
+    if (!shouldValidateSession || !sessionId || !matchSessionError) return;
 
-    const sessionId = matchSession?.id;
-    if (!sessionId) return;
+    const status = axios.isAxiosError(matchSessionError)
+      ? matchSessionError.response?.status
+      : undefined;
+    if (status !== 401 && status !== 404) return;
+
+    logger.warn("[match-session] session restore failed, reset to idle", { sessionId, status });
+    stopSessionLocationSharing();
+    setMatchProposal(null);
+    setMatchSession(null);
+    setSessionId(null);
+    setPartnerLocation(null);
+    setMeetingLocation(null);
+    transitionPhase("idle");
+  }, [matchSessionError, phase, sessionId, stopSessionLocationSharing, transitionPhase]);
+
+  const startSessionLocationSharing = useCallback(() => {
+    if (phaseRef.current === "moving") return;
+
+    const currentSessionId = sessionId;
+    if (!currentSessionId) return;
 
     const isMockMode = import.meta.env.VITE_MSW_ENABLED === "true";
     if (isMockMode) {
       stopSessionLocationSharing();
-      setMeetingLocation(currentLocation);
-      setIsMoving(true);
-      const base = currentLocation ?? { lat: 37.5665, lng: 126.978 };
+      transitionPhase("moving");
+      const base = currentLocation ?? { lat: 37.5662, lng: 126.978 };
       let tick = 0;
       setPartnerLocation({
         lat: base.lat + 0.00035,
@@ -354,8 +485,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     }
 
     stopSessionLocationSharing();
-    setMeetingLocation(currentLocation);
-    setIsMoving(true);
+    transitionPhase("moving");
 
     const wsUrl = import.meta.env.VITE_WS_BASE_URL || "wss://api.snapforyou.cloud/ws";
     const socket = new WebSocket(wsUrl);
@@ -371,7 +501,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
       sendStompFrame(
         "SEND",
         {
-          destination: `/pub/sessions/${sessionId}/location`,
+          destination: `/pub/sessions/${currentSessionId}/location`,
           "content-type": "application/json",
         },
         JSON.stringify({
@@ -416,8 +546,8 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
         if (command === "CONNECTED") {
           isSessionStompConnectedRef.current = true;
           sendStompFrame("SUBSCRIBE", {
-            id: `session-location-${sessionId}`,
-            destination: `/sub/sessions/${sessionId}/location`,
+            id: `session-location-${currentSessionId}`,
+            destination: `/sub/sessions/${currentSessionId}/location`,
           });
 
           if (typeof navigator !== "undefined" && navigator.geolocation) {
@@ -449,7 +579,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
 
         if (command !== "MESSAGE") continue;
         const destination = headers.get("destination");
-        if (destination !== `/sub/sessions/${sessionId}/location`) continue;
+        if (destination !== `/sub/sessions/${currentSessionId}/location`) continue;
 
         try {
           const parsed = JSON.parse(body) as {
@@ -482,7 +612,20 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     socket.onclose = () => {
       isSessionStompConnectedRef.current = false;
     };
-  }, [currentLocation, isMoving, matchSession?.id, setCurrentLocation, stopSessionLocationSharing]);
+  }, [
+    currentLocation,
+    sessionId,
+    setCurrentLocation,
+    stopSessionLocationSharing,
+    transitionPhase,
+  ]);
+
+  useEffect(() => {
+    if (phase !== "moving") return;
+    if (!sessionId) return;
+    if (partnerLocation) return;
+    startSessionLocationSharing();
+  }, [partnerLocation, phase, sessionId, startSessionLocationSharing]);
 
   useEffect(() => {
     if (isManualLocationPhase) {
@@ -744,7 +887,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     savePersistedMatchFlow({
       phase,
       matchProposal,
-      matchSession,
+      sessionId,
       expiredMatchRequest,
       isMatchExpiredModalOpen,
       wasManualLocationMode: requestingManualMode,
@@ -754,9 +897,9 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     expiredMatchRequest,
     isMatchExpiredModalOpen,
     matchProposal,
-    matchSession,
     phase,
     requestingManualMode,
+    sessionId,
   ]);
 
   useEffect(() => {
@@ -781,12 +924,11 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
 
   useEffect(() => {
     if (phase !== "idle") return;
-    if (!isMoving && !partnerLocation && !meetingLocation) return;
+    if (!partnerLocation && !meetingLocation) return;
     stopSessionLocationSharing();
     setPartnerLocation(null);
     setMeetingLocation(null);
-    setIsMoving(false);
-  }, [isMoving, meetingLocation, partnerLocation, phase, stopSessionLocationSharing]);
+  }, [meetingLocation, partnerLocation, phase, stopSessionLocationSharing]);
 
   useEffect(() => {
     return () => {
@@ -809,9 +951,9 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
       stopSessionLocationSharing();
       setMatchProposal(null);
       setMatchSession(null);
+      setSessionId(null);
       setPartnerLocation(null);
       setMeetingLocation(null);
-      setIsMoving(false);
       setNearbyWaitingCount(null);
       setExpiredMatchRequest(null);
       setIsMatchExpiredModalOpen(false);
@@ -915,10 +1057,10 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
 
         setMatchProposal(null);
         setMatchSession(null);
+        setSessionId(null);
         stopSessionLocationSharing();
         setPartnerLocation(null);
         setMeetingLocation(null);
-        setIsMoving(false);
         pendingProposalRejectedRef.current = false;
         setNearbyWaitingCount(null);
         setExpiredMatchRequest(null);
@@ -952,10 +1094,10 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
         sseConnectionRef.current = null;
         setMatchProposal(null);
         setMatchSession(null);
+        setSessionId(null);
         stopSessionLocationSharing();
         setPartnerLocation(null);
         setMeetingLocation(null);
-        setIsMoving(false);
         pendingProposalRejectedRef.current = false;
         setNearbyWaitingCount(null);
         setExpiredMatchRequest(null);
@@ -1024,6 +1166,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     logger.info("[match-request] continue waiting after reject confirmation");
     setMatchProposal(null);
     setMatchSession(null);
+    setSessionId(null);
     transitionPhase("matching-in-progress");
   }, [transitionPhase]);
 
@@ -1061,6 +1204,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
 
       setMatchProposal(null);
       setMatchSession(null);
+      setSessionId(null);
       setExpiredMatchRequest(null);
       setIsMatchExpiredModalOpen(false);
       setNearbyWaitingCount(response.data?.nearbyWaitingCount ?? null);
@@ -1190,10 +1334,13 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
       close: () => transitionPhase("idle"),
     },
     acceptedMatchDetailSheet: {
-      isOpen: phase === "match-accepted",
-      hasMatchSession: Boolean(matchSession),
-      isMoving,
+      isOpen: phase === "match-accepted" || phase === "moving",
+      hasMatchSession: Boolean(sessionId),
+      isMoving: phase === "moving",
       proposalRejectedSignal,
+      partnerProfileText,
+      partnerExpectedDurationLabel,
+      partnerRequestMessage,
       startMoving: startSessionLocationSharing,
       close: () => transitionPhase("idle"),
     },

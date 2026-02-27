@@ -1,4 +1,4 @@
-import { http, HttpResponse, type RequestHandler } from "msw";
+﻿import { http, HttpResponse, type RequestHandler } from "msw";
 
 import {
   type CreateMatchRequestData,
@@ -89,6 +89,7 @@ export const mainMapHandlers: RequestHandler[] = [
       updatedAt: nowIso,
     };
 
+
     return HttpResponse.json(
       {
         success: true,
@@ -137,6 +138,75 @@ export const mainMapHandlers: RequestHandler[] = [
     );
   }),
 
+  http.get("/api/v1/match-sessions/:sessionId", ({ params }) => {
+    const sessionId = Number(params.sessionId);
+    if (!Number.isFinite(sessionId)) {
+      return HttpResponse.json(
+        {
+          success: false,
+          message: "매칭 세션을 찾을 수 없습니다.",
+          code: "MATCH_SESSION_NOT_FOUND",
+          data: null,
+        },
+        { status: 404 }
+      );
+    }
+
+    const fallbackLocation = { latitude: 37.5665, longitude: 126.978 };
+    const sourceLocation = mockCurrentMatchRequest?.location ?? fallbackLocation;
+    const sourceMatchRequestId = mockCurrentMatchRequest?.matchRequestId ?? 100;
+    const sourceMatchStatus = mockCurrentMatchRequest?.status ?? "WAITING";
+    const sourceSpecificPlace = mockCurrentMatchRequest?.specificPlace ?? "서울시청 앞";
+    const sourceRequestMessage =
+      mockCurrentMatchRequest?.requestMessage ?? "전신 사진 구도 맞춰서 찍어주실 분 구해요.";
+    const sourceExpectedDuration = mockCurrentMatchRequest?.expectedDuration ?? "TWENTY_MINUTES";
+
+    return HttpResponse.json(
+      {
+        success: true,
+        message: "매칭 세션 조회 성공",
+        code: "MATCH_SESSION_FOUND",
+        data: {
+          id: sessionId,
+          status: "ACTIVE",
+          destination: {
+            latitude: sourceLocation.latitude - 0.0005,
+            longitude: sourceLocation.longitude + 0.0005,
+          },
+          matchedAt: new Date().toISOString(),
+          endedAt: null,
+          me: {
+            userId: 3,
+            nickname: "me",
+            gender: "MALE",
+            arrived: false,
+            request: {
+              matchRequestId: sourceMatchRequestId,
+              status: sourceMatchStatus,
+              specificPlace: sourceSpecificPlace,
+              requestMessage: sourceRequestMessage,
+              expectedDuration: sourceExpectedDuration,
+            },
+          },
+          partner: {
+            userId: 4,
+            nickname: "사진메이트",
+            gender: "FEMALE",
+            arrived: false,
+            request: {
+              matchRequestId: sourceMatchRequestId + 1,
+              status: "WAITING",
+              specificPlace: sourceSpecificPlace,
+              requestMessage: "전신 사진 구도 맞춰서 찍어주실 분 구해요.",
+              expectedDuration: "TWENTY_MINUTES",
+            },
+          },
+        },
+      },
+      { status: 200 }
+    );
+  }),
+
   http.delete("/api/v1/match-requests/me", () => {
     mockIsWaitingForMatch = false;
     mockPendingMatchSession = null;
@@ -173,7 +243,7 @@ export const mainMapHandlers: RequestHandler[] = [
       return HttpResponse.json(
         {
           success: false,
-          message: "아직 대기 시간이 남아있어 재시도할 수 없습니다.",
+          message: "아직 대기 시간이 남아 있어 재시도할 수 없습니다.",
           code: "MATCH_REQUEST_NOT_EXPIRED",
           data: null,
         },
@@ -389,3 +459,4 @@ export const mainMapHandlers: RequestHandler[] = [
     });
   }),
 ];
+

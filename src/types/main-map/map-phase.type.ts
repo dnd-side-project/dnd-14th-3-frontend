@@ -6,4 +6,5 @@ export type MapPhase =
   | "matching-in-progress"
   | "match-success"
   | "match-accepted"
+  | "moving"
   | "match-failed";

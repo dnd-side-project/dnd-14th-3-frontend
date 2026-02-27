@@ -4,7 +4,7 @@ import { Map, MapMarker } from "react-kakao-maps-sdk";
 import { type LatLng, type LocationAddressInfo } from "@/types/main-map/location.type";
 import { type MatchExpectedDuration } from "@/types/main-map/match-request.type";
 
-import { PIN_ME, PIN_OTHER } from "@/constants/main-map/location.constants";
+import { PIN_MATCHED, PIN_ME, PIN_OTHER } from "@/constants/main-map/location.constants";
 
 import ManualLocationSearchButton from "@/components/main-map/ManualLocationSearchButton";
 import ManualLocationSearchOverlay from "@/components/main-map/ManualLocationSearchOverlay";
@@ -72,6 +72,9 @@ interface MainMapViewProps {
     hasMatchSession: boolean;
     isMoving: boolean;
     proposalRejectedSignal: number;
+    partnerProfileText: string;
+    partnerExpectedDurationLabel: string;
+    partnerRequestMessage: string;
     startMoving: () => void;
     close: () => void;
   };
@@ -202,6 +205,9 @@ export default function MainMapView({
           <MapMarker position={currentLocation} image={PIN_ME} />
         ) : null}
         {partnerLocation ? <MapMarker position={partnerLocation} image={PIN_OTHER} /> : null}
+        {acceptedMatchDetailSheet.isOpen && meetingLocation ? (
+          <MapMarker position={meetingLocation} image={PIN_MATCHED} />
+        ) : null}
       </Map>
 
       {isCenterPinMode ? (
@@ -545,29 +551,30 @@ export default function MainMapView({
           </div>
         )}
         renderContent={
-          <div className="space-y-2">
+          <div className="space-y-2 h-[64vh] ">
             <div>
               <div className="py-2 flex flex-row justify-between">
                 <div className="text-body-1 font-bold">프로필</div>
-                <div className="text-caption-1 text-white font-bold bg-mint-500 px-2 py-1.5 rounded-[8px]">
+                {/* <div className="text-caption-1 text-white font-bold bg-mint-500 px-2 py-1.5 rounded-[8px]">
                   10분 후 도착 예정
-                </div>
+                </div> */}
               </div>
               <div className="text-body-2 text-gray-500">
-                <div>이하선 | 여 | 26세</div>
-                <div>신뢰도가 높은 메이트예요(5점)</div>
+                <div>{acceptedMatchDetailSheet.partnerProfileText}</div>
               </div>
             </div>
             <div>
               <div className="py-2 text-body-1 font-bold">촬영 예상 소요 시간</div>
               <span className="inline-flex items-center gap-1 border border-mint-500 text-caption-1 rounded-md px-2 py-1">
                 <Camera className="text-mint-500" size={16} />
-                <p>20분</p>
+                <p>{acceptedMatchDetailSheet.partnerExpectedDurationLabel}</p>
               </span>
             </div>
             <div>
               <div className="py-2 text-body-1 font-bold">요청 메세지</div>
-              <div className="border border-mint-500 rounded-md p-3">사진 촬영을 도와주세요!</div>
+              <div className="border border-mint-500 rounded-md p-3 min-h-[122px]">
+                {acceptedMatchDetailSheet.partnerRequestMessage}
+              </div>
             </div>
           </div>
         }

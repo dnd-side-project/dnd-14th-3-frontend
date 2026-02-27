@@ -3,6 +3,7 @@ export const queryKeys = {
     all: ["match"] as const,
     request: (matchRequestId: number) => ["match", "request", matchRequestId] as const,
     requestStatus: (matchRequestId: number) => ["match", "request-status", matchRequestId] as const,
+    session: (sessionId: number) => ["match", "session", sessionId] as const,
     proposals: ["match", "proposals"] as const,
   },
   user: {

@@ -1,6 +1,7 @@
 export { acceptMatchProposalApi } from "./acceptMatchProposal.api";
 export { cancelMatchRequestApi } from "./cancelMatchRequest.api";
 export { createMatchRequestApi } from "./createMatchRequest.api";
+export { getMatchSessionApi } from "./getMatchSession.api";
 export { getMatchRequestStatusApi } from "./getMatchRequestStatus.api";
 export { rejectMatchProposalApi } from "./rejectMatchProposal.api";
 export { retryMatchRequestApi } from "./retryMatchRequest.api";
@@ -12,6 +13,13 @@ export type {
   SseConnection,
 } from "./sse.api";
 export { connectMatchSseApi } from "./sse.api";
+export type {
+  GetMatchSessionResponse,
+  MatchSessionData,
+  MatchSessionExpectedDuration,
+  MatchSessionParticipant,
+  MatchSessionRequest,
+} from "./getMatchSession.api";
 export type {
   CreateMatchRequestData,
   CreateMatchRequestPayload,
