@@ -1,41 +1,25 @@
 import { useEffect } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 
+import { jwtDecode } from "jwt-decode";
+
 import { logger } from "@/lib/shared/logger";
 
 import { useAuthStore } from "@/store/auth/auth.store";
 
-function parseJwtExp(token: string): number | null {
-  const parts = token.split(".");
-  if (parts.length < 2) return null;
-
-  try {
-    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
-    const payload = JSON.parse(atob(padded)) as unknown;
-
-    if (!payload || typeof payload !== "object") {
-      return null;
-    }
-
-    const exp = (payload as Record<string, unknown>).exp;
-    if (typeof exp === "number" && Number.isFinite(exp)) {
-      return exp;
-    }
-    if (typeof exp === "string") {
-      const parsed = Number(exp);
-      return Number.isFinite(parsed) ? parsed : null;
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
+type JwtPayload = { exp?: number | string };
 
 function isTokenExpired(token: string): boolean {
-  const exp = parseJwtExp(token);
-  if (exp === null) return true;
-  return Date.now() >= exp * 1000;
+  try {
+    const decoded = jwtDecode<JwtPayload>(token);
+    const exp = decoded.exp;
+    const expNumber =
+      typeof exp === "number" ? exp : typeof exp === "string" ? Number(exp) : Number.NaN;
+    if (!Number.isFinite(expNumber)) return true;
+    return Date.now() >= expNumber * 1000;
+  } catch {
+    return true;
+  }
 }
 
 export default function ProtectedRoute() {
