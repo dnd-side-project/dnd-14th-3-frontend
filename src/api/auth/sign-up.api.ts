@@ -1,20 +1,11 @@
-import type { Gender } from "@/types/profile";
+import type { AgeRange, Gender } from "@/types/profile";
 
 import { apiClient } from "@/api/client";
-
-export type AgeGroup =
-  | "TEENS"
-  | "TWENTIES"
-  | "THIRTIES"
-  | "FORTIES"
-  | "FIFTIES"
-  | "SIXTIES"
-  | "SEVENTIES_AND_ABOVE";
 
 export interface SignupRequest {
   nickname: string;
   gender: Gender;
-  ageGroup: AgeGroup;
+  ageGroup: AgeRange;
   introduction: string;
   profileImageUrl?: string;
   photoStyles: string[];
