@@ -38,6 +38,7 @@ export const authHandlers: RequestHandler[] = [
           data: {
             isNewUser: true,
             registerToken: MOCK_REGISTER_TOKEN,
+            profileImageUrl: "https://mock.cdn/profile.jpg",
           },
         },
         { status: 200 }
@@ -56,16 +57,21 @@ export const authHandlers: RequestHandler[] = [
         data: {
           isNewUser: false,
           accessToken: MOCK_ACCESS_TOKEN,
-          refreshToken: MOCK_REFRESH_TOKEN,
         },
       },
-      { status: 200 }
+      {
+        status: 200,
+        headers: {
+          "Set-Cookie": `refresh_token=${MOCK_REFRESH_TOKEN}; Path=/; HttpOnly; SameSite=Lax`,
+        },
+      }
     );
   }),
   http.post("/api/v1/auth/refresh", ({ request }) => {
-    const authorization = request.headers.get("authorization");
+    const cookie = request.headers.get("cookie") ?? "";
+    const hasRefreshToken = cookie.includes(`refresh_token=${MOCK_REFRESH_TOKEN}`);
 
-    if (authorization !== `Bearer ${MOCK_REFRESH_TOKEN}`) {
+    if (!hasRefreshToken) {
       return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
@@ -76,7 +82,6 @@ export const authHandlers: RequestHandler[] = [
         code: "",
         data: {
           accessToken: MOCK_ACCESS_TOKEN,
-          refreshToken: MOCK_REFRESH_TOKEN,
         },
       },
       { status: 200 }
@@ -117,7 +122,13 @@ export const authHandlers: RequestHandler[] = [
     const registerToken = request.headers.get("Register-Token") ?? request.headers.get("register-token");
     const body = (await request.json()) as SignupRequest;
 
-    if (!body.gender || !body.nickname || !body.photoStyles?.length) {
+    if (
+      !body.gender ||
+      !body.nickname ||
+      !body.ageGroup ||
+      typeof body.introduction !== "string" ||
+      !body.photoStyles?.length
+    ) {
       return HttpResponse.json(
         { success: false, message: "잘못된 요청입니다.", code: "INVALID_REQUEST", data: null },
         { status: 400 }
@@ -152,10 +163,14 @@ export const authHandlers: RequestHandler[] = [
         code: "",
         data: {
           accessToken: MOCK_ACCESS_TOKEN,
-          refreshToken: MOCK_REFRESH_TOKEN,
         },
       },
-      { status: 200 }
+      {
+        status: 200,
+        headers: {
+          "Set-Cookie": `refresh_token=${MOCK_REFRESH_TOKEN}; Path=/; HttpOnly; SameSite=Lax`,
+        },
+      }
     );
   }),
 ];

@@ -150,7 +150,7 @@ const meta = {
     },
     ageRange: {
       control: "select",
-      options: ["", "10s", "20s", "30s", "40s", "50s", "60s", "over-70s"],
+      options: ["", "TEENS", "TWENTIES", "THIRTIES", "FORTIES", "FIFTIES_AND_ABOVE"],
       description: "나이대",
     },
     preferredStyles: {
@@ -257,7 +257,7 @@ export const StepPhotoStyle: Story = {
     initialStep: "shooting-style",
     newUsername: "테스트유저",
     gender: "MALE",
-    ageRange: "20s",
+    ageRange: "TWENTIES",
     preferredStyles: "",
     introduction: "",
     onComplete: () => window.alert("프로필 설정이 완료되었습니다."),
@@ -276,7 +276,7 @@ export const StepIntroduction: Story = {
     initialStep: "introduction",
     newUsername: "테스트유저",
     gender: "MALE",
-    ageRange: "20s",
+    ageRange: "TWENTIES",
     preferredStyles: "UPPER_BODY_FOCUS,FULL_BODY",
     introduction: "",
     onComplete: () => window.alert("프로필 설정이 완료되었습니다."),

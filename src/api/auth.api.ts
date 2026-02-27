@@ -2,9 +2,8 @@ import { z } from "zod";
 
 import { apiClient } from "@/api/client";
 
-type TokenPair = {
+type AccessTokenPayload = {
   accessToken: string;
-  refreshToken: string;
 };
 
 type ApiSuccess<T> = {
@@ -18,7 +17,7 @@ function getStringCandidate(value: unknown): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
 }
 
-function normalizeTokenPair(source: unknown): TokenPair | null {
+function normalizeAccessToken(source: unknown): AccessTokenPayload | null {
   if (!source || typeof source !== "object") {
     return null;
   }
@@ -34,19 +33,11 @@ function normalizeTokenPair(source: unknown): TokenPair | null {
     getStringCandidate(tokenObject?.access_token) ??
     getStringCandidate(tokensObject?.accessToken) ??
     getStringCandidate(tokensObject?.access_token);
-  const refreshToken =
-    getStringCandidate(payload.refreshToken) ??
-    getStringCandidate(payload.refresh_token) ??
-    getStringCandidate(tokenObject?.refreshToken) ??
-    getStringCandidate(tokenObject?.refresh_token) ??
-    getStringCandidate(tokensObject?.refreshToken) ??
-    getStringCandidate(tokensObject?.refresh_token);
-
-  if (!accessToken || !refreshToken) {
+  if (!accessToken) {
     return null;
   }
 
-  return { accessToken, refreshToken };
+  return { accessToken };
 }
 
 function normalizeKakaoLoginData(source: unknown) {
@@ -67,36 +58,36 @@ function normalizeKakaoLoginData(source: unknown) {
     return {
       isNewUser: true,
       registerToken,
+      profileImageUrl: getStringCandidate(payload.profileImageUrl) ?? undefined,
     };
   }
 
   if (isNewUser === false) {
-    const tokenPair = normalizeTokenPair(source);
+    const accessTokenPayload = normalizeAccessToken(source);
     return {
       isNewUser: false,
-      accessToken: tokenPair?.accessToken,
-      refreshToken: tokenPair?.refreshToken,
+      accessToken: accessTokenPayload?.accessToken,
     };
   }
 
   return source;
 }
 
-const tokenPairSchema = z.object({
+const accessTokenSchema = z.object({
   accessToken: z.string().min(1),
-  refreshToken: z.string().min(1),
 });
 
 const kakaoLoginDataSchema = z.union([
   z.object({
     isNewUser: z.literal(true),
     registerToken: z.string().min(1),
+    profileImageUrl: z.string().optional(),
   }),
   z
     .object({
       isNewUser: z.literal(false),
     })
-    .merge(tokenPairSchema),
+    .merge(accessTokenSchema),
 ]);
 
 const kakaoLoginResponseSchema = z
@@ -111,7 +102,7 @@ const kakaoLoginResponseSchema = z
     data: kakaoLoginDataSchema.parse(normalizeKakaoLoginData(response.data)),
   }));
 
-const tokenPairResponseSchema = z
+const accessTokenResponseSchema = z
   .object({
     success: z.literal(true),
     message: z.string(),
@@ -120,7 +111,7 @@ const tokenPairResponseSchema = z
   })
   .transform((response) => ({
     ...response,
-    data: tokenPairSchema.parse(normalizeTokenPair(response.data)),
+    data: accessTokenSchema.parse(normalizeAccessToken(response.data)),
   }));
 
 const verifySessionResponseSchema = z.object({
@@ -135,13 +126,15 @@ export type KakaoLoginResponse = z.infer<typeof kakaoLoginResponseSchema>;
 export type SignupRequest = {
   nickname: string;
   gender: string;
-  profileImageUrl: string;
+  ageGroup: string;
+  introduction: string;
+  profileImageUrl?: string;
   photoStyles: string[];
 };
 
-export type SignupResponse = ApiSuccess<TokenPair>;
+export type SignupResponse = ApiSuccess<AccessTokenPayload>;
 
-export type RefreshResponse = ApiSuccess<TokenPair>;
+export type RefreshResponse = ApiSuccess<AccessTokenPayload>;
 export type VerifySessionResponse = ApiSuccess<string>;
 
 export async function loginWithKakaoCodeApi(code: string) {
@@ -159,17 +152,13 @@ export async function signupWithRegisterTokenApi(registerToken: string, payload:
     },
   });
 
-  return tokenPairResponseSchema.parse(response.data);
+  return accessTokenResponseSchema.parse(response.data);
 }
 
-export async function refreshTokenApi(refreshToken: string) {
-  const response = await apiClient.post<RefreshResponse>("/api/v1/auth/refresh", null, {
-    headers: {
-      Authorization: `Bearer ${refreshToken}`,
-    },
-  });
+export async function refreshTokenApi() {
+  const response = await apiClient.post<RefreshResponse>("/api/v1/auth/refresh");
 
-  return tokenPairResponseSchema.parse(response.data);
+  return accessTokenResponseSchema.parse(response.data);
 }
 
 export async function verifySessionApi() {

@@ -1,4 +1,4 @@
-import axios, { AxiosHeaders } from "axios";
+import axios, { AxiosError, AxiosHeaders, InternalAxiosRequestConfig } from "axios";
 
 import { useAuthStore } from "@/store/auth/auth.store";
 
@@ -6,18 +6,18 @@ const isMockMode = import.meta.env.VITE_MSW_ENABLED === "true";
 
 export const apiClient = axios.create({
   baseURL: isMockMode ? "" : import.meta.env.VITE_API_BASE_URL,
+  withCredentials: true,
 });
 
-type TokenPair = {
+type AccessTokenPayload = {
   accessToken: string;
-  refreshToken: string;
 };
 
 function getStringCandidate(value: unknown): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
 }
 
-function extractTokenPair(source: unknown): TokenPair | null {
+function extractAccessToken(source: unknown): AccessTokenPayload | null {
   if (!source || typeof source !== "object") {
     return null;
   }
@@ -35,19 +35,11 @@ function extractTokenPair(source: unknown): TokenPair | null {
     getStringCandidate(tokens?.accessToken) ??
     getStringCandidate(tokens?.access_token);
 
-  const refreshToken =
-    getStringCandidate(data.refreshToken) ??
-    getStringCandidate(data.refresh_token) ??
-    getStringCandidate(token?.refreshToken) ??
-    getStringCandidate(token?.refresh_token) ??
-    getStringCandidate(tokens?.refreshToken) ??
-    getStringCandidate(tokens?.refresh_token);
-
-  if (!accessToken || !refreshToken) {
+  if (!accessToken) {
     return null;
   }
 
-  return { accessToken, refreshToken };
+  return { accessToken };
 }
 
 export function getAccessToken(): string | null {
@@ -57,39 +49,30 @@ export function getAccessToken(): string | null {
   );
 }
 
-function getRefreshToken(): string | null {
-  return (
-    useAuthStore.getState().refreshToken ??
-    (typeof window !== "undefined" ? localStorage.getItem("refresh_token") : null)
-  );
-}
-
 export async function refreshAccessToken(): Promise<string> {
-  const refreshToken = getRefreshToken();
-  if (!refreshToken) {
-    throw new Error("Missing refresh token.");
-  }
-
   const response = await axios.post(
     `${isMockMode ? "" : import.meta.env.VITE_API_BASE_URL}/api/v1/auth/refresh`,
     null,
     {
-      headers: {
-        Authorization: `Bearer ${refreshToken}`,
-      },
+      withCredentials: true,
     }
   );
 
-  const tokenPair = extractTokenPair(response.data);
-  if (!tokenPair) {
+  const tokenPayload = extractAccessToken(response.data);
+  if (!tokenPayload) {
     throw new Error("Invalid refresh response.");
   }
 
-  useAuthStore.getState().setAuthTokens(tokenPair);
-  return tokenPair.accessToken;
+  useAuthStore.getState().setAuthTokens(tokenPayload);
+  return tokenPayload.accessToken;
 }
 
 let isUnauthorizedHandling = false;
+let refreshTokenRequest: Promise<string> | null = null;
+
+type RetryableRequestConfig = InternalAxiosRequestConfig & {
+  _retry?: boolean;
+};
 
 function shouldAttachAuthorization(url?: string) {
   if (!url) {
@@ -119,18 +102,38 @@ apiClient.interceptors.request.use((config) => {
 
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error?.response?.status === 401 && !isUnauthorizedHandling) {
-      isUnauthorizedHandling = true;
-      useAuthStore.getState().clearAuth();
+  async (error: AxiosError) => {
+    const originalRequest = error.config as RetryableRequestConfig | undefined;
+    const isUnauthorized = error.response?.status === 401;
 
-      if (typeof window !== "undefined" && window.location.pathname !== "/login") {
-        window.location.replace("/login");
+    if (isUnauthorized && originalRequest && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        refreshTokenRequest ??= refreshAccessToken().finally(() => {
+          refreshTokenRequest = null;
+        });
+
+        const nextAccessToken = await refreshTokenRequest;
+        const headers = AxiosHeaders.from(originalRequest.headers);
+        headers.set("Authorization", `Bearer ${nextAccessToken}`);
+        originalRequest.headers = headers;
+
+        return apiClient(originalRequest);
+      } catch {
+        if (!isUnauthorizedHandling) {
+          isUnauthorizedHandling = true;
+          useAuthStore.getState().clearAuth();
+
+          if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+            window.location.replace("/login");
+          }
+
+          setTimeout(() => {
+            isUnauthorizedHandling = false;
+          }, 0);
+        }
       }
-
-      setTimeout(() => {
-        isUnauthorizedHandling = false;
-      }, 0);
     }
 
     return Promise.reject(error);

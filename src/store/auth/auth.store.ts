@@ -2,16 +2,14 @@ import { create } from "zustand";
 
 type AuthState = {
   accessToken: string | null;
-  refreshToken: string | null;
   registerToken: string | null;
   isNewUser: boolean;
-  setAuthTokens: (tokens: { accessToken: string; refreshToken: string }) => void;
+  setAuthTokens: (tokens: { accessToken: string }) => void;
   setRegisterToken: (registerToken: string) => void;
   clearAuth: () => void;
 };
 
 const ACCESS_TOKEN_KEY = "access_token";
-const REFRESH_TOKEN_KEY = "refresh_token";
 const REGISTER_TOKEN_KEY = "register_token";
 
 function getInitialToken(key: string) {
@@ -28,22 +26,20 @@ function persistToken(key: string, value: string) {
 
 function clearPersistedTokens() {
   localStorage.removeItem(ACCESS_TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
   localStorage.removeItem(REGISTER_TOKEN_KEY);
+  localStorage.removeItem("refresh_token");
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   accessToken: getInitialToken(ACCESS_TOKEN_KEY),
-  refreshToken: getInitialToken(REFRESH_TOKEN_KEY),
   registerToken: getInitialToken(REGISTER_TOKEN_KEY),
   isNewUser: Boolean(getInitialToken(REGISTER_TOKEN_KEY)),
-  setAuthTokens: ({ accessToken, refreshToken }) => {
+  setAuthTokens: ({ accessToken }) => {
     persistToken(ACCESS_TOKEN_KEY, accessToken);
-    persistToken(REFRESH_TOKEN_KEY, refreshToken);
+    localStorage.removeItem("refresh_token");
     localStorage.removeItem(REGISTER_TOKEN_KEY);
     set({
       accessToken,
-      refreshToken,
       registerToken: null,
       isNewUser: false,
     });
@@ -51,19 +47,17 @@ export const useAuthStore = create<AuthState>((set) => ({
   setRegisterToken: (registerToken) => {
     persistToken(REGISTER_TOKEN_KEY, registerToken);
     localStorage.removeItem(ACCESS_TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
+    localStorage.removeItem("refresh_token");
     set({
       registerToken,
       isNewUser: true,
       accessToken: null,
-      refreshToken: null,
     });
   },
   clearAuth: () => {
     clearPersistedTokens();
     set({
       accessToken: null,
-      refreshToken: null,
       registerToken: null,
       isNewUser: false,
     });

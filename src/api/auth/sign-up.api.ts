@@ -1,10 +1,12 @@
-import type { Gender } from "@/types/profile";
+import type { AgeRange, Gender } from "@/types/profile";
 
 import { apiClient } from "@/api/client";
 
 export interface SignupRequest {
   nickname: string;
   gender: Gender;
+  ageGroup: AgeRange;
+  introduction: string;
   profileImageUrl?: string;
   photoStyles: string[];
 }
@@ -15,7 +17,6 @@ interface SignupApiResponse {
   code: string;
   data: {
     accessToken: string;
-    refreshToken?: string;
   };
 }
 
