@@ -660,6 +660,12 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
       if (eventMessage.type === "SESSION_END") {
         logger.info("[session-ws] session end", eventMessage);
         stopSessionLocationSharing();
+        clearPersistedSessionLocations();
+        setSessionId(null);
+        setPartnerLocation(null);
+        setMeetingLocation(null);
+        setIsPartnerArrived(false);
+        setArrivalStatusModalType(null);
         transitionPhase("idle");
       }
     };
@@ -806,7 +812,14 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     socket.onclose = () => {
       isSessionStompConnectedRef.current = false;
     };
-  }, [currentLocation, sessionId, setCurrentLocation, stopSessionLocationSharing, transitionPhase]);
+  }, [
+    clearPersistedSessionLocations,
+    currentLocation,
+    sessionId,
+    setCurrentLocation,
+    stopSessionLocationSharing,
+    transitionPhase,
+  ]);
 
   useEffect(() => {
     if (phase !== "moving") return;
