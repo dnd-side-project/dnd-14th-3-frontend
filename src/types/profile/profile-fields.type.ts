@@ -23,6 +23,7 @@ export const preferredStylesSchema = z
 /** 서버에서 받아오는 포토 스타일 항목: { id, label }[] (API: /photo-style) */
 export const photoStyleSchema = z.object({
   id: z.string(),
+  name: z.string(),
   label: z.string(),
 });
 

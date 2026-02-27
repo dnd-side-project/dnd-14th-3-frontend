@@ -1,5 +1,3 @@
-import { z } from "zod";
-
 import type { PhotoStyle } from "@/types/profile";
 
 import { logger } from "@/lib/shared/logger";
@@ -9,41 +7,28 @@ import { apiClient } from "@/api/client";
 /* =====================
  * Zod Schemas
  * ===================== */
-const photoStyleItemSchema = z.object({
-  id: z.number(),
-  name: z.string(),
-  label: z.string(),
-});
 
-const getPhotoStylesResponseSchema = z.object({
-  success: z.boolean(),
-  message: z.string(),
-  code: z.string(),
-  data: z.array(photoStyleItemSchema),
-});
-
-export type GetPhotoStylesApiResponse = z.infer<typeof getPhotoStylesResponseSchema>;
+export type GetPhotoStylesApiResponse = {
+  success: boolean;
+  message: string;
+  code: string;
+  data: { id: string; name: string; label: string }[];
+};
 
 /* =====================
  * API
  * ===================== */
 export async function getPhotoStylesApi(): Promise<PhotoStyle[]> {
-  const response = await apiClient.get("/api/v1/photo-style");
+  const response = await apiClient.get<GetPhotoStylesApiResponse>("/api/v1/photo-style");
 
-  const parsed = getPhotoStylesResponseSchema.safeParse(response.data);
-
-  if (!parsed.success) {
-    const error = new Error(`[getPhotoStylesApi] API 응답 검증 실패: ${parsed.error.message}`);
-    logger.error(error, {
-      scope: "profile-api",
-      rawResponse: response.data,
-      zodIssues: parsed.error.issues,
-    });
-    throw error;
+  if (!response.data.success) {
+    logger.error(response.data.message);
+    throw new Error(response.data.message);
   }
 
-  return parsed.data.data.map((style) => ({
-    id: style.name,
+  return response.data.data.map((style) => ({
+    id: style.id,
+    name: style.name,
     label: style.label,
   }));
 }
