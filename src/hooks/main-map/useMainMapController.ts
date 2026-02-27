@@ -17,14 +17,14 @@ import { logger } from "@/lib/shared/logger";
 import { createMockSessionSocket } from "@/mocks/ws/sessionSocket.mock";
 
 import { getAccessToken } from "@/api/client";
+import { connectMatchSseApi } from "@/api/main-map/sse.api";
 import {
-  connectMatchSseApi,
   type MatchProposalEventData,
   type MatchRequestExpiredEventData,
   type MatchRequestWaitingCountEventData,
   type MatchSessionEventData,
   type SseConnection,
-} from "@/api/main-map";
+} from "@/types/main-map";
 
 import { getUserIdFromToken } from "@/services/auth/getUserIdFromToken.service";
 
@@ -42,6 +42,7 @@ import { useBottomSheet } from "@/hooks/shared/bottom-sheet";
 
 import {
   useAcceptMatchProposal,
+  useArriveMatchSession,
   useCancelMatchRequest,
   useCreateMatchRequest,
   useGetMatchSession,
@@ -327,6 +328,10 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   const [matchRetryCount, setMatchRetryCount] = useState(0);
   const matchRetryCountRef = useRef(0);
   const [isRetryingMatchRequest, setIsRetryingMatchRequest] = useState(false);
+  const [isPartnerArrived, setIsPartnerArrived] = useState(false);
+  const [arrivalStatusModalType, setArrivalStatusModalType] = useState<
+    "partner-arrived" | "partner-moving" | null
+  >(null);
   const [nearbyWaitingCount, setNearbyWaitingCount] = useState<number | null>(null);
   const [proposalRejectedSignal, setProposalRejectedSignal] = useState(0);
   const [partnerLocation, setPartnerLocation] = useState<LatLng | null>(
@@ -403,6 +408,8 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   const { mutateAsync: cancelMatchRequest } = useCancelMatchRequest();
   const { mutateAsync: retryMatchRequest } = useRetryMatchRequest();
   const { mutateAsync: acceptMatchProposal } = useAcceptMatchProposal();
+  const { mutateAsync: arriveMatchSession, isPending: isArrivingMatchSession } =
+    useArriveMatchSession();
   const { mutateAsync: rejectMatchProposal } = useRejectMatchProposal();
   const { data: matchSessionDetail, error: matchSessionError } = useGetMatchSession(sessionId);
   const sessionDestination = matchSessionDetail?.data?.destination;
@@ -446,6 +453,16 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     sessionId,
     setSessionLocationSessionId,
   ]);
+
+  useEffect(() => {
+    setIsPartnerArrived(false);
+    setArrivalStatusModalType(null);
+  }, [sessionId]);
+
+  useEffect(() => {
+    if (phase === "match-accepted" || phase === "moving") return;
+    setArrivalStatusModalType(null);
+  }, [phase]);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -622,17 +639,21 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
       }
 
       if (eventMessage.type === "USER_ARRIVED") {
+        if (myUserId != null && eventMessage.senderId === myUserId) return;
+        if (eventMessage.data.isArrived) {
+          setIsPartnerArrived(true);
+          setArrivalStatusModalType((prev) =>
+            prev === "partner-moving" ? "partner-arrived" : prev
+          );
+        }
         logger.info("[session-ws] user arrived", eventMessage);
         return;
       }
 
       if (eventMessage.type === "SESSION_READY") {
+        setIsPartnerArrived(true);
+        setArrivalStatusModalType((prev) => (prev === "partner-moving" ? "partner-arrived" : prev));
         logger.info("[session-ws] session ready", eventMessage);
-        Toast.show({
-          type: "success",
-          message: "모든 참여자가 도착했어요.",
-          duration: 2500,
-        });
         return;
       }
 
@@ -1195,6 +1216,25 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     [companionRequestForm]
   );
 
+  const handleCompleteArrival = useCallback(async () => {
+    if (!sessionId) return;
+
+    try {
+      await arriveMatchSession(sessionId);
+      setArrivalStatusModalType(isPartnerArrived ? "partner-arrived" : "partner-moving");
+    } catch (error) {
+      const apiMessage = axios.isAxiosError<{ message?: string }>(error)
+        ? error.response?.data?.message
+        : undefined;
+      logger.error(error, { tag: "match-session-arrive", sessionId });
+      Toast.show({
+        type: "error",
+        message: apiMessage || "도착 완료 처리에 실패했어요.",
+        duration: 3000,
+      });
+    }
+  }, [arriveMatchSession, isPartnerArrived, sessionId]);
+
   const handleSubmitCompanionRequest = companionRequestForm.handleSubmit((values) => {
     if (!values.expectedDuration || !currentLocation) return;
 
@@ -1504,11 +1544,28 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
       isOpen: phase === "match-accepted" || phase === "moving",
       hasMatchSession: Boolean(sessionId),
       isMoving: phase === "moving",
+      isCompletingArrival: isArrivingMatchSession,
       proposalRejectedSignal,
       partnerProfileText,
       partnerExpectedDurationLabel,
       partnerRequestMessage,
       startMoving: startSessionLocationSharing,
+      completeArrival: () => {
+        void handleCompleteArrival();
+      },
+      arrivalStatusModal: {
+        isOpen: arrivalStatusModalType != null,
+        type: arrivalStatusModalType ?? "partner-moving",
+        title:
+          arrivalStatusModalType === "partner-arrived"
+            ? "상대방이 도착했어요"
+            : "상대가 이동 중이에요",
+        content:
+          arrivalStatusModalType === "partner-arrived"
+            ? "서로 만났다면 ‘만남 시작하기'를 눌러주세요\n시작해야 만남이 공식적으로 기록돼요"
+            : "메이트가 약속 장소에 도착하면\n알림을 보내드릴게요",
+        close: () => setArrivalStatusModalType(null),
+      },
       close: () => transitionPhase("idle"),
     },
     matchExpiredModal: {

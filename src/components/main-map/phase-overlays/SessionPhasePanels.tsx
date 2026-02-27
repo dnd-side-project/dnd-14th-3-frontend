@@ -1,4 +1,4 @@
-import { Camera, ChevronUp, MapPin, X } from "lucide-react";
+﻿import { Camera, ChevronUp, MapPin, X } from "lucide-react";
 
 import { BottomSheet } from "@/components/shared/bottom-sheet";
 import { Button } from "@/components/shared/button";
@@ -8,11 +8,20 @@ type AcceptedMatchDetailSheet = {
   isOpen: boolean;
   hasMatchSession: boolean;
   isMoving: boolean;
+  isCompletingArrival: boolean;
   proposalRejectedSignal: number;
   partnerProfileText: string;
   partnerExpectedDurationLabel: string;
   partnerRequestMessage: string;
   startMoving: () => void;
+  completeArrival: () => void;
+  arrivalStatusModal: {
+    isOpen: boolean;
+    type: "partner-arrived" | "partner-moving";
+    title: string;
+    content: string;
+    close: () => void;
+  };
   close: () => void;
 };
 
@@ -77,7 +86,9 @@ export default function SessionPhasePanels({
       />
 
       <BottomSheet
-        isOpen={showAcceptedPhase && acceptedMatchDetailSheet.hasMatchSession && !isPeerRejectedFlow}
+        isOpen={
+          showAcceptedPhase && acceptedMatchDetailSheet.hasMatchSession && !isPeerRejectedFlow
+        }
         onClose={acceptedMatchDetailSheet.close}
         showBackdrop
         backdropClick="none"
@@ -110,7 +121,7 @@ export default function SessionPhasePanels({
               </span>
             </div>
             <div>
-              <div className="py-2 text-body-1 font-bold">요청 메세지</div>
+              <div className="py-2 text-body-1 font-bold">요청 메시지</div>
               <div className="min-h-[122px] rounded-md border border-mint-500 p-3">
                 {acceptedMatchDetailSheet.partnerRequestMessage}
               </div>
@@ -171,7 +182,13 @@ export default function SessionPhasePanels({
         footer={
           <div className="flex items-center gap-4">
             <Button.Secondary fullWidth>길찾기</Button.Secondary>
-            <Button.Primary fullWidth>도착 완료</Button.Primary>
+            <Button.Primary
+              fullWidth
+              onClick={acceptedMatchDetailSheet.completeArrival}
+              disabled={acceptedMatchDetailSheet.isCompletingArrival}
+            >
+              도착 완료
+            </Button.Primary>
           </div>
         }
       />
@@ -196,6 +213,17 @@ export default function SessionPhasePanels({
         onClose={matchRetryLimitModal.close}
         onConfirm={matchRetryLimitModal.reserve}
         onCancel={matchRetryLimitModal.nextTime}
+      />
+
+      <Popup
+        isOpen={acceptedMatchDetailSheet.arrivalStatusModal.isOpen}
+        title={acceptedMatchDetailSheet.arrivalStatusModal.title}
+        content={acceptedMatchDetailSheet.arrivalStatusModal.content}
+        showConfirm={acceptedMatchDetailSheet.arrivalStatusModal.type === "partner-arrived"}
+        showCancel={false}
+        confirmMessage="만남 시작하기"
+        onClose={acceptedMatchDetailSheet.arrivalStatusModal.close}
+        onConfirm={acceptedMatchDetailSheet.arrivalStatusModal.close}
       />
     </>
   );

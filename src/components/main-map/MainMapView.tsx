@@ -1,6 +1,11 @@
 import { Map, MapMarker } from "react-kakao-maps-sdk";
 
-import { type LatLng, type LocationAddressInfo, type MapPhase, type MatchExpectedDuration } from "@/types/main-map";
+import {
+  type LatLng,
+  type LocationAddressInfo,
+  type MapPhase,
+  type MatchExpectedDuration,
+} from "@/types/main-map";
 
 import { PIN_MATCHED, PIN_ME, PIN_OTHER } from "@/constants/main-map/location.constants";
 
@@ -64,11 +69,20 @@ interface MainMapViewProps {
     isOpen: boolean;
     hasMatchSession: boolean;
     isMoving: boolean;
+    isCompletingArrival: boolean;
     proposalRejectedSignal: number;
     partnerProfileText: string;
     partnerExpectedDurationLabel: string;
     partnerRequestMessage: string;
     startMoving: () => void;
+    completeArrival: () => void;
+    arrivalStatusModal: {
+      isOpen: boolean;
+      type: "partner-arrived" | "partner-moving";
+      title: string;
+      content: string;
+      close: () => void;
+    };
     close: () => void;
   };
   matchExpiredModal: {

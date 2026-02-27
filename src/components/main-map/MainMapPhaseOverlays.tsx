@@ -55,11 +55,20 @@ type MainMapPhaseOverlaysProps = {
     isOpen: boolean;
     hasMatchSession: boolean;
     isMoving: boolean;
+    isCompletingArrival: boolean;
     proposalRejectedSignal: number;
     partnerProfileText: string;
     partnerExpectedDurationLabel: string;
     partnerRequestMessage: string;
     startMoving: () => void;
+    completeArrival: () => void;
+    arrivalStatusModal: {
+      isOpen: boolean;
+      type: "partner-arrived" | "partner-moving";
+      title: string;
+      content: string;
+      close: () => void;
+    };
     close: () => void;
   };
   matchExpiredModal: {

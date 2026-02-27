@@ -1,4 +1,5 @@
 export { useAcceptMatchProposal } from "./useAcceptMatchProposal";
+export { useArriveMatchSession } from "./useArriveMatchSession";
 export { useCancelMatchRequest } from "./useCancelMatchRequest";
 export { useCreateMatchRequest } from "./useCreateMatchRequest";
 export { useGetMatchRequestStatus } from "./useGetMatchRequestStatus";

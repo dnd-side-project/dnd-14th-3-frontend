@@ -26,6 +26,7 @@ let mockIsWaitingForMatch = false;
 let mockCurrentMatchRequest: CreateMatchRequestData | null = null;
 let mockPendingMatchSession: { id: number; userAId: number; userBId: number } | null = null;
 let mockActiveSseScenario: string | null = null;
+const mockArrivedSessionIds = new Set<number>();
 
 export const mainMapHandlers: RequestHandler[] = [
   http.post("/api/v1/match-requests", async ({ request }) => {
@@ -88,7 +89,6 @@ export const mainMapHandlers: RequestHandler[] = [
       createdAt: nowIso,
       updatedAt: nowIso,
     };
-
 
     return HttpResponse.json(
       {
@@ -179,7 +179,7 @@ export const mainMapHandlers: RequestHandler[] = [
             userId: 3,
             nickname: "me",
             gender: "MALE",
-            arrived: false,
+            arrived: mockArrivedSessionIds.has(sessionId),
             request: {
               matchRequestId: sourceMatchRequestId,
               status: sourceMatchStatus,
@@ -210,6 +210,25 @@ export const mainMapHandlers: RequestHandler[] = [
   http.delete("/api/v1/match-requests/me", () => {
     mockIsWaitingForMatch = false;
     mockPendingMatchSession = null;
+    mockArrivedSessionIds.clear();
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.patch("/api/v1/match-sessions/:sessionId/arrive", ({ params }) => {
+    const sessionId = Number(params.sessionId);
+    if (!Number.isFinite(sessionId)) {
+      return HttpResponse.json(
+        {
+          success: false,
+          message: "매칭 세션을 찾을 수 없습니다.",
+          code: "MATCH_SESSION_NOT_FOUND",
+          data: null,
+        },
+        { status: 404 }
+      );
+    }
+
+    mockArrivedSessionIds.add(sessionId);
     return new HttpResponse(null, { status: 204 });
   }),
 
@@ -459,4 +478,3 @@ export const mainMapHandlers: RequestHandler[] = [
     });
   }),
 ];
-
