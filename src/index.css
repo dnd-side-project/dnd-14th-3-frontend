@@ -129,6 +129,15 @@ body {
   display: none;
 }
 
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* typography */
 .text-title-1 {
   font-size: var(--title-1-size);
