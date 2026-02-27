@@ -1442,25 +1442,27 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
       });
   });
 
-  const handleAcceptMatchFound = useCallback(() => {
+  const handleAcceptMatchFound = useCallback(async () => {
     const proposalId = matchProposal?.id;
-    if (proposalId) {
-      void acceptMatchProposal(proposalId).catch((error: unknown) => {
-        const apiMessage = axios.isAxiosError<{ message?: string }>(error)
-          ? error.response?.data?.message
-          : undefined;
-        logger.error(error, { tag: "match-proposal-accept", proposalId });
-        Toast.show({
-          type: "error",
-          message: apiMessage || "매칭 수락 처리에 실패했어요.",
-          duration: 3000,
-        });
-      });
-    } else {
+    if (!proposalId) {
       logger.warn("[match-request] missing proposal id for accept");
+      return;
     }
 
-    transitionPhase("match-accepted");
+    try {
+      await acceptMatchProposal(proposalId);
+      transitionPhase("match-accepted");
+    } catch (error: unknown) {
+      const apiMessage = axios.isAxiosError<{ message?: string }>(error)
+        ? error.response?.data?.message
+        : undefined;
+      logger.error(error, { tag: "match-proposal-accept", proposalId });
+      Toast.show({
+        type: "error",
+        message: apiMessage || "매칭 수락 처리에 실패했어요.",
+        duration: 3000,
+      });
+    }
   }, [acceptMatchProposal, matchProposal?.id, transitionPhase]);
 
   const handleRejectProposal = useCallback(() => {
