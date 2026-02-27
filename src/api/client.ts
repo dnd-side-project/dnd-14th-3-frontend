@@ -1,4 +1,4 @@
-import axios, { AxiosHeaders } from "axios";
+import axios, { AxiosError, AxiosHeaders, InternalAxiosRequestConfig } from "axios";
 
 import { useAuthStore } from "@/store/auth/auth.store";
 
@@ -68,6 +68,11 @@ export async function refreshAccessToken(): Promise<string> {
 }
 
 let isUnauthorizedHandling = false;
+let refreshTokenRequest: Promise<string> | null = null;
+
+type RetryableRequestConfig = InternalAxiosRequestConfig & {
+  _retry?: boolean;
+};
 
 function shouldAttachAuthorization(url?: string) {
   if (!url) {
@@ -97,18 +102,38 @@ apiClient.interceptors.request.use((config) => {
 
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error?.response?.status === 401 && !isUnauthorizedHandling) {
-      isUnauthorizedHandling = true;
-      useAuthStore.getState().clearAuth();
+  async (error: AxiosError) => {
+    const originalRequest = error.config as RetryableRequestConfig | undefined;
+    const isUnauthorized = error.response?.status === 401;
 
-      if (typeof window !== "undefined" && window.location.pathname !== "/login") {
-        window.location.replace("/login");
+    if (isUnauthorized && originalRequest && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        refreshTokenRequest ??= refreshAccessToken().finally(() => {
+          refreshTokenRequest = null;
+        });
+
+        const nextAccessToken = await refreshTokenRequest;
+        const headers = AxiosHeaders.from(originalRequest.headers);
+        headers.set("Authorization", `Bearer ${nextAccessToken}`);
+        originalRequest.headers = headers;
+
+        return apiClient(originalRequest);
+      } catch {
+        if (!isUnauthorizedHandling) {
+          isUnauthorizedHandling = true;
+          useAuthStore.getState().clearAuth();
+
+          if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+            window.location.replace("/login");
+          }
+
+          setTimeout(() => {
+            isUnauthorizedHandling = false;
+          }, 0);
+        }
       }
-
-      setTimeout(() => {
-        isUnauthorizedHandling = false;
-      }, 0);
     }
 
     return Promise.reject(error);
