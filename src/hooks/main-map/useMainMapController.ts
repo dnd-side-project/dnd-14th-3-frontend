@@ -686,13 +686,12 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   }, [matchSessionError, phase, sessionId, stopSessionLocationSharing, transitionPhase]);
 
   const startSessionLocationSharing = useCallback(() => {
-    if (
-      phaseRef.current === "moving" ||
-      phaseRef.current === "arrival-pending" ||
-      phaseRef.current === "meeting-started"
-    ) {
-      return;
-    }
+    const currentPhase = phaseRef.current;
+    const hasActiveSessionTransport =
+      sessionWsRef.current != null ||
+      sessionWatchIdRef.current != null ||
+      isSessionStompConnectedRef.current;
+    if (hasActiveSessionTransport) return;
 
     const currentSessionId = sessionId;
     if (!currentSessionId) return;
@@ -754,7 +753,9 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     }
 
     stopSessionLocationSharing();
-    transitionPhase("moving");
+    if (currentPhase !== "arrival-pending") {
+      transitionPhase("moving");
+    }
 
     const wsUrl = import.meta.env.VITE_WS_BASE_URL;
     const socket = isMockMode
@@ -890,7 +891,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   ]);
 
   useEffect(() => {
-    if (phase !== "moving") return;
+    if (phase !== "moving" && phase !== "arrival-pending") return;
     if (!sessionId) return;
     if (partnerLocation) return;
     startSessionLocationSharing();
