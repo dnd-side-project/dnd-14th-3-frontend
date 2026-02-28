@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { type LatLng } from "@/types/main-map/location.type";
 
@@ -35,6 +35,12 @@ export function useExpandableFabFlow({
   );
   const closeFindCompanionModal = useMainMapFabFlowStore((state) => state.closeFindCompanionModal);
   const didApplyDefaultModalRef = useRef(false);
+  const isConfirmingLocationShareRef = useRef(false);
+  const [isConfirmingLocationShare, setIsConfirmingLocationShare] = useState(false);
+  const releaseLocationShareConfirmLock = useCallback(() => {
+    isConfirmingLocationShareRef.current = false;
+    setIsConfirmingLocationShare(false);
+  }, []);
 
   useEffect(() => {
     if (!defaultOpenFindCompanionModal || didApplyDefaultModalRef.current) return;
@@ -58,9 +64,15 @@ export function useExpandableFabFlow({
   }, [closeFab, onFindCompanion]);
 
   const handleConfirmLocationShare = useCallback(async () => {
+    if (isConfirmingLocationShareRef.current) return;
+
+    isConfirmingLocationShareRef.current = true;
+    setIsConfirmingLocationShare(true);
+
     const permissionState = await getLocationPermissionState();
     if (permissionState === "denied") {
       openLocationShareSetupModal("denied");
+      releaseLocationShareConfirmLock();
       return;
     }
 
@@ -68,17 +80,20 @@ export function useExpandableFabFlow({
     if (!location) {
       const latestPermissionState = await getLocationPermissionState();
       openLocationShareSetupModal(latestPermissionState === "denied" ? "denied" : "request");
+      releaseLocationShareConfirmLock();
       return;
     }
 
     onResolveLocation(location);
     closeLocationShareSetupModal();
     openFindCompanionModal();
+    releaseLocationShareConfirmLock();
   }, [
     closeLocationShareSetupModal,
     onResolveLocation,
     openFindCompanionModal,
     openLocationShareSetupModal,
+    releaseLocationShareConfirmLock,
   ]);
 
   const handleConfirmFindCompanion = useCallback(() => {
@@ -98,6 +113,7 @@ export function useExpandableFabFlow({
     handleLocationShareClick,
     handleFindCompanionButtonClick,
     handleConfirmLocationShare,
+    isConfirmingLocationShare,
     handleConfirmFindCompanion,
     handlePauseFromFindCompanion,
   };

@@ -9,6 +9,7 @@ export interface PopupProps {
   content: string;
   confirmMessage?: string;
   cancelMessage?: string;
+  confirmDisabled?: boolean;
   showConfirm?: boolean;
   showCancel?: boolean;
   closeOnBackdrop?: boolean;
@@ -23,6 +24,7 @@ export default function Popup({
   content,
   confirmMessage = "확인",
   cancelMessage = "취소",
+  confirmDisabled = false,
   showConfirm = true,
   showCancel = true,
   closeOnBackdrop = true,
@@ -112,7 +114,7 @@ export default function Popup({
         {shouldShowActions && (
           <div className="mt-5 flex flex-col gap-2">
             {showConfirm && (
-              <Button.Primary fullWidth onClick={handleConfirm}>
+              <Button.Primary fullWidth onClick={handleConfirm} disabled={confirmDisabled}>
                 {confirmMessage}
               </Button.Primary>
             )}
