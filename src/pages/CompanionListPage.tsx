@@ -5,13 +5,20 @@ import type { MineSubTab } from "@/types/companion-reservation";
 
 import { getViewSegment } from "@/lib/companion-reservation/getViewSegment";
 
-import { FilterStoreProvider , useFilterStore } from "@/store/companion-reservation";
+import {
+  FilterStoreProvider,
+  ReservationCreateStepStoreProvider,
+  ReservationFormStoreProvider,
+  useFilterStore,
+} from "@/store/companion-reservation";
 
 import { useScrollHideHeader } from "@/hooks/companion-reservation/useScrollHideHeader";
 
 import {
   AppliedList,
   BrowseList,
+  CreateBottomSheet,
+  Fab,
   FilterArea,
   MineTabGroup,
   PostedList,
@@ -41,9 +48,7 @@ function CompanionListPageInner() {
         />
         {activeTab === "browse" ? (
           <>
-            <SearchBar
-              onChange={(keyword) => setValues({ ...values, keyword })}
-            />
+            <SearchBar onChange={(keyword) => setValues({ ...values, keyword })} />
             <FilterArea />
           </>
         ) : (
@@ -51,6 +56,11 @@ function CompanionListPageInner() {
         )}
       </div>
 
+      <Fab
+        ariaLabel="동행 예약 작성"
+        style={{ transform: isHeaderVisible ? "translateY(0)" : "translateY(30%)" }}
+        onClick={() => setSearchParams({ mode: "create" })}
+      />
       {activeTab === "browse" ? (
         <BrowseList />
       ) : mineSubTab === "posted" ? (
@@ -58,6 +68,11 @@ function CompanionListPageInner() {
       ) : (
         <AppliedList />
       )}
+      <ReservationFormStoreProvider>
+        <ReservationCreateStepStoreProvider>
+          <CreateBottomSheet />
+        </ReservationCreateStepStoreProvider>
+      </ReservationFormStoreProvider>
     </div>
   );
 }
