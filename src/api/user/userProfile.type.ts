@@ -16,7 +16,7 @@ export interface UserProfileResponse {
   consent: UserProfileConsent;
 }
 
-/** 사용자 프로필 수정 요청 */
+/** 사용자 프로필 수정 요청 (multipart/form-data) */
 export interface PatchUserProfileRequest {
   nickname: string;
   gender: string;
@@ -24,4 +24,6 @@ export interface PatchUserProfileRequest {
   introduction: string;
   profileImageUrl?: string;
   photoStyles: string[];
+  /** 새 프로필 이미지 파일 (있으면 image 파트로 전송) */
+  profileImage?: File;
 }
