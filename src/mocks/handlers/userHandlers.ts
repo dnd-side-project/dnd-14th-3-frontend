@@ -2,14 +2,29 @@ import { http, HttpResponse, type RequestHandler } from "msw";
 
 import type { PatchUserConsentsRequest, PatchUserProfileRequest } from "@/api/user";
 
+let consents = {
+  notificationAllowed: true,
+  locationAllowed: true,
+  updatedAt: "2025-01-01T12:00:00.000Z",
+};
+
 export const userHandlers: RequestHandler[] = [
   /** 본인 프로필 조회 (userId 경로) */
   http.get("/api/v1/users/:userId/profiles", () => {
     return HttpResponse.json({
-      nickname: "홍길동",
-      profileImageUrl: "https://example.com/updated_profile.jpg",
-      email: "hong@mail.com",
-      phoneNumber: "010-1234-5678",
+      success: true,
+      message: "SUCCESS",
+      code: "",
+      data: {
+        userId: 1,
+        nickname: "홍길동",
+        gender: "MALE",
+        ageGroup: "TWENTIES",
+        introduction: "사진 찍는 걸 좋아합니다.",
+        profileImageUrl: "https://example.com/profile.jpg",
+        photoStyles: ["SNS_UPLOAD", "FULL_BODY"],
+        consent: { ...consents },
+      },
     });
   }),
 
@@ -17,7 +32,7 @@ export const userHandlers: RequestHandler[] = [
   http.patch("/api/v1/users/:userId/profiles", async ({ request }) => {
     const body = (await request.json()) as PatchUserProfileRequest;
 
-    if (!body.newUsername?.trim()) {
+    if (!body.nickname?.trim()) {
       return HttpResponse.json(
         {
           success: false,
@@ -30,19 +45,18 @@ export const userHandlers: RequestHandler[] = [
     }
 
     return HttpResponse.json({
-      nickname: body.newUsername,
+      nickname: body.nickname,
       gender: body.gender,
-      preferredStyles: body.preferredStyles,
+      ageGroup: body.ageGroup,
+      introduction: body.introduction,
+      profileImageUrl: body.profileImageUrl ?? "https://example.com/updated_profile.jpg",
+      photoStyles: body.photoStyles,
     });
   }),
 
   /** 본인 동의 설정 조회 */
   http.get("/api/v1/users/:userId/consents", () => {
-    return HttpResponse.json({
-      notificationAllowed: true,
-      locationAllowed: true,
-      updatedAt: "2025-01-01T12:00:00.000Z",
-    });
+    return HttpResponse.json({ ...consents });
   }),
 
   /** 본인 동의 설정 수정 */
@@ -64,10 +78,12 @@ export const userHandlers: RequestHandler[] = [
       );
     }
 
-    return HttpResponse.json({
+    consents = {
       notificationAllowed: body.notificationAllowed,
       locationAllowed: body.locationAllowed,
       updatedAt: new Date().toISOString(),
-    });
+    };
+
+    return HttpResponse.json({ ...consents });
   }),
 ];

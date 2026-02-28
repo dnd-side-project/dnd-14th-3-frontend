@@ -1,4 +1,4 @@
-﻿import { matchPath } from "react-router-dom";
+import { matchPath } from "react-router-dom";
 
 import type { HeaderLeftAction } from "@/types/layout/page-layout.type";
 
@@ -50,6 +50,48 @@ const routeLayoutMeta: RouteLayoutMeta[] = [
     leftAction: "back",
   },
   { pattern: "/mypage", title: "마이페이지", showHeader: true, showBottomNav: true },
+  {
+    pattern: "/mypage/profile",
+    title: "프로필 카드",
+    showHeader: true,
+    showBottomNav: false,
+    leftAction: "back",
+  },
+  {
+    pattern: "/mypage/profile/edit",
+    title: "프로필 수정",
+    showHeader: true,
+    showBottomNav: false,
+    leftAction: "back",
+  },
+  {
+    pattern: "/mypage/account",
+    title: "계정 관리",
+    showHeader: true,
+    showBottomNav: false,
+    leftAction: "back",
+  },
+  {
+    pattern: "/mypage/settings",
+    title: "설정",
+    showHeader: true,
+    showBottomNav: false,
+    leftAction: "back",
+  },
+  {
+    pattern: "/mypage/companion-schedule/:scheduleId",
+    title: "동행 일정 상세",
+    showHeader: true,
+    showBottomNav: false,
+    leftAction: "back",
+  },
+  {
+    pattern: "/mypage/companion-schedule",
+    title: "동행 일정",
+    showHeader: true,
+    showBottomNav: false,
+    leftAction: "back",
+  },
 ];
 
 const defaultRouteLayoutMeta: RouteLayoutMeta = {
