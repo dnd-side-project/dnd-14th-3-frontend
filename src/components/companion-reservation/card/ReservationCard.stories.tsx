@@ -85,12 +85,7 @@ export const MyPosted_Pending: Story = {
     status: "pending",
     labelText: "대기중",
     footer: (
-      <ReservationCardFooter.CTA
-        label="상세 보기"
-        status="pending"
-        variant="secondary"
-        disabled
-      />
+      <ReservationCardFooter.CTA label="상세 보기" status="pending" variant="secondary" disabled />
     ),
   },
 };

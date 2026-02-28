@@ -141,12 +141,7 @@ export default function FilterBottomSheet({
           >
             초기화
           </Button.Secondary>
-          <Button.Primary
-            size="large"
-            fullWidth
-            disabled={isActionDisabled}
-            onClick={handleApply}
-          >
+          <Button.Primary size="large" fullWidth disabled={isActionDisabled} onClick={handleApply}>
             적용
           </Button.Primary>
         </div>

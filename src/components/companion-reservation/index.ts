@@ -10,10 +10,23 @@ export type { SegmentedControlProps } from "./layout";
 export type { SearchBarProps } from "./layout";
 export type { FilterChipGroupProps, FilterChipProps } from "./layout";
 export type { MineTabGroupProps } from "./layout";
-export type { FilterModalProps, FilterTab,FilterValues } from "./layout";
-export { FilterArea, FilterChipGroup, FilterModal, MineTabGroup, SearchBar, SegmentedControl } from "./layout";
+export type { FilterModalProps, FilterTab, FilterValues } from "./layout";
+export {
+  FilterArea,
+  FilterChipGroup,
+  FilterModal,
+  MineTabGroup,
+  SearchBar,
+  SegmentedControl,
+} from "./layout";
+
+// Fab
+export { default as Fab } from "./Fab";
 
 // List sub-feature
 export { default as AppliedList } from "./AppliedList";
 export { default as BrowseList } from "./BrowseList";
 export { default as PostedList } from "./PostedList";
+
+// BottomSheet
+export { default as CreateBottomSheet } from "./CreateBottomSheet";

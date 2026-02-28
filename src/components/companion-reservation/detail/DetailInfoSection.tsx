@@ -47,7 +47,9 @@ export default function DetailInfoSection({
         <section className="flex flex-col gap-2 px-5">
           <h2 className="text-body-1 font-medium text-gray-900">요청메시지</h2>
           <div className="rounded-xl bg-gray-50 p-3">
-            <p className="text-label-1 text-gray-600 whitespace-pre-wrap">{detail.requestMessage}</p>
+            <p className="text-label-1 text-gray-600 whitespace-pre-wrap">
+              {detail.requestMessage}
+            </p>
           </div>
         </section>
       ) : null}

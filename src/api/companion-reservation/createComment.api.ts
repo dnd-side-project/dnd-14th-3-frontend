@@ -7,7 +7,7 @@ import { apiClient } from "@/api/client";
 
 export async function createCommentApi(
   reservationId: number,
-  payload: ReservationCommentCreateRequest,
+  payload: ReservationCommentCreateRequest
 ) {
   const parsed = reservationCommentCreateRequestSchema.safeParse(payload);
 
@@ -17,7 +17,7 @@ export async function createCommentApi(
 
   const response = await apiClient.post(
     `/api/v1/reservations/${reservationId}/comments`,
-    parsed.data,
+    parsed.data
   );
 
   return response.data;

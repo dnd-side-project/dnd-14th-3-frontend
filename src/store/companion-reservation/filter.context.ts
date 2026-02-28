@@ -10,9 +10,7 @@ const identitySelector = (s: FilterState) => s;
 
 export function useFilterStore(): FilterState;
 export function useFilterStore<T>(selector: (state: FilterState) => T): T;
-export function useFilterStore<T>(
-  selector?: (state: FilterState) => T,
-): T | FilterState {
+export function useFilterStore<T>(selector?: (state: FilterState) => T): T | FilterState {
   const store = useContext(FilterStoreContext);
 
   if (!store) {

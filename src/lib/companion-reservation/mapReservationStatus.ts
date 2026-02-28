@@ -5,14 +5,13 @@ import type {
 } from "@/types/companion-reservation";
 
 // ─── 내가 올린 예약 상태 매핑 ──────────────────────────────────────
-export const CREATED_RESERVATION_STATUS_MAP: Record<CreatedReservationStatus, ReservationStatus> =
-  {
-    RECRUITING: "recruiting",
-    CONFIRMED: "confirmed",
-    RECRUITMENT_CLOSED: "closed",
-    COMPLETED: "closed",
-    CANCELED: "closed",
-  };
+export const CREATED_RESERVATION_STATUS_MAP: Record<CreatedReservationStatus, ReservationStatus> = {
+  RECRUITING: "recruiting",
+  CONFIRMED: "confirmed",
+  RECRUITMENT_CLOSED: "closed",
+  COMPLETED: "closed",
+  CANCELED: "closed",
+};
 
 export const CREATED_RESERVATION_LABEL_MAP: Record<CreatedReservationStatus, string> = {
   RECRUITING: "지원자 모집중",
@@ -23,14 +22,13 @@ export const CREATED_RESERVATION_LABEL_MAP: Record<CreatedReservationStatus, str
 };
 
 // ─── 내가 지원한 동행 상태 매핑 ──────────────────────────────────
-export const APPLIED_RESERVATION_STATUS_MAP: Record<AppliedReservationStatus, ReservationStatus> =
-  {
-    WAITING: "pending",
-    MATCHED: "confirmed",
-    COMPLETED: "confirmed",
-    REJECTED: "closed",
-    CANCELED: "closed",
-  };
+export const APPLIED_RESERVATION_STATUS_MAP: Record<AppliedReservationStatus, ReservationStatus> = {
+  WAITING: "pending",
+  MATCHED: "confirmed",
+  COMPLETED: "confirmed",
+  REJECTED: "closed",
+  CANCELED: "closed",
+};
 
 export const APPLIED_RESERVATION_LABEL_MAP: Record<AppliedReservationStatus, string> = {
   WAITING: "대기중",
@@ -55,7 +53,6 @@ export function mapAppliedReservationStatus(status: AppliedReservationStatus): R
 export function mapAppliedReservationLabel(status: AppliedReservationStatus): string {
   return APPLIED_RESERVATION_LABEL_MAP[status];
 }
-
 
 // ─── 하위 호환 (기존 코드에서 사용 중인 함수) ─────────────────────
 /** @deprecated mapCreatedReservationStatus 사용 */

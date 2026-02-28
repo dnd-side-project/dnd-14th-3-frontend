@@ -18,7 +18,11 @@ export default function SearchBar({
   const [inputValue, setInputValue] = useState(defaultValue);
   // debounce 함수 인스턴스를 한 번만 생성 → 내부 timer가 호출 간에 유지됨
   const debouncedOnChange = useMemo(
-	  () => debounce((value: string) => { onChange(value);  console.log(value)}, 400),
+    () =>
+      debounce((value: string) => {
+        onChange(value);
+        console.log(value);
+      }, 400),
     [onChange]
   );
 

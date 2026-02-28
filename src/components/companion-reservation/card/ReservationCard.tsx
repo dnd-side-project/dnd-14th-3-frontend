@@ -4,9 +4,7 @@ import type { ReactNode } from "react";
 import type { ReservationStatus } from "@/types/companion-reservation";
 
 import MetaItem from "./MetaItem";
-import ReservationCardFooterCTA, {
-  type ReservationCardCTAProps,
-} from "./ReservationCardFooterCTA";
+import ReservationCardFooterCTA, { type ReservationCardCTAProps } from "./ReservationCardFooterCTA";
 import ReservationCardFooterPersonnelMessage, {
   type ReservationCardPersonnelMessageProps,
 } from "./ReservationCardFooterPersonnelMessage";
@@ -103,12 +101,11 @@ const ReservationCard = Object.assign(ReservationCardComponent, {
     CTA: ReservationCardFooterCTA,
     PersonnelMessage: ReservationCardFooterPersonnelMessage,
     RequesterInfo: ReservationCardFooterRequesterInfo,
-    },
-    TagChip,
-    MetaItem,
-    StatusBadge
-  }
-);
+  },
+  TagChip,
+  MetaItem,
+  StatusBadge,
+});
 export const ReservationCardFooter = {
   CTA: ReservationCardFooterCTA,
   PersonnelMessage: ReservationCardFooterPersonnelMessage,
