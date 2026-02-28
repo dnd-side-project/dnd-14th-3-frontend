@@ -2,10 +2,7 @@ import { type InfiniteData, useInfiniteQuery } from "@tanstack/react-query";
 
 import type { PageResponseCreatedReservationListDto } from "@/types/companion-reservation";
 
-import {
-  getMyReservationsApi,
-  type GetMyReservationsParams,
-} from "@/api/companion-reservation";
+import { getMyReservationsApi, type GetMyReservationsParams } from "@/api/companion-reservation";
 
 import { queryKeys } from "@/queries/keys";
 

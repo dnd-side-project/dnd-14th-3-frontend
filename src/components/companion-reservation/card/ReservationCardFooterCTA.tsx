@@ -30,11 +30,7 @@ export default function ReservationCardFooterCTA({
 
   return (
     <div className={`relative w-full ${className}`}>
-      {derivedAccent ? (
-        <div
-          className="absolute inset-x-0 top-0 h-0.5"
-        />
-      ) : null}
+      {derivedAccent ? <div className="absolute inset-x-0 top-0 h-0.5" /> : null}
       <ButtonComponent
         fullWidth
         disabled={disabled}

@@ -13,9 +13,7 @@ const AGE_GROUP_LABEL: Record<string, string> = {
   FIFTIES_AND_ABOVE: "50대 이상",
 };
 
-const PHOTO_STYLE_LABELS = new Map(
-  FALLBACK_PHOTO_STYLES.map((style) => [style.id, style.label]),
-);
+const PHOTO_STYLE_LABELS = new Map(FALLBACK_PHOTO_STYLES.map((style) => [style.id, style.label]));
 
 export function getStatusMessage(status: string) {
   if (status === "CONFIRMED") return "동행이 확정되었어요.";
@@ -26,8 +24,8 @@ export function getStatusMessage(status: string) {
 
 export function getOwnerMeta(ownerAgeGroup?: string, ownerGender?: string): string {
   return [
-    ownerAgeGroup ? AGE_GROUP_LABEL[ownerAgeGroup] ?? ownerAgeGroup : null,
-    ownerGender ? GENDER_LABEL[ownerGender] ?? ownerGender : null,
+    ownerAgeGroup ? (AGE_GROUP_LABEL[ownerAgeGroup] ?? ownerAgeGroup) : null,
+    ownerGender ? (GENDER_LABEL[ownerGender] ?? ownerGender) : null,
   ]
     .filter(Boolean)
     .join(" · ");

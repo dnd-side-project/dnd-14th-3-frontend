@@ -206,9 +206,7 @@ export const reservationCommentCreateRequestSchema = z.object({
   content: z.string().trim().min(1),
 });
 
-export type ReservationCommentCreateRequest = z.infer<
-  typeof reservationCommentCreateRequestSchema
->;
+export type ReservationCommentCreateRequest = z.infer<typeof reservationCommentCreateRequestSchema>;
 
 // ─── 예약 생성/수정 요청 ─────────────────────────────────────────
 

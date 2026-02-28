@@ -1,6 +1,9 @@
-import { type InfiniteData,useInfiniteQuery } from "@tanstack/react-query";
+import { type InfiniteData, useInfiniteQuery } from "@tanstack/react-query";
 
-import type { PageResponseReservationSummaryDto, ReservationSearchCondition } from "@/types/companion-reservation";
+import type {
+  PageResponseReservationSummaryDto,
+  ReservationSearchCondition,
+} from "@/types/companion-reservation";
 
 import { getReservationsApi, type GetReservationsParams } from "@/api/companion-reservation";
 
@@ -11,7 +14,7 @@ type UseReservationsParams = Pick<GetReservationsParams, "limit"> & {
   condition?: ReservationSearchCondition;
 };
 
-const FIFTEEN_SECONDS = 1000 * 15 ;
+const FIFTEEN_SECONDS = 1000 * 15;
 const ONE_MINUTES = 1000 * 60;
 
 export function useReservations(params: UseReservationsParams = {}) {

@@ -8,7 +8,7 @@ export function formatDateChipLabel(date: Date | null): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
-  
+
   if (year === currentYear) {
     return `${month}.${day}`;
   }
@@ -24,10 +24,7 @@ export function formatRegionChipLabel(region: string | null): string {
   return reverseRegionMap[region] || region;
 }
 
-export function formatAgeGenderChipLabel(
-  ageGroup: string | null,
-  gender: Gender | null,
-): string {
+export function formatAgeGenderChipLabel(ageGroup: string | null, gender: Gender | null): string {
   const items = [
     ...(ageGroup ? [ageGroup] : []),
     ...(gender ? [gender === "MALE" ? "남자" : "여자"] : []),

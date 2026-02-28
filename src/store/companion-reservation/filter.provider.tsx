@@ -11,9 +11,5 @@ interface FilterStoreProviderProps {
 
 export function FilterStoreProvider({ children }: FilterStoreProviderProps) {
   const [store] = useState(() => createFilterStore());
-  return (
-    <FilterStoreContext.Provider value={store}>
-      {children}
-    </FilterStoreContext.Provider>
-  );
+  return <FilterStoreContext.Provider value={store}>{children}</FilterStoreContext.Provider>;
 }

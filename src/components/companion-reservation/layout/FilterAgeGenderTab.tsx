@@ -24,11 +24,7 @@ export default function FilterAgeGenderTab({
         <span className="text-body-2 font-semibold text-gray-900">나이</span>
         <div className="flex flex-wrap gap-2">
           {AGE_GROUPS.map((age) => (
-            <ChipButton
-              key={age}
-              selected={ageGroup === age}
-              onClick={() => onSelectAge(age)}
-            >
+            <ChipButton key={age} selected={ageGroup === age} onClick={() => onSelectAge(age)}>
               {age}
             </ChipButton>
           ))}

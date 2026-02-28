@@ -46,4 +46,6 @@ export type {
   ReservationCardProps,
   ReservationCardRequesterInfo,
 } from "./reservation-card.type";
+export type { ReservationFormValues } from "./reservation-form.type";
+export { defaultReservationFormValues, reservationFormSchema } from "./reservation-form.type";
 export type { ReservationSearchFilter } from "./reservation-search-filter.type";
