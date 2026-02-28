@@ -3,17 +3,19 @@ export interface DateTimeLabel {
   timeLabel: string;
 }
 
+const KST_TIMEZONE = "Asia/Seoul";
+
 /**
- * ISO 8601 문자열을 한국어 날짜/시간 라벨로 포맷팅
+ * ISO 8601 문자열(UTC)을 한국어 날짜/시간 라벨(KST, UTC+9)로 포맷팅
  *
- * @param isoString - ISO 8601 형식의 날짜/시간 문자열
- * @returns 날짜 라벨(예: "2026년 2월 5일")과 시간 라벨(예: "14:00")
+ * @param isoString - ISO 8601 형식의 날짜/시간 문자열 (UTC)
+ * @returns 날짜 라벨(예: "2026년 2월 5일")과 시간 라벨(예: "23:00")
  *
  * @example
  * ```ts
  * const { dateLabel, timeLabel } = formatDateTimeLabel("2026-02-05T14:00:00Z");
  * // dateLabel: "2026년 2월 5일"
- * // timeLabel: "14:00"
+ * // timeLabel: "23:00" (UTC 14:00 + 9h = KST 23:00)
  * ```
  */
 export function formatDateTimeLabel(isoString: string): DateTimeLabel {
@@ -27,11 +29,13 @@ export function formatDateTimeLabel(isoString: string): DateTimeLabel {
     year: "numeric",
     month: "long",
     day: "numeric",
+    timeZone: KST_TIMEZONE,
   });
   const timeLabel = date.toLocaleTimeString("ko-KR", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
+    timeZone: KST_TIMEZONE,
   });
 
   return { dateLabel, timeLabel };
