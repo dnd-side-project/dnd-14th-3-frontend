@@ -1,11 +1,14 @@
-import { useEffect, useState } from "react";
-
 import { X } from "lucide-react";
 
 import type { FilterTab, FilterValues } from "@/types/companion-reservation";
-import { Gender } from "@/types/profile";
 
-import { useBottomSheet } from "@/hooks/shared/bottom-sheet";
+import {
+  FILTER_TAB_LABELS,
+  FILTER_TABS,
+  getFilterCount,
+} from "@/lib/companion-reservation/filterBottomSheet";
+
+import { useFilterBottomSheetState } from "@/hooks/companion-reservation/useFilterBottomSheetState";
 
 import { BottomSheet } from "@/components/shared/bottom-sheet";
 import { Button } from "@/components/shared/button";
@@ -29,42 +32,6 @@ export interface FilterModalProps {
 }
 
 /* =====================
- * Constants
- * ===================== */
-const TAB_LABELS: Record<FilterTab, string> = {
-  date: "날짜",
-  "age-gender": "나이/성별",
-  region: "지역",
-};
-
-const TABS: FilterTab[] = ["date", "region", "age-gender"];
-
-/* =====================
- * Helpers
- * ===================== */
-function getFilterCount(tab: FilterTab, values: FilterValues): number {
-  switch (tab) {
-    case "date":
-      return values.date ? 1 : 0;
-    case "age-gender":
-      return (values.ageGroup ? 1 : 0) + (values.gender ? 1 : 0);
-    case "region":
-      return values.region ? 1 : 0;
-    default:
-      return 0;
-  }
-}
-
-function hasAnyFilter(values: FilterValues): boolean {
-  return (
-    values.date !== null ||
-    values.ageGroup !== null ||
-    values.gender !== null ||
-    values.region !== null
-  );
-}
-
-/* =====================
  * FilterBottomSheet
  * ===================== */
 export default function FilterBottomSheet({
@@ -75,64 +42,23 @@ export default function FilterBottomSheet({
   initialValues,
   onApply,
 }: FilterModalProps) {
-  const [values, setValues] = useState<FilterValues>(
-    initialValues ?? {
-      date: null,
-      ageGroup: null,
-      gender: null,
-      region: null,
-      keyword: "",
-    }
-  );
-  const { open: openBottomSheet, close: closeBottomSheet, ...bottomSheet } = useBottomSheet();
-
-  // 모달이 열릴 때마다 최신 저장값으로 동기화
-  useEffect(() => {
-    if (isOpen) {
-      openBottomSheet();
-    }
-  }, [isOpen, openBottomSheet]);
-
-  const handleSelectAge = (age: string) => {
-    setValues((prev) => ({
-      ...prev,
-      ageGroup: prev.ageGroup === age ? null : age,
-    }));
-  };
-
-  const handleSelectGender = (gender: Gender) => {
-    setValues((prev) => ({
-      ...prev,
-      gender: prev.gender === gender ? null : gender,
-    }));
-  };
-
-  const handleSelectRegion = (region: string) => {
-    setValues((prev) => ({
-      ...prev,
-      region: prev.region === region ? null : region,
-    }));
-  };
-
-  const handleReset = () => {
-    setValues({
-      date: null,
-      ageGroup: null,
-      gender: null,
-      region: null,
-      keyword: "",
-    });
-    closeBottomSheet();
-  };
-  const handleClose = () => {
-    onClose();
-    closeBottomSheet();
-  };
-
-  const handleApply = () => {
-    onApply(values);
-    closeBottomSheet();
-  };
+  const {
+    values,
+    bottomSheet,
+    isActionDisabled,
+    handleDateChange,
+    handleSelectAge,
+    handleSelectGender,
+    handleSelectRegion,
+    handleReset,
+    handleClose,
+    handleApply,
+  } = useFilterBottomSheetState({
+    isOpen,
+    initialValues,
+    onClose,
+    onApply,
+  });
 
   return (
     <BottomSheet
@@ -161,7 +87,7 @@ export default function FilterBottomSheet({
         <div className="flex flex-col">
           {/* Filter Tabs */}
           <div className="flex px-5 gap-1 border-b border-gray-100">
-            {TABS.map((tab) => {
+            {FILTER_TABS.map((tab) => {
               const isActive = activeTab === tab;
               const count = getFilterCount(tab, values);
               return (
@@ -175,7 +101,7 @@ export default function FilterBottomSheet({
                       : "font-medium text-gray-400"
                   }`}
                 >
-                  {TAB_LABELS[tab]}
+                  {FILTER_TAB_LABELS[tab]}
                   {count > 0 ? ` ${count}` : ""}
                 </button>
               );
@@ -185,10 +111,7 @@ export default function FilterBottomSheet({
           {/* Tab Content */}
           <div className="py-6 min-h-80">
             {activeTab === "date" && (
-              <FilterDateTab
-                date={values.date}
-                onChange={(date) => setValues((prev) => ({ ...prev, date }))}
-              />
+              <FilterDateTab date={values.date} onChange={handleDateChange} />
             )}
             {activeTab === "age-gender" && (
               <div className="px-5">
@@ -214,14 +137,14 @@ export default function FilterBottomSheet({
             size="large"
             fullWidth
             onClick={handleReset}
-            disabled={!hasAnyFilter(values)}
+            disabled={isActionDisabled}
           >
             초기화
           </Button.Secondary>
           <Button.Primary
             size="large"
             fullWidth
-            disabled={!hasAnyFilter(values)}
+            disabled={isActionDisabled}
             onClick={handleApply}
           >
             적용

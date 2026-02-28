@@ -7,6 +7,7 @@ import type {
   PageResponseCreatedReservationListDto,
   PageResponseReservationCommentDto,
   PageResponseReservationSummaryDto,
+  ReservationCommentDto,
   ReservationDetailDto,
   ReservationSummaryDto,
 } from "@/types/companion-reservation";
@@ -49,11 +50,13 @@ const mockDetail: ReservationDetailDto = {
   viewCount: 7,
   applicantCount: 3,
   commentCount: 2,
-  ownerId: 1,
+  ownerId: 2,
   ownerNickname: "개발자",
   ownerProfileImageUrl:
     "http://localhost:3845/assets/b8463b7c90c4ed29f5e3bcc370b07c76119ee2a3.png",
   ownerGender: "MALE",
+  ownerAgeGroup: "TWENTIES",
+  ownerIntroduction: "인물사진 위주로 찍는 걸 좋아하는 개발자입니다.",
   title: "홍대에서 사진 동행 구해요",
   scheduledAt: "2026-02-20T14:30:00",
   region1Depth: "서울특별시",
@@ -222,6 +225,44 @@ const mockApplicants: ApplicantListResponseDto = {
   ],
 };
 
+const initialComments: ReservationCommentDto[] = [
+  {
+    commentId: 1,
+    reservationId: 101,
+    authorId: 2,
+    authorNickname: "라이언",
+    authorProfileImageUrl:
+      "http://localhost:3845/assets/b8463b7c90c4ed29f5e3bcc370b07c76119ee2a3.png",
+    content: "저 지원했는데 확인 부탁드려요!",
+    isDeleted: false,
+    createdAt: "2026-02-18T10:00:00",
+    updatedAt: "2026-02-18T10:00:00",
+  },
+];
+
+const reservationDetailDb = new Map<number, ReservationDetailDto>([[
+  mockDetail.reservationId,
+  {
+    ...mockDetail,
+    commentCount: initialComments.length,
+    photoStyleSnapshot: mockDetail.photoStyleSnapshot
+      ? [...mockDetail.photoStyleSnapshot]
+      : undefined,
+  },
+]]);
+
+const commentsDb = new Map<number, ReservationCommentDto[]>([[
+  mockDetail.reservationId,
+  [...initialComments],
+]]);
+
+const appliedReservationDb = new Set<number>();
+
+let nextCommentId =
+  initialComments.length > 0
+    ? Math.max(...initialComments.map((comment) => comment.commentId)) + 1
+    : 1;
+
 // ─── 핸들러 ────────────────────────────────────────────────────────
 
 export const reservationHandlers: RequestHandler[] = [
@@ -279,11 +320,17 @@ export const reservationHandlers: RequestHandler[] = [
 
   // 예약 상세
   http.get("/api/v1/reservations/:reservationId", ({ params }) => {
-    const id = Number(params.reservationId);
-    if (id !== 101) {
-      return HttpResponse.json({ success: false, message: "Not found" }, { status: 404 });
+    const reservationId = Number(params.reservationId);
+    const detail = reservationDetailDb.get(reservationId);
+
+    if (!detail) {
+      return HttpResponse.json(
+        { success: false, message: "예약 글을 찾을 수 없습니다.", code: "RESERVATION_NOT_FOUND" },
+        { status: 404 },
+      );
     }
-    return HttpResponse.json({data:mockDetail});
+
+    return HttpResponse.json({ data: detail });
   }),
 
   // 예약 생성
@@ -292,7 +339,31 @@ export const reservationHandlers: RequestHandler[] = [
   }),
 
   // 예약 취소(삭제)
-  http.delete("/api/v1/reservations/:reservationId", () => {
+  http.delete("/api/v1/reservations/:reservationId", ({ params }) => {
+    const reservationId = Number(params.reservationId);
+    const detail = reservationDetailDb.get(reservationId);
+
+    if (!detail) {
+      return HttpResponse.json(
+        { success: false, message: "예약 글을 찾을 수 없습니다.", code: "RESERVATION_NOT_FOUND" },
+        { status: 404 },
+      );
+    }
+
+    detail.status = "CANCELED";
+
+    const feedItem = mockFeed.find((reservation) => reservation.reservationId === reservationId);
+    if (feedItem) {
+      feedItem.status = "CANCELED";
+    }
+
+    const createdItem = mockCreated.find(
+      (reservation) => reservation.reservationId === reservationId,
+    );
+    if (createdItem) {
+      createdItem.status = "CANCELED";
+    }
+
     return HttpResponse.json({ success: true });
   }),
 
@@ -302,18 +373,48 @@ export const reservationHandlers: RequestHandler[] = [
   }),
 
   // 동행 지원
-  http.post("/api/v1/reservations/:reservationId/apply", () => {
+  http.post("/api/v1/reservations/:reservationId/apply", ({ params }) => {
+    const reservationId = Number(params.reservationId);
+    const detail = reservationDetailDb.get(reservationId);
+
+    if (!detail) {
+      return HttpResponse.json(
+        { success: false, message: "예약 글을 찾을 수 없습니다.", code: "RESERVATION_NOT_FOUND" },
+        { status: 404 },
+      );
+    }
+
+    if (!appliedReservationDb.has(reservationId)) {
+      appliedReservationDb.add(reservationId);
+      detail.applicantCount += 1;
+    }
+
     return HttpResponse.json({ success: true });
   }),
 
   // 동행 지원 취소
-  http.delete("/api/v1/reservations/:reservationId/apply", () => {
+  http.delete("/api/v1/reservations/:reservationId/apply", ({ params }) => {
+    const reservationId = Number(params.reservationId);
+    const detail = reservationDetailDb.get(reservationId);
+
+    if (!detail) {
+      return HttpResponse.json(
+        { success: false, message: "예약 글을 찾을 수 없습니다.", code: "RESERVATION_NOT_FOUND" },
+        { status: 404 },
+      );
+    }
+
+    if (appliedReservationDb.has(reservationId)) {
+      appliedReservationDb.delete(reservationId);
+      detail.applicantCount = Math.max(0, detail.applicantCount - 1);
+    }
+
     return HttpResponse.json({ success: true });
   }),
 
   // 지원자 목록
   http.get("/api/v1/reservations/:reservationId/applicants", () => {
-    return HttpResponse.json(mockApplicants);
+    return HttpResponse.json({data: mockApplicants});
   }),
 
   // 지원자 수락
@@ -327,32 +428,66 @@ export const reservationHandlers: RequestHandler[] = [
   }),
 
   // 댓글 목록
-  http.get("/api/v1/reservations/:reservationId/comments", ({ request }) => {
+  http.get("/api/v1/reservations/:reservationId/comments", ({ params, request }) => {
+    const reservationId = Number(params.reservationId);
     const url = new URL(request.url);
     const limit = url.searchParams.get("limit");
     const pageSize = limit ? Number(limit) : 10;
+    const reservationComments = commentsDb.get(reservationId) ?? [];
 
     const response: PageResponseReservationCommentDto = {
-      content: [
-        {
-          commentId: 1,
-          reservationId: 101,
-          authorId: 2,
-          authorNickname: "라이언",
-          authorProfileImageUrl:
-            "http://localhost:3845/assets/b8463b7c90c4ed29f5e3bcc370b07c76119ee2a3.png",
-          content: "저 지원했는데 확인 부탁드려요!",
-          isDeleted: false,
-          createdAt: "2026-02-18T10:00:00",
-          updatedAt: "2026-02-18T10:00:00",
-        },
-      ].slice(0, pageSize),
+      content: reservationComments.slice(0, pageSize),
       nextCursor: null,
       size: pageSize,
       hasNext: false,
-      totalElements: 1,
+      totalElements: reservationComments.length,
     };
 
-    return HttpResponse.json(response);
+    return HttpResponse.json({data: response});
+  }),
+
+  // 댓글 작성
+  http.post("/api/v1/reservations/:reservationId/comments", async ({ params, request }) => {
+    const reservationId = Number(params.reservationId);
+    const detail = reservationDetailDb.get(reservationId);
+
+    if (!detail) {
+      return HttpResponse.json(
+        { success: false, message: "예약 글을 찾을 수 없습니다.", code: "RESERVATION_NOT_FOUND" },
+        { status: 404 },
+      );
+    }
+
+    const body = (await request.json()) as { content?: string };
+    const content = body.content?.trim();
+
+    if (!content) {
+      return HttpResponse.json(
+        { success: false, message: "댓글 내용을 입력해주세요." },
+        { status: 400 },
+      );
+    }
+
+    const now = new Date().toISOString();
+    const reservationComments = commentsDb.get(reservationId) ?? [];
+
+    const newComment: ReservationCommentDto = {
+      commentId: nextCommentId,
+      reservationId,
+      authorId: 1,
+      authorNickname: "개발자",
+      authorProfileImageUrl: mockDetail.ownerProfileImageUrl,
+      content,
+      isDeleted: false,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    nextCommentId += 1;
+
+    commentsDb.set(reservationId, [newComment, ...reservationComments]);
+    detail.commentCount = (commentsDb.get(reservationId) ?? []).length;
+
+    return HttpResponse.json({ success: true });
   }),
 ];
