@@ -1,4 +1,4 @@
-import { useGetMyPageSummary } from "@/queries/my-page/useGetMyPageSummary";
+import { useGetUserProfile } from "@/queries/user";
 
 import {
   MyPageCompanionCard,
@@ -14,9 +14,9 @@ const HARDCODED_RATING = 4.8;
 const HARDCODED_COMPANION_COUNT = 12;
 
 export default function MyPage() {
-  const { data: summary, isLoading, isError } = useGetMyPageSummary();
+  const { data: profile, isLoading, isError } = useGetUserProfile();
 
-  if (isLoading || isError || !summary) {
+  if (isLoading || isError || !profile) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <LoadingIndicator />
@@ -24,8 +24,8 @@ export default function MyPage() {
     );
   }
 
-  const displaySummary = {
-    ...summary,
+  const displayProfile = {
+    ...profile,
     profileImageUrl: HARDCODED_PROFILE_IMAGE_URL,
     rating: HARDCODED_RATING,
     companionCount: HARDCODED_COMPANION_COUNT,
@@ -33,8 +33,8 @@ export default function MyPage() {
 
   return (
     <div className="flex flex-col pb-4">
-      <MyPageProfileSection summary={displaySummary} />
-      <MyPageCompanionCard companionCount={displaySummary.companionCount} />
+      <MyPageProfileSection summary={displayProfile} />
+      <MyPageCompanionCard companionCount={displayProfile.companionCount} />
       <div className="mt-4 overflow-hidden border border-gray-100 bg-white">
         <MyPageCompanionSchedule />
         <MyPageCompanionRecords />
