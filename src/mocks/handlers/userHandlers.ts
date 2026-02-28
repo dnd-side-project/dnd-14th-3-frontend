@@ -28,9 +28,17 @@ export const userHandlers: RequestHandler[] = [
     });
   }),
 
-  /** 본인 프로필 수정 (userId 경로) */
+  /** 본인 프로필 수정 (userId 경로, multipart/form-data) */
   http.patch("/api/v1/users/:userId/profiles", async ({ request }) => {
-    const body = (await request.json()) as PatchUserProfileRequest;
+    const formData = await request.formData();
+    const requestPart = formData.get("request");
+    const body = (
+      typeof requestPart === "string"
+        ? JSON.parse(requestPart)
+        : requestPart instanceof Blob
+          ? JSON.parse(await requestPart.text())
+          : {}
+    ) as PatchUserProfileRequest;
 
     if (!body.nickname?.trim()) {
       return HttpResponse.json(
@@ -45,12 +53,19 @@ export const userHandlers: RequestHandler[] = [
     }
 
     return HttpResponse.json({
-      nickname: body.nickname,
-      gender: body.gender,
-      ageGroup: body.ageGroup,
-      introduction: body.introduction,
-      profileImageUrl: body.profileImageUrl ?? "https://example.com/updated_profile.jpg",
-      photoStyles: body.photoStyles,
+      success: true,
+      message: "SUCCESS",
+      code: "",
+      data: {
+        userId: 1,
+        nickname: body.nickname,
+        gender: body.gender,
+        ageGroup: body.ageGroup,
+        introduction: body.introduction,
+        profileImageUrl: body.profileImageUrl ?? "https://example.com/updated_profile.jpg",
+        photoStyles: body.photoStyles,
+        consent: { ...consents },
+      },
     });
   }),
 
