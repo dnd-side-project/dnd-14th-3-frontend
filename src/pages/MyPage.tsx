@@ -7,6 +7,7 @@ import {
   MyPageMenuList,
   MyPageProfileSection,
 } from "@/components/my-page";
+import { Button } from "@/components/shared/button";
 import { LoadingIndicator } from "@/components/shared/loading";
 
 const HARDCODED_PROFILE_IMAGE_URL = "https://example.com/profile.jpg";
@@ -14,9 +15,22 @@ const HARDCODED_RATING = 4.8;
 const HARDCODED_COMPANION_COUNT = 12;
 
 export default function MyPage() {
-  const { data: profile, isLoading, isError } = useGetUserProfile();
+  const { data: profile, isLoading, isError, refetch } = useGetUserProfile();
 
-  if (isLoading || isError || !profile) {
+  if (isError) {
+    return (
+      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 px-4 text-center">
+        <p className="text-body-1 font-medium text-gray-700">
+          프로필을 불러오지 못했어요.
+        </p>
+        <Button.Secondary onClick={() => refetch()} fullWidth className="max-w-64">
+          다시 시도
+        </Button.Secondary>
+      </div>
+    );
+  }
+
+  if (isLoading || !profile) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <LoadingIndicator />
