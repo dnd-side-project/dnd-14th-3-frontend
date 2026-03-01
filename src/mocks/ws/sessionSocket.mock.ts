@@ -46,8 +46,12 @@ function parseClientFrame(raw: string) {
   return { command, headers, body };
 }
 
-export function createMockSessionSocket(sessionId: number): StompCompatibleSocket {
+export function createMockSessionSocket(
+  sessionId: number,
+  scenario?: "disconnect" | null
+): StompCompatibleSocket {
   let intervalId: number | null = null;
+  let disconnectTimeoutId: number | null = null;
   let tick = 0;
   let subscribedDestination: string | null = null;
   let isConnected = false;
@@ -63,6 +67,10 @@ export function createMockSessionSocket(sessionId: number): StompCompatibleSocke
       if (intervalId != null) {
         window.clearInterval(intervalId);
         intervalId = null;
+      }
+      if (disconnectTimeoutId != null) {
+        window.clearTimeout(disconnectTimeoutId);
+        disconnectTimeoutId = null;
       }
       socket.readyState = SOCKET_CLOSED;
       socket.onclose?.(new CloseEvent("close"));
@@ -85,6 +93,11 @@ export function createMockSessionSocket(sessionId: number): StompCompatibleSocke
       if (command === "SUBSCRIBE") {
         subscribedDestination = headers.get("destination") ?? null;
         if (!subscribedDestination) return;
+        if (scenario === "disconnect") {
+          disconnectTimeoutId = window.setTimeout(() => {
+            socket.close();
+          }, 3000);
+        }
 
         intervalId = window.setInterval(() => {
           tick += 1;

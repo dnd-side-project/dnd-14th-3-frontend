@@ -63,6 +63,14 @@ const MATCH_FLOW_STORAGE_KEY = "main-map-match-flow-v1";
 const MATCH_FLOW_TTL_MS = 30 * 60 * 1000;
 const MAX_MATCH_RETRY_COUNT = 2;
 const SOCKET_OPEN_STATE = 1;
+const SSE_RECONNECT_BASE_DELAY_MS = 1000;
+const SSE_RECONNECT_MAX_DELAY_MS = 30000;
+const SSE_RECONNECT_MAX_ATTEMPTS = 8;
+const SSE_RECONNECT_STABLE_WINDOW_MS = 10000;
+const WS_RECONNECT_BASE_DELAY_MS = 1000;
+const WS_RECONNECT_MAX_DELAY_MS = 30000;
+const WS_RECONNECT_MAX_ATTEMPTS = 8;
+const WS_RECONNECT_STABLE_WINDOW_MS = 10000;
 
 type SessionSocketMessageType = "LOCATION" | "USER_ARRIVED" | "SESSION_READY" | "SESSION_END";
 
@@ -129,6 +137,21 @@ type StompCompatibleSocket = {
   onclose: ((event: CloseEvent) => void) | null;
   readyState: number;
 };
+
+function getExponentialBackoffDelay(attempt: number, baseDelayMs: number, maxDelayMs: number) {
+  const safeAttempt = Math.max(1, attempt);
+  return Math.min(maxDelayMs, baseDelayMs * 2 ** (safeAttempt - 1));
+}
+
+function shouldReconnectSseInPhase(phase: MapPhase) {
+  return (
+    phase === "matching-in-progress" ||
+    phase === "match-success" ||
+    phase === "match-accepted" ||
+    phase === "moving" ||
+    phase === "arrival-pending"
+  );
+}
 
 function toSockJsUrl(wsUrl: string): string {
   if (wsUrl.startsWith("wss://")) return `https://${wsUrl.slice("wss://".length)}`;
@@ -359,7 +382,15 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   const currentLocationSheet = useBottomSheet();
   const companionRequestSheet = useBottomSheet();
   const sseConnectionRef = useRef<SseConnection | null>(null);
+  const sseReconnectTimerRef = useRef<number | null>(null);
+  const sseReconnectAttemptRef = useRef(0);
+  const sseConnectedAtRef = useRef<number | null>(null);
+  const shouldReconnectSseRef = useRef(false);
   const sessionWsRef = useRef<StompCompatibleSocket | null>(null);
+  const wsReconnectTimerRef = useRef<number | null>(null);
+  const wsReconnectAttemptRef = useRef(0);
+  const wsConnectedAtRef = useRef<number | null>(null);
+  const shouldReconnectWsRef = useRef(false);
   const sessionWatchIdRef = useRef<number | null>(null);
   const isSessionStompConnectedRef = useRef(false);
   const sessionWsBufferRef = useRef("");
@@ -529,6 +560,17 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   }, [phase]);
 
   useEffect(() => {
+    const shouldReconnect = shouldReconnectSseInPhase(phase);
+    shouldReconnectSseRef.current = shouldReconnect;
+    if (shouldReconnect) return;
+    sseReconnectAttemptRef.current = 0;
+    if (sseReconnectTimerRef.current != null) {
+      window.clearTimeout(sseReconnectTimerRef.current);
+      sseReconnectTimerRef.current = null;
+    }
+  }, [phase]);
+
+  useEffect(() => {
     if (
       phase !== "match-success" &&
       phase !== "match-accepted" &&
@@ -544,9 +586,15 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   }, [phase]);
 
   const openMatchSseConnection = useCallback(() => {
+    shouldReconnectSseRef.current = true;
+    if (sseReconnectTimerRef.current != null) {
+      window.clearTimeout(sseReconnectTimerRef.current);
+      sseReconnectTimerRef.current = null;
+    }
     sseConnectionRef.current?.close();
     sseConnectionRef.current = connectMatchSseApi({
       onOpen: () => {
+        sseConnectedAtRef.current = Date.now();
         logger.info("[match-sse] connected");
       },
       onMatchProposal: (proposal) => {
@@ -608,17 +656,58 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
       },
       onError: (error) => {
         logger.error(error, { tag: "match-sse" });
-        transitionPhase("match-failed");
-        Toast.show({
-          type: "error",
-          message: "실시간 매칭 연결에 실패했어요.",
-          duration: 3000,
+        sseConnectionRef.current = null;
+        const connectedAt = sseConnectedAtRef.current;
+        if (connectedAt != null && Date.now() - connectedAt >= SSE_RECONNECT_STABLE_WINDOW_MS) {
+          sseReconnectAttemptRef.current = 0;
+        }
+        sseConnectedAtRef.current = null;
+
+        if (!shouldReconnectSseRef.current || !shouldReconnectSseInPhase(phaseRef.current)) return;
+        if (sseReconnectTimerRef.current != null) return;
+
+        const nextAttempt = sseReconnectAttemptRef.current + 1;
+        if (nextAttempt > SSE_RECONNECT_MAX_ATTEMPTS) {
+          shouldReconnectSseRef.current = false;
+          sseReconnectAttemptRef.current = 0;
+          transitionPhase("match-failed");
+          Toast.show({
+            type: "error",
+            message: "실시간 매칭 연결이 끊겼어요. 다시 시도해주세요.",
+            duration: 3000,
+          });
+          return;
+        }
+
+        sseReconnectAttemptRef.current = nextAttempt;
+        const delayMs = getExponentialBackoffDelay(
+          nextAttempt,
+          SSE_RECONNECT_BASE_DELAY_MS,
+          SSE_RECONNECT_MAX_DELAY_MS
+        );
+        logger.warn("[match-sse] reconnect scheduled", {
+          attempt: nextAttempt,
+          delayMs,
         });
+        sseReconnectTimerRef.current = window.setTimeout(() => {
+          sseReconnectTimerRef.current = null;
+          if (!shouldReconnectSseRef.current || !shouldReconnectSseInPhase(phaseRef.current)) return;
+          openMatchSseConnection();
+        }, delayMs);
       },
     });
   }, [transitionPhase]);
 
-  const stopSessionLocationSharing = useCallback(() => {
+  const stopSessionLocationSharing = useCallback((resetReconnectState = true) => {
+    if (resetReconnectState) {
+      shouldReconnectWsRef.current = false;
+      wsReconnectAttemptRef.current = 0;
+      wsConnectedAtRef.current = null;
+      if (wsReconnectTimerRef.current != null) {
+        window.clearTimeout(wsReconnectTimerRef.current);
+        wsReconnectTimerRef.current = null;
+      }
+    }
     if (
       sessionWatchIdRef.current != null &&
       typeof navigator !== "undefined" &&
@@ -752,14 +841,23 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
       return;
     }
 
-    stopSessionLocationSharing();
+    stopSessionLocationSharing(false);
+    shouldReconnectWsRef.current = true;
+    if (wsReconnectTimerRef.current != null) {
+      window.clearTimeout(wsReconnectTimerRef.current);
+      wsReconnectTimerRef.current = null;
+    }
     if (currentPhase !== "arrival-pending") {
       transitionPhase("moving");
     }
 
     const wsUrl = import.meta.env.VITE_WS_BASE_URL;
+    const wsScenario = import.meta.env.VITE_MSW_MATCH_WS_SCENARIO;
     const socket = isMockMode
-      ? createMockSessionSocket(currentSessionId)
+      ? createMockSessionSocket(
+          currentSessionId,
+          wsScenario === "disconnect" ? "disconnect" : null
+        )
       : (new SockJS(toSockJsUrl(wsUrl)) as unknown as StompCompatibleSocket);
     sessionWsRef.current = socket;
 
@@ -824,6 +922,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
 
         if (command === "CONNECTED") {
           isSessionStompConnectedRef.current = true;
+          wsConnectedAtRef.current = Date.now();
           sendStompFrame("SUBSCRIBE", {
             id: `session-location-${currentSessionId}`,
             destination: `/sub/sessions/${currentSessionId}/location`,
@@ -872,15 +971,75 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     };
 
     socket.onerror = () => {
-      Toast.show({
-        type: "error",
-        message: "위치 공유 연결에 실패했어요.",
-        duration: 3000,
-      });
+      const currentPhaseForReconnect = phaseRef.current;
+      if (
+        !shouldReconnectWsRef.current ||
+        (currentPhaseForReconnect !== "moving" && currentPhaseForReconnect !== "arrival-pending")
+      ) {
+        Toast.show({
+          type: "error",
+          message: "위치 공유 연결에 실패했어요.",
+          duration: 3000,
+        });
+      }
     };
 
     socket.onclose = () => {
       isSessionStompConnectedRef.current = false;
+      sessionWsBufferRef.current = "";
+      sessionWsRef.current = null;
+      if (
+        sessionWatchIdRef.current != null &&
+        typeof navigator !== "undefined" &&
+        navigator.geolocation
+      ) {
+        navigator.geolocation.clearWatch(sessionWatchIdRef.current);
+        sessionWatchIdRef.current = null;
+      }
+      const connectedAt = wsConnectedAtRef.current;
+      if (connectedAt != null && Date.now() - connectedAt >= WS_RECONNECT_STABLE_WINDOW_MS) {
+        wsReconnectAttemptRef.current = 0;
+      }
+      wsConnectedAtRef.current = null;
+
+      const currentPhaseForReconnect = phaseRef.current;
+      if (
+        !shouldReconnectWsRef.current ||
+        (currentPhaseForReconnect !== "moving" && currentPhaseForReconnect !== "arrival-pending")
+      ) {
+        return;
+      }
+      if (wsReconnectTimerRef.current != null) return;
+
+      const nextAttempt = wsReconnectAttemptRef.current + 1;
+      if (nextAttempt > WS_RECONNECT_MAX_ATTEMPTS) {
+        shouldReconnectWsRef.current = false;
+        wsReconnectAttemptRef.current = 0;
+        Toast.show({
+          type: "error",
+          message: "위치 공유 연결이 끊겼어요. 다시 시도해주세요.",
+          duration: 3000,
+        });
+        return;
+      }
+
+      wsReconnectAttemptRef.current = nextAttempt;
+      const delayMs = getExponentialBackoffDelay(
+        nextAttempt,
+        WS_RECONNECT_BASE_DELAY_MS,
+        WS_RECONNECT_MAX_DELAY_MS
+      );
+      logger.warn("[session-ws] reconnect scheduled", {
+        attempt: nextAttempt,
+        delayMs,
+      });
+      wsReconnectTimerRef.current = window.setTimeout(() => {
+        wsReconnectTimerRef.current = null;
+        if (!shouldReconnectWsRef.current) return;
+        const retryPhase = phaseRef.current;
+        if (retryPhase !== "moving" && retryPhase !== "arrival-pending") return;
+        startSessionLocationSharing();
+      }, delayMs);
     };
   }, [
     clearPersistedSessionLocations,
@@ -1204,6 +1363,12 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
 
   useEffect(() => {
     return () => {
+      shouldReconnectSseRef.current = false;
+      sseReconnectAttemptRef.current = 0;
+      if (sseReconnectTimerRef.current != null) {
+        window.clearTimeout(sseReconnectTimerRef.current);
+        sseReconnectTimerRef.current = null;
+      }
       sseConnectionRef.current?.close();
       sseConnectionRef.current = null;
       stopSessionLocationSharing();
