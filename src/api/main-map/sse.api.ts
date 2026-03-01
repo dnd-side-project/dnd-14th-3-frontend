@@ -50,7 +50,8 @@ function parseSseChunk(
     | "onMatchRequestWaitingCount"
   >
 ) {
-  const blocks = chunk.split("\n\n");
+  const normalizedChunk = chunk.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const blocks = normalizedChunk.split("\n\n");
 
   for (const block of blocks) {
     if (!block.trim()) continue;
@@ -78,7 +79,7 @@ function parseSseChunk(
 
     try {
       const parsed = JSON.parse(dataText) as unknown;
-      if (eventName === "match.proposal") {
+      if (eventName === "match.proposal.created") {
         handlers.onMatchProposal?.(parsed as MatchProposalEventData);
       } else if (eventName === "match.proposal.rejected") {
         handlers.onMatchProposalRejected?.(parsed as MatchProposalEventData);
@@ -180,6 +181,7 @@ export function connectMatchSseApi(options: ConnectMatchSseOptions): SseConnecti
         const { done, value } = await reader.read();
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
+        buffer = buffer.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 
         const boundary = buffer.lastIndexOf("\n\n");
         if (boundary === -1) continue;
@@ -195,7 +197,9 @@ export function connectMatchSseApi(options: ConnectMatchSseOptions): SseConnecti
           onMatchRequestWaitingCount: options.onMatchRequestWaitingCount,
         });
       }
+      if (isClosed) return;
       logger.warn("[match-sse] stream ended by server");
+      throw new Error("SSE stream ended unexpectedly.");
     } catch (error) {
       if (isClosed) return;
       logger.error(error, { tag: "match-sse-connect" });

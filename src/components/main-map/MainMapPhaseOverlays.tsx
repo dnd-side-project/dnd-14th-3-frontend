@@ -58,10 +58,12 @@ type MainMapPhaseOverlaysProps = {
     isCompletingArrival: boolean;
     movingSheetTitle: string;
     proposalRejectedSignal: number;
+    isLocationShareDisconnected: boolean;
     partnerProfileText: string;
     partnerExpectedDurationLabel: string;
     partnerRequestMessage: string;
     startMoving: () => void;
+    retryLocationShare: () => void;
     openDirections: () => void;
     completeArrival: () => void;
     arrivalStatusModal: {

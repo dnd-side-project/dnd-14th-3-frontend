@@ -3,7 +3,7 @@
 import { SignupRequest } from "@/api/auth";
 
 const MOCK_KAKAO_CODE = "mock-kakao-code";
-const MOCK_ACCESS_TOKEN = "mock-kakao-access-token";
+const MOCK_ACCESS_TOKEN = "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiIzIn0.";
 const MOCK_REFRESH_TOKEN = "mock-kakao-refresh-token";
 
 /** 회원가입 성공 시 사용할 Register-Token (localStorage register_token에 저장) */

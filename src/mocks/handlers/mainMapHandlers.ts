@@ -410,6 +410,12 @@ export const mainMapHandlers: RequestHandler[] = [
           const nearbyWaitingCount = Math.max(1, Math.floor(8 + Math.random() * 6));
           pushEvent("match.request.waiting-count", { nearbyWaitingCount });
         }, 4000);
+        const disconnectTimer =
+          scenario === "disconnect"
+            ? globalThis.setTimeout(() => {
+                controller.close();
+              }, 3000)
+            : null;
         let proposalRejectedTimeout: ReturnType<typeof globalThis.setTimeout> | null = null;
 
         const eventTimer = globalThis.setTimeout(() => {
@@ -440,7 +446,7 @@ export const mainMapHandlers: RequestHandler[] = [
             };
           }
 
-          pushEvent("match.proposal", {
+          pushEvent("match.proposal.created", {
             id: 12,
             userAId: 3,
             userBId: 4,
@@ -479,6 +485,9 @@ export const mainMapHandlers: RequestHandler[] = [
           globalThis.clearInterval(matchSessionTimer);
           if (proposalRejectedTimeout !== null) {
             globalThis.clearTimeout(proposalRejectedTimeout);
+          }
+          if (disconnectTimer !== null) {
+            globalThis.clearTimeout(disconnectTimer);
           }
           globalThis.clearInterval(keepAliveTimer);
           mockActiveSseScenario = null;

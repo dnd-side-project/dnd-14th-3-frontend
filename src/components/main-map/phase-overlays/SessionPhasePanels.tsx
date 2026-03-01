@@ -11,10 +11,12 @@ type AcceptedMatchDetailSheet = {
   isCompletingArrival: boolean;
   movingSheetTitle: string;
   proposalRejectedSignal: number;
+  isLocationShareDisconnected: boolean;
   partnerProfileText: string;
   partnerExpectedDurationLabel: string;
   partnerRequestMessage: string;
   startMoving: () => void;
+  retryLocationShare: () => void;
   openDirections: () => void;
   completeArrival: () => void;
   arrivalStatusModal: {
@@ -74,6 +76,11 @@ export default function SessionPhasePanels({
   const shouldCollapseMovingSheet =
     acceptedMatchDetailSheet.arrivalStatusModal.isOpen ||
     acceptedMatchDetailSheet.meetingStartedModal.isOpen;
+  const isLocationReconnectModalOpen =
+    showMovingPhase &&
+    acceptedMatchDetailSheet.hasMatchSession &&
+    acceptedMatchDetailSheet.isLocationShareDisconnected &&
+    !isPeerRejectedFlow;
 
   return (
     <>
@@ -209,6 +216,19 @@ export default function SessionPhasePanels({
       />
 
       <Popup
+        isOpen={isLocationReconnectModalOpen}
+        title="실시간 위치 공유가 중단되었어요"
+        content={"위치 공유 연결을 다시 시도할까요?"}
+        confirmMessage="재연결"
+        showCancel={false}
+        closeOnBackdrop={false}
+        onClose={() => {}}
+        onConfirm={() => {
+          acceptedMatchDetailSheet.retryLocationShare();
+        }}
+      />
+
+      <Popup
         isOpen={showFailedPhase && matchExpiredModal.isOpen}
         title="아직 연결되지 않았어요"
         content={"지금 근처에 수락 가능한 사용자가 없어요.\n다시 시도해볼까요?"}
@@ -253,3 +273,4 @@ export default function SessionPhasePanels({
     </>
   );
 }
+
