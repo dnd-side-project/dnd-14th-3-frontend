@@ -700,6 +700,9 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   }, [transitionPhase]);
 
   const stopSessionLocationSharing = useCallback((resetReconnectState = true) => {
+    const socketToClose = sessionWsRef.current;
+    sessionWsRef.current = null;
+
     if (resetReconnectState) {
       shouldReconnectWsRef.current = false;
       wsReconnectAttemptRef.current = 0;
@@ -717,13 +720,12 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
       navigator.geolocation.clearWatch(sessionWatchIdRef.current);
       sessionWatchIdRef.current = null;
     }
-    if (sessionWsRef.current) {
+    if (socketToClose) {
       try {
-        sessionWsRef.current.close();
+        socketToClose.close();
       } catch {
         // no-op
       }
-      sessionWsRef.current = null;
     }
     isSessionStompConnectedRef.current = false;
     sessionWsBufferRef.current = "";
@@ -894,6 +896,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     };
 
     socket.onopen = () => {
+      if (sessionWsRef.current !== socket) return;
       sendStompFrame("CONNECT", {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         "accept-version": "1.2,1.1,1.0",
@@ -902,6 +905,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     };
 
     socket.onmessage = (event) => {
+      if (sessionWsRef.current !== socket) return;
       if (typeof event.data !== "string") return;
       sessionWsBufferRef.current += event.data;
 
@@ -977,6 +981,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     };
 
     socket.onerror = () => {
+      if (sessionWsRef.current !== socket) return;
       const currentPhaseForReconnect = phaseRef.current;
       if (
         !shouldReconnectWsRef.current ||
@@ -991,6 +996,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     };
 
     socket.onclose = () => {
+      if (sessionWsRef.current !== socket) return;
       isSessionStompConnectedRef.current = false;
       sessionWsBufferRef.current = "";
       sessionWsRef.current = null;
