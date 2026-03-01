@@ -79,7 +79,7 @@ function parseSseChunk(
 
     try {
       const parsed = JSON.parse(dataText) as unknown;
-      if (eventName === "match.proposal") {
+      if (eventName === "match.proposal.created") {
         handlers.onMatchProposal?.(parsed as MatchProposalEventData);
       } else if (eventName === "match.proposal.rejected") {
         handlers.onMatchProposalRejected?.(parsed as MatchProposalEventData);

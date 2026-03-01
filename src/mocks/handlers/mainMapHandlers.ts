@@ -446,7 +446,7 @@ export const mainMapHandlers: RequestHandler[] = [
             };
           }
 
-          pushEvent("match.proposal", {
+          pushEvent("match.proposal.created", {
             id: 12,
             userAId: 3,
             userBId: 4,
