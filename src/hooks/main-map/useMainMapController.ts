@@ -362,6 +362,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   const matchRetryCountRef = useRef(0);
   const [isRetryingMatchRequest, setIsRetryingMatchRequest] = useState(false);
   const [isPartnerArrived, setIsPartnerArrived] = useState(false);
+  const [isWsConnectionDegraded, setIsWsConnectionDegraded] = useState(false);
   const [isMeetingStartedModalOpen, setIsMeetingStartedModalOpen] = useState(false);
   const [arrivalStatusModalType, setArrivalStatusModalType] = useState<
     "partner-arrived" | "partner-moving" | null
@@ -726,6 +727,9 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     }
     isSessionStompConnectedRef.current = false;
     sessionWsBufferRef.current = "";
+    if (resetReconnectState) {
+      setIsWsConnectionDegraded(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -843,6 +847,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
 
     stopSessionLocationSharing(false);
     shouldReconnectWsRef.current = true;
+    setIsWsConnectionDegraded(false);
     if (wsReconnectTimerRef.current != null) {
       window.clearTimeout(wsReconnectTimerRef.current);
       wsReconnectTimerRef.current = null;
@@ -923,6 +928,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
         if (command === "CONNECTED") {
           isSessionStompConnectedRef.current = true;
           wsConnectedAtRef.current = Date.now();
+          setIsWsConnectionDegraded(false);
           sendStompFrame("SUBSCRIBE", {
             id: `session-location-${currentSessionId}`,
             destination: `/sub/sessions/${currentSessionId}/location`,
@@ -1015,9 +1021,10 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
       if (nextAttempt > WS_RECONNECT_MAX_ATTEMPTS) {
         shouldReconnectWsRef.current = false;
         wsReconnectAttemptRef.current = 0;
+        setIsWsConnectionDegraded(true);
         Toast.show({
           type: "error",
-          message: "위치 공유 연결이 끊겼어요. 다시 시도해주세요.",
+          message: "위치 공유가 중단되었어요. 재연결을 눌러 복구해주세요.",
           duration: 3000,
         });
         return;
@@ -1374,6 +1381,18 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
       stopSessionLocationSharing();
     };
   }, [stopSessionLocationSharing]);
+
+  const handleRetrySessionLocationSharing = useCallback(() => {
+    wsReconnectAttemptRef.current = 0;
+    wsConnectedAtRef.current = null;
+    shouldReconnectWsRef.current = true;
+    if (wsReconnectTimerRef.current != null) {
+      window.clearTimeout(wsReconnectTimerRef.current);
+      wsReconnectTimerRef.current = null;
+    }
+    setIsWsConnectionDegraded(false);
+    startSessionLocationSharing();
+  }, [startSessionLocationSharing]);
 
   const handleCancelMatchingRequest = useCallback(async () => {
     if (isCancellingMatchRequest) return;
@@ -1843,10 +1862,12 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
       isCompletingArrival: isArrivingMatchSession,
       movingSheetTitle: isMeetingStartedModalOpen ? "만남 완료" : "이동 중",
       proposalRejectedSignal,
+      isLocationShareDisconnected: isWsConnectionDegraded,
       partnerProfileText,
       partnerExpectedDurationLabel,
       partnerRequestMessage,
       startMoving: startSessionLocationSharing,
+      retryLocationShare: handleRetrySessionLocationSharing,
       openDirections: handleOpenKakaoDirections,
       completeArrival: () => {
         void handleCompleteArrival();
