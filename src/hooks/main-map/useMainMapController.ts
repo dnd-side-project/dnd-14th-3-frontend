@@ -6,6 +6,13 @@ import { z } from "zod";
 import axios from "axios";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Client,
+  type IFrame,
+  type IMessage,
+  type IStompSocket,
+  type StompSubscription,
+} from "@stomp/stompjs";
 import { useForm, useWatch } from "react-hook-form";
 import SockJS from "sockjs-client";
 
@@ -62,7 +69,6 @@ type CompanionRequestFormValues = z.infer<typeof companionRequestSchema>;
 const MATCH_FLOW_STORAGE_KEY = "main-map-match-flow-v1";
 const MATCH_FLOW_TTL_MS = 30 * 60 * 1000;
 const MAX_MATCH_RETRY_COUNT = 2;
-const SOCKET_OPEN_STATE = 1;
 const SSE_RECONNECT_BASE_DELAY_MS = 1000;
 const SSE_RECONNECT_MAX_DELAY_MS = 30000;
 const SSE_RECONNECT_MAX_ATTEMPTS = 8;
@@ -126,16 +132,6 @@ type LegacyLocationSocketMessage = {
   latitude: number;
   longitude: number;
   timestamp?: string;
-};
-
-type StompCompatibleSocket = {
-  close: () => void;
-  send: (data: string) => void;
-  onopen: ((event: Event) => void) | null;
-  onmessage: ((event: MessageEvent) => void) | null;
-  onerror: ((event: Event) => void) | null;
-  onclose: ((event: CloseEvent) => void) | null;
-  readyState: number;
 };
 
 function getExponentialBackoffDelay(attempt: number, baseDelayMs: number, maxDelayMs: number) {
@@ -387,14 +383,14 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   const sseReconnectAttemptRef = useRef(0);
   const sseConnectedAtRef = useRef<number | null>(null);
   const shouldReconnectSseRef = useRef(false);
-  const sessionWsRef = useRef<StompCompatibleSocket | null>(null);
+  const sessionWsRef = useRef<Client | null>(null);
+  const sessionWsSubscriptionRef = useRef<StompSubscription | null>(null);
   const wsReconnectTimerRef = useRef<number | null>(null);
   const wsReconnectAttemptRef = useRef(0);
   const wsConnectedAtRef = useRef<number | null>(null);
   const shouldReconnectWsRef = useRef(false);
   const sessionWatchIdRef = useRef<number | null>(null);
   const isSessionStompConnectedRef = useRef(false);
-  const sessionWsBufferRef = useRef("");
   const isManualSearchPage = searchParams.get("manualSearch") === "1";
   const wasManualLocationModeRef = useRef(false);
   const manualModeOverrideRef = useRef(false);
@@ -700,8 +696,10 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   }, [transitionPhase]);
 
   const stopSessionLocationSharing = useCallback((resetReconnectState = true) => {
-    const socketToClose = sessionWsRef.current;
+    const stompClient = sessionWsRef.current;
     sessionWsRef.current = null;
+    sessionWsSubscriptionRef.current?.unsubscribe();
+    sessionWsSubscriptionRef.current = null;
 
     if (resetReconnectState) {
       shouldReconnectWsRef.current = false;
@@ -720,15 +718,8 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
       navigator.geolocation.clearWatch(sessionWatchIdRef.current);
       sessionWatchIdRef.current = null;
     }
-    if (socketToClose) {
-      try {
-        socketToClose.close();
-      } catch {
-        // no-op
-      }
-    }
+    stompClient?.deactivate();
     isSessionStompConnectedRef.current = false;
-    sessionWsBufferRef.current = "";
     if (resetReconnectState) {
       setIsWsConnectionDegraded(false);
     }
@@ -860,28 +851,31 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
 
     const wsUrl = import.meta.env.VITE_WS_BASE_URL;
     const wsScenario = import.meta.env.VITE_MSW_MATCH_WS_SCENARIO;
-    const socket = isMockMode
-      ? createMockSessionSocket(
-          currentSessionId,
-          wsScenario === "disconnect" ? "disconnect" : null
-        )
-      : (new SockJS(toSockJsUrl(wsUrl)) as unknown as StompCompatibleSocket);
-    sessionWsRef.current = socket;
-
-    const sendStompFrame = (command: string, headers: Record<string, string>, body = "") => {
-      const headerLines = Object.entries(headers).map(([key, value]) => `${key}:${value}`);
-      socket.send(`${command}\n${headerLines.join("\n")}\n\n${body}\0`);
-    };
+    const stompClient = new Client({
+      webSocketFactory: () =>
+        isMockMode
+          ? (createMockSessionSocket(
+              currentSessionId,
+              wsScenario === "disconnect" ? "disconnect" : null
+            ) as unknown as IStompSocket)
+          : (new SockJS(toSockJsUrl(wsUrl)) as unknown as IStompSocket),
+      connectHeaders: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      reconnectDelay: 0,
+      heartbeatIncoming: 10000,
+      heartbeatOutgoing: 10000,
+    });
+    sessionWsRef.current = stompClient;
 
     const sendLocation = (location: LatLng) => {
-      if (!isSessionStompConnectedRef.current || socket.readyState !== SOCKET_OPEN_STATE) return;
-      sendStompFrame(
-        "SEND",
-        {
-          destination: `/pub/sessions/${currentSessionId}/location`,
+      if (!isSessionStompConnectedRef.current || !stompClient.connected) return;
+      stompClient.publish({
+        destination: `/pub/sessions/${currentSessionId}/location`,
+        headers: {
           "content-type": "application/json",
         },
-        JSON.stringify({
+        body: JSON.stringify({
           type: "LOCATION",
           sessionId: currentSessionId,
           timestamp: new Date().toISOString(),
@@ -891,97 +885,65 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
           },
           latitude: location.lat,
           longitude: location.lng,
-        })
-      );
-    };
-
-    socket.onopen = () => {
-      if (sessionWsRef.current !== socket) return;
-      sendStompFrame("CONNECT", {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        "accept-version": "1.2,1.1,1.0",
-        "heart-beat": "10000,10000",
+        }),
       });
     };
 
-    socket.onmessage = (event) => {
-      if (sessionWsRef.current !== socket) return;
-      if (typeof event.data !== "string") return;
-      sessionWsBufferRef.current += event.data;
-
-      let frameEnd = sessionWsBufferRef.current.indexOf("\0");
-      while (frameEnd !== -1) {
-        const rawFrame = sessionWsBufferRef.current.slice(0, frameEnd);
-        sessionWsBufferRef.current = sessionWsBufferRef.current.slice(frameEnd + 1);
-        frameEnd = sessionWsBufferRef.current.indexOf("\0");
-
-        if (!rawFrame.trim()) continue;
-        const [headerPart, body = ""] = rawFrame.split("\n\n");
-        const headerLines = headerPart.split("\n");
-        const command = headerLines[0]?.trim();
-        const headers = new Map<string, string>();
-
-        for (const line of headerLines.slice(1)) {
-          const separatorIndex = line.indexOf(":");
-          if (separatorIndex === -1) continue;
-          const key = line.slice(0, separatorIndex).trim();
-          const value = line.slice(separatorIndex + 1).trim();
-          headers.set(key, value);
-        }
-
-        if (command === "CONNECTED") {
-          isSessionStompConnectedRef.current = true;
-          wsConnectedAtRef.current = Date.now();
-          setIsWsConnectionDegraded(false);
-          sendStompFrame("SUBSCRIBE", {
-            id: `session-location-${currentSessionId}`,
-            destination: `/sub/sessions/${currentSessionId}/location`,
-          });
-
-          if (typeof navigator !== "undefined" && navigator.geolocation) {
-            sessionWatchIdRef.current = navigator.geolocation.watchPosition(
-              (position) => {
-                const location = {
-                  lat: position.coords.latitude,
-                  lng: position.coords.longitude,
-                };
-                setCurrentLocation(location);
-                sendLocation(location);
-              },
-              () => {
-                Toast.show({
-                  type: "error",
-                  message: "위치 정보를 가져오지 못했어요.",
-                  duration: 2500,
-                });
-              },
-              {
-                enableHighAccuracy: true,
-                maximumAge: 3000,
-                timeout: 10000,
-              }
-            );
+    stompClient.onConnect = () => {
+      if (sessionWsRef.current !== stompClient) return;
+      isSessionStompConnectedRef.current = true;
+      wsConnectedAtRef.current = Date.now();
+      setIsWsConnectionDegraded(false);
+      sessionWsSubscriptionRef.current = stompClient.subscribe(
+        `/sub/sessions/${currentSessionId}/location`,
+        (message: IMessage) => {
+          try {
+            const parsed = JSON.parse(message.body) as unknown;
+            const eventMessage = normalizeIncomingSessionMessage(parsed, currentSessionId);
+            if (!eventMessage) return;
+            handleSessionEventMessage(eventMessage, myUserId);
+          } catch {
+            // Ignore malformed payload.
           }
-          continue;
-        }
+        },
+        { id: `session-location-${currentSessionId}` }
+      );
 
-        if (command !== "MESSAGE") continue;
-        const destination = headers.get("destination");
-        if (destination !== `/sub/sessions/${currentSessionId}/location`) continue;
-
-        try {
-          const parsed = JSON.parse(body) as unknown;
-          const eventMessage = normalizeIncomingSessionMessage(parsed, currentSessionId);
-          if (!eventMessage) continue;
-          handleSessionEventMessage(eventMessage, myUserId);
-        } catch {
-          // Ignore malformed payload.
-        }
+      if (typeof navigator !== "undefined" && navigator.geolocation) {
+        sessionWatchIdRef.current = navigator.geolocation.watchPosition(
+          (position) => {
+            const location = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            };
+            setCurrentLocation(location);
+            sendLocation(location);
+          },
+          () => {
+            Toast.show({
+              type: "error",
+              message: "위치 정보를 가져오지 못했어요.",
+              duration: 2500,
+            });
+          },
+          {
+            enableHighAccuracy: true,
+            maximumAge: 3000,
+            timeout: 10000,
+          }
+        );
       }
     };
 
-    socket.onerror = () => {
-      if (sessionWsRef.current !== socket) return;
+    stompClient.onStompError = (frame: IFrame) => {
+      logger.error("[session-ws] stomp error", {
+        message: frame.headers["message"],
+        body: frame.body,
+      });
+    };
+
+    stompClient.onWebSocketError = () => {
+      if (sessionWsRef.current !== stompClient) return;
       const currentPhaseForReconnect = phaseRef.current;
       if (
         !shouldReconnectWsRef.current ||
@@ -995,10 +957,11 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
       }
     };
 
-    socket.onclose = () => {
-      if (sessionWsRef.current !== socket) return;
+    stompClient.onWebSocketClose = () => {
+      if (sessionWsRef.current !== stompClient) return;
       isSessionStompConnectedRef.current = false;
-      sessionWsBufferRef.current = "";
+      sessionWsSubscriptionRef.current?.unsubscribe();
+      sessionWsSubscriptionRef.current = null;
       sessionWsRef.current = null;
       if (
         sessionWatchIdRef.current != null &&
@@ -1054,6 +1017,8 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
         startSessionLocationSharing();
       }, delayMs);
     };
+
+    stompClient.activate();
   }, [
     clearPersistedSessionLocations,
     sessionId,
