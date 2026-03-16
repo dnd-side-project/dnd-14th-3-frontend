@@ -13,6 +13,8 @@ import { getAccessToken, refreshAccessToken } from "@/api/client";
 type ConnectMatchSseOptions = {
   onOpen?: () => void;
   onError?: (error: unknown) => void;
+  lastEventId?: string | null;
+  onEventId?: (id: string) => void;
   onMatchProposal?: (data: MatchProposalEventData) => void;
   onMatchProposalRejected?: (data: MatchProposalEventData) => void;
   onMatchSession?: (data: MatchSessionEventData) => void;
@@ -48,7 +50,8 @@ function parseSseChunk(
     | "onMatchSession"
     | "onMatchRequestExpired"
     | "onMatchRequestWaitingCount"
-  >
+  >,
+  onEventId?: (id: string) => void
 ) {
   const normalizedChunk = chunk.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
   const blocks = normalizedChunk.split("\n\n");
@@ -57,12 +60,18 @@ function parseSseChunk(
     if (!block.trim()) continue;
 
     let eventName = "";
+    let eventId = "";
     const dataLines: string[] = [];
     const lines = block.split("\n");
 
     for (const rawLine of lines) {
       const line = rawLine.trimEnd();
       if (!line || line.startsWith(":")) continue;
+
+      if (line.startsWith("id:")) {
+        eventId = line.slice("id:".length).trim();
+        continue;
+      }
 
       if (line.startsWith("event:")) {
         eventName = line.slice("event:".length).trim();
@@ -74,6 +83,9 @@ function parseSseChunk(
       }
     }
 
+    if (eventId) {
+      onEventId?.(eventId);
+    }
     if (!eventName || dataLines.length === 0) continue;
     const dataText = dataLines.join("\n");
 
@@ -96,7 +108,10 @@ function parseSseChunk(
   }
 }
 
-async function openSseResponse(signal: AbortSignal): Promise<Response> {
+async function openSseResponse(
+  signal: AbortSignal,
+  lastEventId?: string | null
+): Promise<Response> {
   const token = getAccessToken();
   if (!token) {
     logger.warn("[match-sse] missing access token");
@@ -105,32 +120,32 @@ async function openSseResponse(signal: AbortSignal): Promise<Response> {
 
   logger.info("[match-sse] request start", { url: toSseUrl() });
 
-  const request = () =>
+  const buildHeaders = (accessToken: string) => {
+    const headers: Record<string, string> = {
+      Accept: "text/event-stream",
+      Authorization: `Bearer ${accessToken}`,
+    };
+    if (lastEventId) {
+      headers["Last-Event-ID"] = lastEventId;
+    }
+    return headers;
+  };
+
+  const request = (accessToken: string) =>
     fetch(toSseUrl(), {
       method: "GET",
-      headers: {
-        Accept: "text/event-stream",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: buildHeaders(accessToken),
       cache: "no-cache",
       signal,
     });
 
-  let response = await request();
+  let response = await request(token);
   logger.info("[match-sse] first response", { status: response.status });
 
   if (response.status === 401) {
     logger.warn("[match-sse] unauthorized, trying refresh");
     const nextAccessToken = await refreshAccessToken();
-    response = await fetch(toSseUrl(), {
-      method: "GET",
-      headers: {
-        Accept: "text/event-stream",
-        Authorization: `Bearer ${nextAccessToken}`,
-      },
-      cache: "no-cache",
-      signal,
-    });
+    response = await request(nextAccessToken);
     logger.info("[match-sse] retry response", { status: response.status });
   }
 
@@ -151,7 +166,7 @@ export function connectMatchSseApi(options: ConnectMatchSseOptions): SseConnecti
 
   void (async () => {
     try {
-      const response = await openSseResponse(controller.signal);
+      const response = await openSseResponse(controller.signal, options.lastEventId);
       if (!response.ok) {
         const body = await response.text().catch(() => "");
         throw new Error(`SSE request failed (${response.status}): ${body.slice(0, 200)}`);
@@ -195,7 +210,7 @@ export function connectMatchSseApi(options: ConnectMatchSseOptions): SseConnecti
           onMatchSession: options.onMatchSession,
           onMatchRequestExpired: options.onMatchRequestExpired,
           onMatchRequestWaitingCount: options.onMatchRequestWaitingCount,
-        });
+        }, options.onEventId);
       }
       if (isClosed) return;
       logger.warn("[match-sse] stream ended by server");
