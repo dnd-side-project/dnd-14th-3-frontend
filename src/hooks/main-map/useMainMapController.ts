@@ -77,6 +77,17 @@ const WS_RECONNECT_BASE_DELAY_MS = 1000;
 const WS_RECONNECT_MAX_DELAY_MS = 30000;
 const WS_RECONNECT_MAX_ATTEMPTS = 8;
 const WS_RECONNECT_STABLE_WINDOW_MS = 10000;
+const SSE_LAST_EVENT_ID_KEY = "match-sse-last-event-id";
+
+function loadLastSseEventId(): string | null {
+  if (typeof window === "undefined") return null;
+  return window.sessionStorage.getItem(SSE_LAST_EVENT_ID_KEY);
+}
+
+function persistLastSseEventId(id: string) {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.setItem(SSE_LAST_EVENT_ID_KEY, id);
+}
 
 type SessionSocketMessageType = "LOCATION" | "USER_ARRIVED" | "SESSION_READY" | "SESSION_END";
 
@@ -379,6 +390,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   const currentLocationSheet = useBottomSheet();
   const companionRequestSheet = useBottomSheet();
   const sseConnectionRef = useRef<SseConnection | null>(null);
+  const lastSseEventIdRef = useRef<string | null>(loadLastSseEventId());
   const sseReconnectTimerRef = useRef<number | null>(null);
   const sseReconnectAttemptRef = useRef(0);
   const sseConnectedAtRef = useRef<number | null>(null);
@@ -588,12 +600,17 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
       window.clearTimeout(sseReconnectTimerRef.current);
       sseReconnectTimerRef.current = null;
     }
-    sseConnectionRef.current?.close();
-    sseConnectionRef.current = connectMatchSseApi({
-      onOpen: () => {
-        sseConnectedAtRef.current = Date.now();
-        logger.info("[match-sse] connected");
-      },
+      sseConnectionRef.current?.close();
+      sseConnectionRef.current = connectMatchSseApi({
+        lastEventId: lastSseEventIdRef.current,
+        onEventId: (id) => {
+          lastSseEventIdRef.current = id;
+          persistLastSseEventId(id);
+        },
+        onOpen: () => {
+          sseConnectedAtRef.current = Date.now();
+          logger.info("[match-sse] connected");
+        },
       onMatchProposal: (proposal) => {
         logger.info("[match-sse] match.proposal received", proposal);
         setMatchProposal(proposal);
