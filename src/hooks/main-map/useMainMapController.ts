@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+﻿import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { z } from "zod";
@@ -289,13 +289,13 @@ function loadPersistedMatchFlow(): PersistedMatchFlow | null {
   if (typeof window === "undefined") return null;
 
   try {
-    const raw = window.localStorage.getItem(MATCH_FLOW_STORAGE_KEY);
+    const raw = window.sessionStorage.getItem(MATCH_FLOW_STORAGE_KEY);
     if (!raw) return null;
 
     const parsed = JSON.parse(raw) as Partial<PersistedMatchFlow>;
     if (!parsed || typeof parsed.updatedAt !== "number") return null;
     if (Date.now() - parsed.updatedAt > MATCH_FLOW_TTL_MS) {
-      window.localStorage.removeItem(MATCH_FLOW_STORAGE_KEY);
+      window.sessionStorage.removeItem(MATCH_FLOW_STORAGE_KEY);
       return null;
     }
 
@@ -323,7 +323,7 @@ function loadPersistedMatchFlow(): PersistedMatchFlow | null {
 
 function savePersistedMatchFlow(flow: PersistedMatchFlow) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(MATCH_FLOW_STORAGE_KEY, JSON.stringify(flow));
+  window.sessionStorage.setItem(MATCH_FLOW_STORAGE_KEY, JSON.stringify(flow));
 }
 
 export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptions) {
@@ -600,17 +600,17 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
       window.clearTimeout(sseReconnectTimerRef.current);
       sseReconnectTimerRef.current = null;
     }
-      sseConnectionRef.current?.close();
-      sseConnectionRef.current = connectMatchSseApi({
-        lastEventId: lastSseEventIdRef.current,
-        onEventId: (id) => {
-          lastSseEventIdRef.current = id;
-          persistLastSseEventId(id);
-        },
-        onOpen: () => {
-          sseConnectedAtRef.current = Date.now();
-          logger.info("[match-sse] connected");
-        },
+    sseConnectionRef.current?.close();
+    sseConnectionRef.current = connectMatchSseApi({
+      lastEventId: lastSseEventIdRef.current,
+      onEventId: (id) => {
+        lastSseEventIdRef.current = id;
+        persistLastSseEventId(id);
+      },
+      onOpen: () => {
+        sseConnectedAtRef.current = Date.now();
+        logger.info("[match-sse] connected");
+      },
       onMatchProposal: (proposal) => {
         logger.info("[match-sse] match.proposal received", proposal);
         setMatchProposal(proposal);
@@ -705,7 +705,8 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
         });
         sseReconnectTimerRef.current = window.setTimeout(() => {
           sseReconnectTimerRef.current = null;
-          if (!shouldReconnectSseRef.current || !shouldReconnectSseInPhase(phaseRef.current)) return;
+          if (!shouldReconnectSseRef.current || !shouldReconnectSseInPhase(phaseRef.current))
+            return;
           openMatchSseConnection();
         }, delayMs);
       },

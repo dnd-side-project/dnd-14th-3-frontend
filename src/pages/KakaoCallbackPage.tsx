@@ -65,7 +65,7 @@ export default function KakaoCallbackPage() {
           logger.info("[Auth] New user detected. Redirecting to onboarding.");
           setRegisterToken(data.registerToken);
           if (data.profileImageUrl) {
-            localStorage.setItem("profileImageUrl", data.profileImageUrl);
+            sessionStorage.setItem("profileImageUrl", data.profileImageUrl);
           }
           navigate("/onboarding", { replace: true });
           return;
