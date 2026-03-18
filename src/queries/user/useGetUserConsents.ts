@@ -13,6 +13,8 @@ import { getUserIdFromToken } from "@/services/auth";
 
 import { queryKeys } from "@/queries/keys";
 
+import { getLocationPermissionState } from "@/utils/main-map/geolocation";
+
 export function useGetUserConsents() {
   const userId = getUserIdFromToken();
   const cachedConsents = getCachedUserConsents(userId);
@@ -25,10 +27,18 @@ export function useGetUserConsents() {
 
   useEffect(() => {
     if (!query.data) return;
-    setCachedUserConsents(userId, {
-      locationAllowed: query.data.locationAllowed,
-      notificationAllowed: query.data.notificationAllowed,
-    });
+    let cancelled = false;
+    void (async () => {
+      const permissionState = await getLocationPermissionState();
+      if (cancelled) return;
+      setCachedUserConsents(userId, {
+        locationAllowed: permissionState === "denied" ? false : query.data.locationAllowed,
+        notificationAllowed: query.data.notificationAllowed,
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [query.data, userId]);
 
   return query;
