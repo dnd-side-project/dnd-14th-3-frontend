@@ -17,17 +17,26 @@ function getInitialToken(key: string) {
     return null;
   }
 
+  if (key === REGISTER_TOKEN_KEY) {
+    return sessionStorage.getItem(key);
+  }
+
   return localStorage.getItem(key);
 }
 
 function persistToken(key: string, value: string) {
+  if (key === REGISTER_TOKEN_KEY) {
+    sessionStorage.setItem(key, value);
+    return;
+  }
+
   localStorage.setItem(key, value);
 }
 
 function clearPersistedTokens() {
   localStorage.removeItem(ACCESS_TOKEN_KEY);
-  localStorage.removeItem(REGISTER_TOKEN_KEY);
   localStorage.removeItem("refresh_token");
+  sessionStorage.removeItem(REGISTER_TOKEN_KEY);
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -37,7 +46,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   setAuthTokens: ({ accessToken }) => {
     persistToken(ACCESS_TOKEN_KEY, accessToken);
     localStorage.removeItem("refresh_token");
-    localStorage.removeItem(REGISTER_TOKEN_KEY);
+    sessionStorage.removeItem(REGISTER_TOKEN_KEY);
     set({
       accessToken,
       registerToken: null,

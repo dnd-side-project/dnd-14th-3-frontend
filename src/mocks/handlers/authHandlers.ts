@@ -6,7 +6,7 @@ const MOCK_KAKAO_CODE = "mock-kakao-code";
 const MOCK_ACCESS_TOKEN = "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiIzIn0.";
 const MOCK_REFRESH_TOKEN = "mock-kakao-refresh-token";
 
-/** 회원가입 성공 시 사용할 Register-Token (localStorage register_token에 저장) */
+/** 회원가입 성공 시 사용할 Register-Token (sessionStorage register_token에 저장) */
 export const MOCK_REGISTER_TOKEN = "mock-register-token";
 
 /** 토큰 에러 시나리오 테스트용 - 401 TOKEN_EXPIRED 반환 */

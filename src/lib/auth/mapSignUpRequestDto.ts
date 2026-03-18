@@ -3,8 +3,8 @@ import type { ProfileSetupData } from "@/types/profile";
 import type { SignupRequest } from "@/api/auth/sign-up.api";
 
 export function mapSignUpRequestDto(data: ProfileSetupData): SignupRequest {
-  const profileImageUrl = localStorage.getItem("profileImageUrl");
-  localStorage.removeItem("profileImageUrl");
+  const profileImageUrl = sessionStorage.getItem("profileImageUrl");
+  sessionStorage.removeItem("profileImageUrl");
   return {
     nickname: data.newUsername,
     gender: data.gender,

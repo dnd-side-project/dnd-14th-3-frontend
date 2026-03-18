@@ -32,7 +32,7 @@ export const useMainMapSessionLocationStore = create<SessionLocationState>()(
     }),
     {
       name: "main-map-session-location",
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => sessionStorage),
       partialize: (state) => ({
         sessionId: state.sessionId,
         destination: state.destination,

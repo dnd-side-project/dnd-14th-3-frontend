@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+﻿import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { z } from "zod";
@@ -27,6 +27,10 @@ import { type LatLng } from "@/types/main-map/location.type";
 import { type MapPhase } from "@/types/main-map/map-phase.type";
 import { type MatchExpectedDuration } from "@/types/main-map/match-request.type";
 
+import {
+  getCachedLocationAllowed,
+  setCachedLocationAllowed,
+} from "@/lib/permission/location-consent-storage";
 import { logger } from "@/lib/shared/logger";
 
 import { getAccessToken } from "@/api/client";
@@ -58,6 +62,10 @@ import {
 } from "@/queries/match";
 
 import { createMockSessionSocket } from "@/mocks/ws/sessionSocket.mock";
+import {
+  getLocationPermissionState,
+  requestCurrentLocation,
+} from "@/utils/main-map/geolocation";
 
 const companionRequestSchema = z.object({
   expectedDuration: z.enum(["TEN_MINUTES", "TWENTY_MINUTES", "THIRTY_PLUS_MINUTES"]).nullable(),
@@ -289,13 +297,13 @@ function loadPersistedMatchFlow(): PersistedMatchFlow | null {
   if (typeof window === "undefined") return null;
 
   try {
-    const raw = window.localStorage.getItem(MATCH_FLOW_STORAGE_KEY);
+    const raw = window.sessionStorage.getItem(MATCH_FLOW_STORAGE_KEY);
     if (!raw) return null;
 
     const parsed = JSON.parse(raw) as Partial<PersistedMatchFlow>;
     if (!parsed || typeof parsed.updatedAt !== "number") return null;
     if (Date.now() - parsed.updatedAt > MATCH_FLOW_TTL_MS) {
-      window.localStorage.removeItem(MATCH_FLOW_STORAGE_KEY);
+      window.sessionStorage.removeItem(MATCH_FLOW_STORAGE_KEY);
       return null;
     }
 
@@ -323,7 +331,7 @@ function loadPersistedMatchFlow(): PersistedMatchFlow | null {
 
 function savePersistedMatchFlow(flow: PersistedMatchFlow) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(MATCH_FLOW_STORAGE_KEY, JSON.stringify(flow));
+  window.sessionStorage.setItem(MATCH_FLOW_STORAGE_KEY, JSON.stringify(flow));
 }
 
 export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptions) {
@@ -342,6 +350,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   const [searchParams, setSearchParams] = useSearchParams();
   const [phase, setPhase] = useState<MapPhase>(initialPhase);
   const [isCancellingMatchRequest, setIsCancellingMatchRequest] = useState(false);
+  const userId = getUserIdFromToken();
   const [matchProposal, setMatchProposal] = useState<MatchProposalEventData | null>(
     persistedMatchFlow?.matchProposal ?? null
   );
@@ -382,7 +391,10 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   const [meetingLocation, setMeetingLocation] = useState<LatLng | null>(
     shouldRestorePersistedSessionLocations ? persistedDestination : null
   );
+  const cachedLocationAllowed = getCachedLocationAllowed(userId);
+  const isLocationConsentGranted = cachedLocationAllowed === true;
   const persistedLocation = useMainMapLocationStore((state) => state.selectedLocation);
+  const clearPersistedLocation = useMainMapLocationStore((state) => state.clearSelectedLocation);
   const [requestingManualMode, setRequestingManualMode] = useState(false);
   const setPersistedLocation = useMainMapLocationStore((state) => state.setSelectedLocation);
   const setLayoutOptions = usePageLayoutStore((state) => state.setLayoutOptions);
@@ -395,6 +407,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   const sseReconnectAttemptRef = useRef(0);
   const sseConnectedAtRef = useRef<number | null>(null);
   const shouldReconnectSseRef = useRef(false);
+  const didAutoResolveLocationRef = useRef(false);
   const sessionWsRef = useRef<Client | null>(null);
   const sessionWsSubscriptionRef = useRef<StompSubscription | null>(null);
   const wsReconnectTimerRef = useRef<number | null>(null);
@@ -445,7 +458,15 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     centerMapOnLocation,
     handleMapDragEnd: syncMapCenterOnDragEnd,
     enterManualLocationMode,
-  } = useMainMapState({ persistedLocation });
+  } = useMainMapState({
+    persistedLocation: isLocationConsentGranted ? persistedLocation : null,
+  });
+
+  useEffect(() => {
+    if (isLocationConsentGranted) return;
+    if (!persistedLocation) return;
+    clearPersistedLocation();
+  }, [clearPersistedLocation, isLocationConsentGranted, persistedLocation]);
 
   const { addressInfo, isResolvingAddress, lookupAddress } = useMapAddressLookup(
     isCurrentLocationSheetOpen
@@ -600,17 +621,17 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
       window.clearTimeout(sseReconnectTimerRef.current);
       sseReconnectTimerRef.current = null;
     }
-      sseConnectionRef.current?.close();
-      sseConnectionRef.current = connectMatchSseApi({
-        lastEventId: lastSseEventIdRef.current,
-        onEventId: (id) => {
-          lastSseEventIdRef.current = id;
-          persistLastSseEventId(id);
-        },
-        onOpen: () => {
-          sseConnectedAtRef.current = Date.now();
-          logger.info("[match-sse] connected");
-        },
+    sseConnectionRef.current?.close();
+    sseConnectionRef.current = connectMatchSseApi({
+      lastEventId: lastSseEventIdRef.current,
+      onEventId: (id) => {
+        lastSseEventIdRef.current = id;
+        persistLastSseEventId(id);
+      },
+      onOpen: () => {
+        sseConnectedAtRef.current = Date.now();
+        logger.info("[match-sse] connected");
+      },
       onMatchProposal: (proposal) => {
         logger.info("[match-sse] match.proposal received", proposal);
         setMatchProposal(proposal);
@@ -705,7 +726,8 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
         });
         sseReconnectTimerRef.current = window.setTimeout(() => {
           sseReconnectTimerRef.current = null;
-          if (!shouldReconnectSseRef.current || !shouldReconnectSseInPhase(phaseRef.current)) return;
+          if (!shouldReconnectSseRef.current || !shouldReconnectSseInPhase(phaseRef.current))
+            return;
           openMatchSseConnection();
         }, delayMs);
       },
@@ -1140,6 +1162,24 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     },
     [handleResolveLocation]
   );
+
+  useEffect(() => {
+    if (!isKakaoReady) return;
+    if (didAutoResolveLocationRef.current) return;
+
+    didAutoResolveLocationRef.current = true;
+    void (async () => {
+      const permissionState = await getLocationPermissionState();
+      if (permissionState === "denied") {
+        setCachedLocationAllowed(userId, false);
+        return;
+      }
+      if (!isLocationConsentGranted) return;
+      const location = await requestCurrentLocation();
+      if (!location) return;
+      handleResolveLocation(location);
+    })();
+  }, [handleResolveLocation, isKakaoReady, isLocationConsentGranted, userId]);
 
   const handleMapDragEnd = useCallback(
     (map: kakao.maps.Map) => {
