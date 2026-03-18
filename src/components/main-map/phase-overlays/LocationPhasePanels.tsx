@@ -207,8 +207,8 @@ export default function LocationPhasePanels({
                   20분
                 </ChipButton>
                 <ChipButton
-                  selected={companionRequestSheet.selectedDuration === "OVER_THIRTY_MINUTES"}
-                  onClick={() => companionRequestSheet.selectDuration("OVER_THIRTY_MINUTES")}
+                  selected={companionRequestSheet.selectedDuration === "THIRTY_PLUS_MINUTES"}
+                  onClick={() => companionRequestSheet.selectDuration("THIRTY_PLUS_MINUTES")}
                 >
                   30분 이상
                 </ChipButton>

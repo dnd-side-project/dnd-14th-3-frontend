@@ -1,4 +1,4 @@
-﻿import { Camera, ChevronUp, MapPin, X } from "lucide-react";
+import { Camera, ChevronUp, MapPin, X } from "lucide-react";
 
 import { BottomSheet } from "@/components/shared/bottom-sheet";
 import { Button } from "@/components/shared/button";

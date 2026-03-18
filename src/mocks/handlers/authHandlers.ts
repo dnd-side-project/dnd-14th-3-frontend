@@ -1,4 +1,4 @@
-﻿import { http, HttpResponse, type RequestHandler } from "msw";
+import { http, HttpResponse, type RequestHandler } from "msw";
 
 import { SignupRequest } from "@/api/auth";
 

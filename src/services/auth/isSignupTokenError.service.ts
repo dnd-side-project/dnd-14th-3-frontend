@@ -1,4 +1,4 @@
-﻿import { isAxiosError } from "axios";
+import { isAxiosError } from "axios";
 
 import { SIGNUP_TOKEN_ERROR_CODES } from "@/constants/auth";
 

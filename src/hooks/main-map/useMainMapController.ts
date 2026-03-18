@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { z } from "zod";
@@ -60,7 +60,7 @@ import {
 import { createMockSessionSocket } from "@/mocks/ws/sessionSocket.mock";
 
 const companionRequestSchema = z.object({
-  expectedDuration: z.enum(["TEN_MINUTES", "TWENTY_MINUTES", "OVER_THIRTY_MINUTES"]).nullable(),
+  expectedDuration: z.enum(["TEN_MINUTES", "TWENTY_MINUTES", "THIRTY_PLUS_MINUTES"]).nullable(),
   requestMessage: z.string().max(200, "Request message must be 200 characters or fewer."),
 });
 
@@ -260,7 +260,7 @@ function normalizeIncomingSessionMessage(
 function toDurationLabel(duration: string | null | undefined) {
   if (duration === "TEN_MINUTES") return "10분";
   if (duration === "TWENTY_MINUTES") return "20분";
-  if (duration === "OVER_THIRTY_MINUTES") return "30분 이상";
+  if (duration === "THIRTY_PLUS_MINUTES") return "30분 이상";
   return "미정";
 }
 

@@ -1,4 +1,4 @@
-﻿import { Camera, CircleUserRound, Flag } from "lucide-react";
+import { Camera, CircleUserRound, Flag } from "lucide-react";
 
 import type { LayoutNavItem } from "@/types/layout/nav-item.type";
 
