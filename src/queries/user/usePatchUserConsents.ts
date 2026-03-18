@@ -16,7 +16,7 @@ export function usePatchUserConsents() {
     mutationKey: queryKeys.user.consents(userId),
     mutationFn: (body: PatchUserConsentsRequest) => patchUserConsentsApi(userId, body),
     onSuccess: (data) => {
-      setCachedUserConsents({
+      setCachedUserConsents(userId, {
         locationAllowed: data.locationAllowed,
         notificationAllowed: data.notificationAllowed,
       });

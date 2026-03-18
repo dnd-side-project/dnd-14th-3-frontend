@@ -350,6 +350,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   const [searchParams, setSearchParams] = useSearchParams();
   const [phase, setPhase] = useState<MapPhase>(initialPhase);
   const [isCancellingMatchRequest, setIsCancellingMatchRequest] = useState(false);
+  const userId = getUserIdFromToken();
   const [matchProposal, setMatchProposal] = useState<MatchProposalEventData | null>(
     persistedMatchFlow?.matchProposal ?? null
   );
@@ -390,7 +391,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   const [meetingLocation, setMeetingLocation] = useState<LatLng | null>(
     shouldRestorePersistedSessionLocations ? persistedDestination : null
   );
-  const cachedLocationAllowed = getCachedLocationAllowed();
+  const cachedLocationAllowed = getCachedLocationAllowed(userId);
   const isLocationConsentGranted = cachedLocationAllowed === true;
   const persistedLocation = useMainMapLocationStore((state) => state.selectedLocation);
   const clearPersistedLocation = useMainMapLocationStore((state) => state.clearSelectedLocation);
@@ -1170,7 +1171,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     void (async () => {
       const permissionState = await getLocationPermissionState();
       if (permissionState === "denied") {
-        setCachedLocationAllowed(false);
+        setCachedLocationAllowed(userId, false);
         return;
       }
       if (!isLocationConsentGranted) return;
@@ -1178,7 +1179,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
       if (!location) return;
       handleResolveLocation(location);
     })();
-  }, [handleResolveLocation, isKakaoReady, isLocationConsentGranted]);
+  }, [handleResolveLocation, isKakaoReady, isLocationConsentGranted, userId]);
 
   const handleMapDragEnd = useCallback(
     (map: kakao.maps.Map) => {

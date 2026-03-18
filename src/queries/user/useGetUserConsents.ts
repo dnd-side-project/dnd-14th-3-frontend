@@ -15,7 +15,7 @@ import { queryKeys } from "@/queries/keys";
 
 export function useGetUserConsents() {
   const userId = getUserIdFromToken();
-  const cachedConsents = getCachedUserConsents();
+  const cachedConsents = getCachedUserConsents(userId);
   const query = useQuery({
     queryKey: queryKeys.user.consents(userId),
     queryFn: () => getUserConsentsApi(userId!),
@@ -25,11 +25,11 @@ export function useGetUserConsents() {
 
   useEffect(() => {
     if (!query.data) return;
-    setCachedUserConsents({
+    setCachedUserConsents(userId, {
       locationAllowed: query.data.locationAllowed,
       notificationAllowed: query.data.notificationAllowed,
     });
-  }, [query.data]);
+  }, [query.data, userId]);
 
   return query;
 }
