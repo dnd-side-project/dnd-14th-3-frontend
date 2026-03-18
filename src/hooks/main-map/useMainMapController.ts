@@ -27,6 +27,10 @@ import { type LatLng } from "@/types/main-map/location.type";
 import { type MapPhase } from "@/types/main-map/map-phase.type";
 import { type MatchExpectedDuration } from "@/types/main-map/match-request.type";
 
+import {
+  getCachedLocationAllowed,
+  setCachedLocationAllowed,
+} from "@/lib/permission/location-consent-storage";
 import { logger } from "@/lib/shared/logger";
 
 import { getAccessToken } from "@/api/client";
@@ -58,6 +62,10 @@ import {
 } from "@/queries/match";
 
 import { createMockSessionSocket } from "@/mocks/ws/sessionSocket.mock";
+import {
+  getLocationPermissionState,
+  requestCurrentLocation,
+} from "@/utils/main-map/geolocation";
 
 const companionRequestSchema = z.object({
   expectedDuration: z.enum(["TEN_MINUTES", "TWENTY_MINUTES", "THIRTY_PLUS_MINUTES"]).nullable(),
@@ -382,7 +390,10 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   const [meetingLocation, setMeetingLocation] = useState<LatLng | null>(
     shouldRestorePersistedSessionLocations ? persistedDestination : null
   );
+  const cachedLocationAllowed = getCachedLocationAllowed();
+  const isLocationConsentGranted = cachedLocationAllowed === true;
   const persistedLocation = useMainMapLocationStore((state) => state.selectedLocation);
+  const clearPersistedLocation = useMainMapLocationStore((state) => state.clearSelectedLocation);
   const [requestingManualMode, setRequestingManualMode] = useState(false);
   const setPersistedLocation = useMainMapLocationStore((state) => state.setSelectedLocation);
   const setLayoutOptions = usePageLayoutStore((state) => state.setLayoutOptions);
@@ -395,6 +406,7 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
   const sseReconnectAttemptRef = useRef(0);
   const sseConnectedAtRef = useRef<number | null>(null);
   const shouldReconnectSseRef = useRef(false);
+  const didAutoResolveLocationRef = useRef(false);
   const sessionWsRef = useRef<Client | null>(null);
   const sessionWsSubscriptionRef = useRef<StompSubscription | null>(null);
   const wsReconnectTimerRef = useRef<number | null>(null);
@@ -445,7 +457,15 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     centerMapOnLocation,
     handleMapDragEnd: syncMapCenterOnDragEnd,
     enterManualLocationMode,
-  } = useMainMapState({ persistedLocation });
+  } = useMainMapState({
+    persistedLocation: isLocationConsentGranted ? persistedLocation : null,
+  });
+
+  useEffect(() => {
+    if (isLocationConsentGranted) return;
+    if (!persistedLocation) return;
+    clearPersistedLocation();
+  }, [clearPersistedLocation, isLocationConsentGranted, persistedLocation]);
 
   const { addressInfo, isResolvingAddress, lookupAddress } = useMapAddressLookup(
     isCurrentLocationSheetOpen
@@ -1141,6 +1161,24 @@ export function useMainMapController({ isKakaoReady }: UseMainMapControllerOptio
     },
     [handleResolveLocation]
   );
+
+  useEffect(() => {
+    if (!isKakaoReady) return;
+    if (didAutoResolveLocationRef.current) return;
+
+    didAutoResolveLocationRef.current = true;
+    void (async () => {
+      const permissionState = await getLocationPermissionState();
+      if (permissionState === "denied") {
+        setCachedLocationAllowed(false);
+        return;
+      }
+      if (!isLocationConsentGranted) return;
+      const location = await requestCurrentLocation();
+      if (!location) return;
+      handleResolveLocation(location);
+    })();
+  }, [handleResolveLocation, isKakaoReady, isLocationConsentGranted]);
 
   const handleMapDragEnd = useCallback(
     (map: kakao.maps.Map) => {

@@ -1,5 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { setCachedUserConsents } from "@/lib/permission/location-consent-storage";
+
 import { patchUserConsentsApi, type PatchUserConsentsRequest } from "@/api/user";
 
 import { getUserIdFromToken } from "@/services/auth";
@@ -13,7 +15,11 @@ export function usePatchUserConsents() {
   return useMutation({
     mutationKey: queryKeys.user.consents(userId),
     mutationFn: (body: PatchUserConsentsRequest) => patchUserConsentsApi(userId, body),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      setCachedUserConsents({
+        locationAllowed: data.locationAllowed,
+        notificationAllowed: data.notificationAllowed,
+      });
       queryClient.invalidateQueries({ queryKey: queryKeys.user.all });
     },
   });
