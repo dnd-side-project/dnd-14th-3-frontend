@@ -1,7 +1,7 @@
-export type MatchSessionExpectedDuration =
+﻿export type MatchSessionExpectedDuration =
   | "TEN_MINUTES"
   | "TWENTY_MINUTES"
-  | "OVER_THIRTY_MINUTES"
+  | "THIRTY_PLUS_MINUTES"
   | string;
 
 export type MatchSessionRequest = {

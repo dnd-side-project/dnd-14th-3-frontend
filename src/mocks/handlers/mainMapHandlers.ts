@@ -18,7 +18,7 @@ interface MatchRequestBody {
 const ALLOWED_DURATIONS: MatchExpectedDuration[] = [
   "TEN_MINUTES",
   "TWENTY_MINUTES",
-  "OVER_THIRTY_MINUTES",
+  "THIRTY_PLUS_MINUTES",
 ];
 
 let mockMatchRequestId = 100;
