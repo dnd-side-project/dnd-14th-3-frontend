@@ -1,4 +1,4 @@
-﻿export type MatchSessionExpectedDuration =
+export type MatchSessionExpectedDuration =
   | "TEN_MINUTES"
   | "TWENTY_MINUTES"
   | "THIRTY_PLUS_MINUTES"

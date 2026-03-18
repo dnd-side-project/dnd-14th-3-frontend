@@ -1,4 +1,4 @@
-﻿export type MatchExpectedDuration = "TEN_MINUTES" | "TWENTY_MINUTES" | "THIRTY_PLUS_MINUTES";
+export type MatchExpectedDuration = "TEN_MINUTES" | "TWENTY_MINUTES" | "THIRTY_PLUS_MINUTES";
 
 export interface CreateMatchRequestPayload {
   location: {

@@ -1,4 +1,4 @@
-﻿import { ChevronUp, MapPin, X } from "lucide-react";
+import { ChevronUp, MapPin, X } from "lucide-react";
 
 import type { LocationAddressInfo, MatchExpectedDuration } from "@/types/main-map";
 

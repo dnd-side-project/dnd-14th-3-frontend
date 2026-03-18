@@ -1,4 +1,4 @@
-﻿import { NavLink } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 import { layoutNavItems } from "@/constants/layout/nav-items";
 
