@@ -198,6 +198,7 @@ export default function CreateBottomSheetLocationAdjustStep() {
                         const merged = mergeDateAndTime(baseDate, time);
                         field.onChange(toKstISOString(merged));
                       }}
+                      minuteStep={30}
                     />
                   );
                 }}
