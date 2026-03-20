@@ -7,6 +7,11 @@ const DAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
 export interface CalendarProps {
   selectedDate: Date | null;
   onChange: (date: Date | null) => void;
+  minDate?: Date;
+}
+
+function startOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
 function isSameDay(a: Date, b: Date) {
@@ -17,7 +22,9 @@ function isSameDay(a: Date, b: Date) {
   );
 }
 
-export default function Calendar({ selectedDate, onChange }: CalendarProps) {
+export default function Calendar({ selectedDate, onChange, minDate }: CalendarProps) {
+  const normalizedMinDate = minDate ? startOfDay(minDate) : null;
+
   const [viewDate, setViewDate] = useState(() => {
     const base = selectedDate ?? new Date();
     return new Date(base.getFullYear(), base.getMonth(), 1);
@@ -31,6 +38,11 @@ export default function Calendar({ selectedDate, onChange }: CalendarProps) {
 
   const handleDayClick = (day: number) => {
     const clicked = new Date(year, month, day);
+    const clickedStart = startOfDay(clicked);
+
+    if (normalizedMinDate && clickedStart < normalizedMinDate) {
+      return;
+    }
 
     if (selectedDate && isSameDay(clicked, selectedDate)) {
       onChange(null);
@@ -85,6 +97,8 @@ export default function Calendar({ selectedDate, onChange }: CalendarProps) {
 
             const current = new Date(year, month, day);
             const isSelected = !!selectedDate && isSameDay(current, selectedDate);
+            const isDisabled =
+              !!normalizedMinDate && startOfDay(current).getTime() < normalizedMinDate.getTime();
 
             return (
               <div
@@ -94,10 +108,13 @@ export default function Calendar({ selectedDate, onChange }: CalendarProps) {
                 <button
                   type="button"
                   onClick={() => handleDayClick(day)}
+                  disabled={isDisabled}
                   className={`flex h-10.5 w-10.5 items-center justify-center rounded-full text-body-2 font-medium transition-colors ${
                     isSelected
                       ? "bg-mint-500 font-bold text-black"
-                      : "text-gray-700 hover:bg-gray-100"
+                      : isDisabled
+                        ? "text-gray-300"
+                        : "text-gray-700 hover:bg-gray-100"
                   }`}
                 >
                   {String(day).padStart(2, "0")}

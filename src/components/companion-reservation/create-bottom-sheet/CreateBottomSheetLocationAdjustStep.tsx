@@ -28,6 +28,16 @@ const PIN_ME = {
   size: { width: 60, height: 60 },
 };
 
+const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+
+function toKstISOString(date: Date) {
+  return new Date(date.getTime() + KST_OFFSET_MS).toISOString();
+}
+
+function fromKstISOString(value: string) {
+  return new Date(new Date(value).getTime() - KST_OFFSET_MS);
+}
+
 export default function CreateBottomSheetLocationAdjustStep() {
   const currentStep = useReservationCreateStepStore((s) => s.currentStep);
   const { control, setValue, register } = useReservationFormContext();
@@ -36,6 +46,10 @@ export default function CreateBottomSheetLocationAdjustStep() {
 
   const [currentBuildingAddress, setCurrentBuildingAddress] = useState("");
   const [currentRoadAddress, setCurrentRoadAddress] = useState("");
+  const today = useMemo(() => {
+    const now = new Date().getTime() + KST_OFFSET_MS;
+    return new Date(now);
+  }, []);
 
   const syncAddressFromLatLng = useCallback(
     (latlng: kakao.maps.LatLng) => {
@@ -152,8 +166,9 @@ export default function CreateBottomSheetLocationAdjustStep() {
                 name="scheduledAt"
                 render={({ field }) => (
                   <Calendar
-                    selectedDate={field.value ? new Date(field.value) : null}
-                    onChange={(date) => field.onChange(date ? date.toISOString() : "")}
+                    selectedDate={field.value ? fromKstISOString(field.value) : null}
+                    onChange={(date) => field.onChange(date ? toKstISOString(date) : "")}
+                    minDate={new Date(today.getTime() + 24 * 60 * 60 * 1000)}
                   />
                 )}
               />
@@ -174,14 +189,14 @@ export default function CreateBottomSheetLocationAdjustStep() {
                 control={control}
                 name="scheduledAt"
                 render={({ field }) => {
-                  const baseDate = field.value ? new Date(field.value) : new Date();
+                  const baseDate = field.value ? fromKstISOString(field.value) : new Date();
                   return (
                     <TimePicker
                       value={baseDate}
                       onChange={(time) => {
                         if (!time) return;
                         const merged = mergeDateAndTime(baseDate, time);
-                        field.onChange(merged.toISOString());
+                        field.onChange(toKstISOString(merged));
                       }}
                     />
                   );
@@ -198,7 +213,7 @@ export default function CreateBottomSheetLocationAdjustStep() {
       default:
         return null;
     }
-  }, [control, currentBuildingAddress, currentRoadAddress, currentStep, goNext, register]);
+  }, [control, currentBuildingAddress, currentRoadAddress, currentStep, goNext, register, today]);
 
   if (!location) {
     return null;
