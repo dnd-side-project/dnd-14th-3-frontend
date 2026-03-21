@@ -46,6 +46,7 @@ export default function CreateBottomSheetLocationAdjustStep() {
 
   const [currentBuildingAddress, setCurrentBuildingAddress] = useState("");
   const [currentRoadAddress, setCurrentRoadAddress] = useState("");
+  const isPinMovable = currentStep === "location-adjust";
   const today = useMemo(() => {
     const now = new Date().getTime() + KST_OFFSET_MS;
     return new Date(now);
@@ -98,9 +99,10 @@ export default function CreateBottomSheetLocationAdjustStep() {
 
   const handleMapDragEnd = useCallback(
     (map: kakao.maps.Map) => {
+      if (!isPinMovable) return;
       updateLocationAndAddress(map.getCenter());
     },
-    [updateLocationAndAddress]
+    [isPinMovable, updateLocationAndAddress]
   );
 
   const handleMapCreate = useCallback((map: kakao.maps.Map) => {
@@ -109,9 +111,10 @@ export default function CreateBottomSheetLocationAdjustStep() {
 
   const handleMapClick = useCallback(
     (_map: kakao.maps.Map, mouseEvent: kakao.maps.event.MouseEvent) => {
+      if (!isPinMovable) return;
       updateLocationAndAddress(mouseEvent.latLng);
     },
-    [updateLocationAndAddress]
+    [isPinMovable, updateLocationAndAddress]
   );
 
   const stepContent = useMemo(() => {
@@ -225,7 +228,7 @@ export default function CreateBottomSheetLocationAdjustStep() {
       <Map
         center={{ lat: location.latitude, lng: location.longitude }}
         level={3}
-        draggable={currentStep === "location-adjust"}
+        draggable={currentStep === "location-adjust" && isPinMovable}
         onDragEnd={handleMapDragEnd}
         onCreate={handleMapCreate}
         onClick={handleMapClick}
