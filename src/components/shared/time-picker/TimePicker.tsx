@@ -10,6 +10,7 @@ export interface TimePickerProps {
   onChange: (date: Date | null) => void;
   disabled?: boolean;
   className?: string;
+  minuteStep?: number;
 }
 
 /* =====================
@@ -28,6 +29,12 @@ function to12Hour(date: Date): { hour: number; minute: number; period: TimePerio
 function to24Hour(hour12: number, minute: number, period: TimePeriod): number {
   if (period === "AM") return hour12 === 12 ? 0 : hour12;
   return hour12 === 12 ? 12 : hour12 + 12;
+}
+
+function normalizeMinute(minute: number, step: number): number {
+  const safeStep = Math.min(Math.max(step, 1), 30);
+  const nearest = Math.round(minute / safeStep) * safeStep;
+  return nearest >= 60 ? 0 : nearest;
 }
 
 /* =====================
@@ -65,9 +72,12 @@ export default function TimePicker({
   onChange,
   disabled = false,
   className = "",
+  minuteStep = 1,
 }: TimePickerProps) {
   const baseDate = value ?? new Date();
-  const { hour, minute, period } = to12Hour(baseDate);
+  const { hour, minute: rawMinute, period } = to12Hour(baseDate);
+  const step = Math.min(Math.max(minuteStep, 1), 30);
+  const minute = normalizeMinute(rawMinute, step);
 
   const updateTime = (newHour: number, newMinute: number, newPeriod: TimePeriod) => {
     const d = value ? new Date(value) : new Date();
@@ -88,12 +98,12 @@ export default function TimePicker({
   };
 
   const incMinute = () => {
-    const next = minute === 59 ? 0 : minute + 1;
+    const next = minute + step >= 60 ? 0 : minute + step;
     updateTime(hour, next, period);
   };
 
   const decMinute = () => {
-    const next = minute === 0 ? 59 : minute - 1;
+    const next = minute === 0 ? 60 - step : minute - step;
     updateTime(hour, next, period);
   };
 
